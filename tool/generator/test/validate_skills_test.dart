@@ -530,45 +530,39 @@ Content
         contains('--- Raw content from https://example.com/source ---'),
       );
     });
-    test(
-      'logs warning when fetchAndConvertContent returns empty string',
-      () async {
-        const skillName = 'empty-fetch-val';
-        final skillDir = Directory(p.join(skillsDir.path, skillName));
-        await skillDir.create();
-        File(
-          p.join(skillDir.path, 'SKILL.md'),
-        ).writeAsStringSync('name: $skillName\ncontent');
+    test('fails upfront validation when resources list is empty', () async {
+      const skillName = 'empty-fetch-val';
+      final skillDir = Directory(p.join(skillsDir.path, skillName));
+      await skillDir.create();
+      File(
+        p.join(skillDir.path, 'SKILL.md'),
+      ).writeAsStringSync('name: $skillName\ncontent');
 
-        final configFile = File(p.join(tempDir.path, 'config.yaml'));
-        await configFile.writeAsString(
-          jsonEncode([
-            {'name': skillName, 'description': 'Desc', 'resources': <String>[]},
-          ]),
-        );
+      final configFile = File(p.join(tempDir.path, 'config.yaml'));
+      await configFile.writeAsString(
+        jsonEncode([
+          {'name': skillName, 'description': 'Desc', 'resources': <String>[]},
+        ]),
+      );
 
-        final mockClient = MockClient(
-          (request) async => http.Response('', 200),
-        );
-
-        runner = CommandRunner<void>('skills', 'Test runner')
-          ..addCommand(
-            ValidateSkillCommand(
-              environment: {'GEMINI_API_KEY': 'test-key'},
-              outputDir: skillsDir,
-              httpClient: mockClient,
-            ),
-          );
-
-        await runner.run(['validate-skill', configFile.path]);
-        expect(
-          logs,
-          contains(
-            '  No content fetched for empty-fetch-val. Skipping validation.',
+      runner = CommandRunner<void>('skills', 'Test runner')
+        ..addCommand(
+          ValidateSkillCommand(
+            environment: {'GEMINI_API_KEY': 'test-key'},
+            outputDir: skillsDir,
+            httpClient: mockClient,
           ),
         );
-      },
-    );
+
+      await runner.run(['validate-skill', configFile.path]);
+      expect(
+        logs,
+        contains(
+          'Skill "empty-fetch-val" field "resources" must not be empty.',
+        ),
+      );
+      expect(logs, contains('Configuration validation failed.'));
+    });
 
     test('logs severe error on generic exception during validation', () async {
       const skillName = 'exception-val';
