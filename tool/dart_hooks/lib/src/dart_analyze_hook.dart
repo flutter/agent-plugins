@@ -5,6 +5,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart' as path;
+import 'hook_utils.dart';
 
 /// Implements the dart analyze hook logic.
 class DartAnalyzeHook {
@@ -95,9 +96,7 @@ class DartAnalyzeHook {
             filePath = entries[++i];
           }
         }
-        if (filePath.endsWith('.dart') &&
-            !filePath.endsWith('.g.dart') &&
-            !filePath.endsWith('.mocks.dart')) {
+        if (filterGeneratedFiles(filePath)) {
           final String fullPath = path.join(repoRoot, filePath);
           if (fileExists(fullPath)) {
             files.add(fullPath);

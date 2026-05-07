@@ -5,6 +5,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart' as path;
+import 'hook_utils.dart';
 
 /// Implements the dart format hook logic.
 class DartFormatHook {
@@ -98,7 +99,7 @@ class DartFormatHook {
             filePath = entries[++i];
           }
         }
-        if (filePath.endsWith('.dart')) {
+        if (filterGeneratedFiles(filePath)) {
           final String fullPath = path.join(repoRoot, filePath);
           if (fileExists(fullPath)) {
             modifiedDartFiles.add(fullPath);
@@ -113,7 +114,7 @@ class DartFormatHook {
         return;
       }
 
-      await logToFile('Running dart format on: ${modifiedDartFiles.join(', ')}');
+      await logToFile('Running dart format on ${modifiedDartFiles.length} files...');
 
       // 2. Run dart format ONLY on the modified files.
       final ProcessResult result = await runProcess('dart', [
