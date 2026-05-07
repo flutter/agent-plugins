@@ -51,29 +51,59 @@ class DartAnalyzeHook {
     await logToFile('dart_analyze.dart started in $currentPath (Trigger: $triggerSource)');
 
     try {
+      // Get the repo root to resolve paths in monorepo.
+      final ProcessResult repoRootResult = await runProcess('git', [
+        'rev-parse',
+        '--show-toplevel',
+      ], runInShell: false);
+
+      if (repoRootResult.exitCode != 0) {
+        await logToFile('ERROR: Failed to get git repo root.');
+        printStdout(jsonEncode({'decision': 'continue', 'reason': 'Failed to get git repo root.'}));
+        onExit(0);
+        return;
+      }
+      final String repoRoot = (repoRootResult.stdout as String).trim();
+
       // Get list of all Dart files in the package not ignored by git
       final ProcessResult gitResult = await runProcess(
         'git',
-        ['ls-files', '-z', '--cached', '--others', '--exclude-standard', '.'],
+        ['status', '--porcelain', '-z', '.'],
         runInShell: false,
         workingDirectory: packageRoot,
       );
 
       if (gitResult.exitCode != 0) {
-        await logToFile('ERROR: Failed to get git files. Exit code ${gitResult.exitCode}');
+        await logToFile('ERROR: git status failed with exit code ${gitResult.exitCode}');
         await logToFile(gitResult.stderr as String);
-        printStdout(jsonEncode({'decision': 'continue', 'reason': 'Failed to get git files.'}));
+        printStdout(jsonEncode({'decision': 'continue', 'reason': 'Failed to get git status.'}));
         onExit(0); // Exit 0 so Antigravity captures the stdout JSON
         return;
       }
 
-      final List<String> files = (gitResult.stdout as String)
-          .split('\x00')
-          .where((line) => line.isNotEmpty && line.endsWith('.dart'))
-          .where((line) => !line.endsWith('.g.dart') && !line.endsWith('.mocks.dart'))
-          .map((filePath) => path.join(packageRoot, filePath))
-          .where((filePath) => fileExists(filePath))
-          .toList();
+      final List<String> files = [];
+      final List<String> entries = (gitResult.stdout as String).split('\x00');
+      for (var i = 0; i < entries.length; i++) {
+        final String entry = entries[i];
+        if (entry.length < 4) {
+          continue;
+        }
+        final String status = entry.substring(0, 2);
+        String filePath = entry.substring(3);
+        if (status.startsWith('R') || status.startsWith('C')) {
+          if (i + 1 < entries.length) {
+            filePath = entries[++i];
+          }
+        }
+        if (filePath.endsWith('.dart') &&
+            !filePath.endsWith('.g.dart') &&
+            !filePath.endsWith('.mocks.dart')) {
+          final String fullPath = path.join(repoRoot, filePath);
+          if (fileExists(fullPath)) {
+            files.add(fullPath);
+          }
+        }
+      }
 
       if (files.isEmpty) {
         await logToFile('No dart files found to analyze.');

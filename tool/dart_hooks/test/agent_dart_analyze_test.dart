@@ -14,13 +14,13 @@ void main() {
 
       final hook = DartAnalyzeHook(
         runProcess: (cmd, args, {bool runInShell = false, String? workingDirectory}) async {
-          if (cmd == 'git' && args.first == 'ls-files') {
+          if (cmd == 'git' && args.first == 'status') {
             return ProcessResult(0, 0, '', '');
           }
           return ProcessResult(0, 0, '', '');
         },
         fileExists: (path) => true,
-        logToFile: (msg) async => loggedMessage = (loggedMessage ?? '') + msg + '\n',
+        logToFile: (msg) async => loggedMessage = "${loggedMessage ?? ''}$msg\n",
         onExit: (code) {},
       );
 
@@ -35,8 +35,8 @@ void main() {
 
       final hook = DartAnalyzeHook(
         runProcess: (cmd, args, {bool runInShell = false, String? workingDirectory}) async {
-          if (cmd == 'git' && args.first == 'ls-files') {
-            return ProcessResult(0, 0, 'lib/file.dart\x00', '');
+          if (cmd == 'git' && args.first == 'status') {
+            return ProcessResult(0, 0, 'M  lib/file.dart\x00', '');
           }
           if (cmd == 'dart' && args.first == 'analyze') {
             return ProcessResult(0, 0, 'No issues found.', '');
@@ -61,8 +61,8 @@ void main() {
 
       final hook = DartAnalyzeHook(
         runProcess: (cmd, args, {bool runInShell = false, String? workingDirectory}) async {
-          if (cmd == 'git' && args.first == 'ls-files') {
-            return ProcessResult(0, 0, 'lib/file.dart\x00', '');
+          if (cmd == 'git' && args.first == 'status') {
+            return ProcessResult(0, 0, 'M  lib/file.dart\x00', '');
           }
           if (cmd == 'dart' && args.first == 'analyze') {
             return ProcessResult(0, 1, 'Issue found.', '');
@@ -82,14 +82,13 @@ void main() {
     });
 
     test('Handles filenames with spaces', () async {
-      String? stdoutMessage;
       int? exitCode;
       List<String>? dartAnalyzeArgs;
 
       final hook = DartAnalyzeHook(
         runProcess: (cmd, args, {bool runInShell = false, String? workingDirectory}) async {
-          if (cmd == 'git' && args.first == 'ls-files') {
-            return ProcessResult(0, 0, 'lib/my file.dart\x00lib/other.dart\x00', '');
+          if (cmd == 'git' && args.first == 'status') {
+            return ProcessResult(0, 0, 'M  lib/my file.dart\x00M  lib/other.dart\x00', '');
           }
           if (cmd == 'dart' && args.first == 'analyze') {
             dartAnalyzeArgs = args;
@@ -98,7 +97,7 @@ void main() {
           return ProcessResult(0, 0, '', '');
         },
         fileExists: (path) => true,
-        printStdout: (msg) => stdoutMessage = msg,
+        printStdout: (msg) {},
         logToFile: (msg) async {},
         onExit: (code) => exitCode = code,
       );

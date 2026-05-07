@@ -107,5 +107,58 @@ environment:
       // Verify files were actually found and analyzed
       expect(logs.any((l) => l.contains('Running dart analyze on')), isTrue);
     });
+
+    test('Only analyzes modified files', () async {
+      final modifiedFile = File(path.join(packageRoot, 'lib', 'modified.dart'));
+      await modifiedFile.create(recursive: true);
+      await modifiedFile.writeAsString('void main() {}');
+
+      final untouchedFile = File(path.join(packageRoot, 'lib', 'untouched.dart'));
+      await untouchedFile.create(recursive: true);
+      await untouchedFile.writeAsString('void main() {}');
+
+      // Commit both files to make them "untouched"
+      await Process.run('git', ['add', '.'], workingDirectory: repoRoot, runInShell: true);
+      await Process.run(
+        'git',
+        ['commit', '-m', 'Add initial files'],
+        workingDirectory: repoRoot,
+        runInShell: true,
+      );
+
+      // Now modify only one file
+      await modifiedFile.writeAsString('void main() { print("modified"); }');
+
+      int? exitCode;
+      List<String>? dartAnalyzeArgs;
+
+      final hook = DartAnalyzeHook(
+        runProcess: (cmd, args, {bool runInShell = false, String? workingDirectory}) async {
+          if (cmd == 'dart' && args.first == 'analyze') {
+            dartAnalyzeArgs = args;
+            return ProcessResult(0, 0, 'No issues found.', '');
+          }
+          // For git commands, run them for real
+          return Process.run(
+            cmd,
+            args,
+            runInShell: runInShell,
+            workingDirectory: workingDirectory ?? packageRoot,
+          );
+        },
+        fileExists: (p) => File(p).existsSync(),
+        printStdout: (msg) {},
+        logToFile: (msg) async {},
+        onExit: (code) => exitCode = code,
+      );
+
+      final String agentsDir = path.join(packageRoot, '.agents');
+      await hook.run([], agentsDir, packageRoot);
+
+      expect(dartAnalyzeArgs, isNotNull);
+      expect(dartAnalyzeArgs!.any((arg) => arg.endsWith('lib/modified.dart')), isTrue);
+      expect(dartAnalyzeArgs!.any((arg) => arg.endsWith('lib/untouched.dart')), isFalse);
+      expect(exitCode, equals(0));
+    });
   });
 }

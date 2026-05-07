@@ -81,7 +81,6 @@ void main() {
     });
 
     test('Handles filenames with spaces', () async {
-      String? stdoutMessage;
       int? exitCode;
       List<String>? dartFormatArgs;
 
@@ -100,7 +99,7 @@ void main() {
           return ProcessResult(0, 0, '', '');
         },
         fileExists: (path) => true,
-        printStdout: (msg) => stdoutMessage = msg,
+        printStdout: (msg) {},
         logToFile: (msg) async {},
         onExit: (code) => exitCode = code,
       );
