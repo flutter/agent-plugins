@@ -9,13 +9,11 @@ import 'package:path/path.dart' as path;
 
 Future<void> main(List<String> args) async {
   if (path.basename(Directory.current.path) != '.agents') {
-    stderr.writeln(
-      'WARNING: This script is expected to be run from the .agents directory.',
-    );
+    stderr.writeln('WARNING: This script is expected to be run from the .agents directory.');
   }
   final String scriptDir = File(Platform.script.toFilePath()).parent.path;
   // Log file placed in the package root directory
-  final logFilePath = '$scriptDir/../dart_analyze.log';
+  final String logFilePath = path.join(scriptDir, '..', 'dart_analyze.log');
   final logFile = File(logFilePath);
 
   Future<void> logToFile(String message) async {

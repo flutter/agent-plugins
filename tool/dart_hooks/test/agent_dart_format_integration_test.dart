@@ -18,12 +18,7 @@ void main() {
       repoRoot = tempDir.path;
 
       // Initialize a git repo in the temp directory
-      await Process.run(
-        'git',
-        ['init'],
-        workingDirectory: repoRoot,
-        runInShell: true,
-      );
+      await Process.run('git', ['init'], workingDirectory: repoRoot, runInShell: true);
 
       // Git requires user name and email to be set in some environments
       await Process.run(
@@ -46,9 +41,7 @@ void main() {
 
     test('Formats modified file', () async {
       final fileToFormat = File(path.join(repoRoot, 'test.dart'));
-      await fileToFormat.writeAsString(
-        'void main() {  print("hello");}',
-      ); // Poorly formatted
+      await fileToFormat.writeAsString('void main() {  print("hello");}'); // Poorly formatted
 
       // Stage the file so git status sees it or leave it untracked?
       // The hook checks `git status --porcelain` which sees both modified and untracked files (if not ignored).
@@ -57,16 +50,15 @@ void main() {
       int? exitCode;
 
       final hook = DartFormatHook(
-        runProcess:
-            (cmd, args, {bool runInShell = false, String? workingDirectory}) {
-              // Delegate to real Process.run but force workingDirectory to repoRoot
-              return Process.run(
-                cmd,
-                args,
-                runInShell: runInShell,
-                workingDirectory: workingDirectory ?? repoRoot,
-              );
-            },
+        runProcess: (cmd, args, {bool runInShell = false, String? workingDirectory}) {
+          // Delegate to real Process.run but force workingDirectory to repoRoot
+          return Process.run(
+            cmd,
+            args,
+            runInShell: runInShell,
+            workingDirectory: workingDirectory ?? repoRoot,
+          );
+        },
         fileExists: (p) => File(p).existsSync(),
         printStdout: (msg) => stdoutMessage = msg,
         logToFile: (msg) async {},
@@ -74,12 +66,7 @@ void main() {
       );
 
       // Stage the file so git status sees it as added
-      await Process.run(
-        'git',
-        ['add', 'test.dart'],
-        workingDirectory: repoRoot,
-        runInShell: true,
-      );
+      await Process.run('git', ['add', 'test.dart'], workingDirectory: repoRoot, runInShell: true);
 
       // Run the hook
       await hook.run([], repoRoot);
@@ -104,21 +91,15 @@ void main() {
       }
 
       final hook = DartFormatHook(
-        runProcess:
-            (
-              cmd,
-              args, {
-              bool runInShell = false,
-              String? workingDirectory,
-            }) async {
-              if (cmd == 'git' && args.first == 'rev-parse') {
-                return ProcessResult(0, 0, repoRoot, '');
-              }
-              if (cmd == 'git' && args.first == 'status') {
-                return ProcessResult(0, 0, '', '');
-              }
-              return ProcessResult(0, 0, '', '');
-            },
+        runProcess: (cmd, args, {bool runInShell = false, String? workingDirectory}) async {
+          if (cmd == 'git' && args.first == 'rev-parse') {
+            return ProcessResult(0, 0, repoRoot, '');
+          }
+          if (cmd == 'git' && args.first == 'status') {
+            return ProcessResult(0, 0, '', '');
+          }
+          return ProcessResult(0, 0, '', '');
+        },
         fileExists: (p) => true,
         printStdout: (msg) {},
         logToFile: testLog,

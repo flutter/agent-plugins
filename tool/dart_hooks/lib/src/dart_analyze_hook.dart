@@ -4,6 +4,7 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'package:path/path.dart' as path;
 
 /// Implements the dart analyze hook logic.
 class DartAnalyzeHook {
@@ -41,20 +42,13 @@ class DartAnalyzeHook {
   static void _defaultPrintStdout(String message) => stdout.writeln(message);
 
   /// Runs the analysis hook.
-  Future<void> run(
-    List<String> args,
-    String currentPath,
-    String packageRoot,
-  ) async {
+  Future<void> run(List<String> args, String currentPath, String packageRoot) async {
     final int sourceIdx = args.indexOf('--source');
-    final String triggerSource =
-        (sourceIdx != -1 && sourceIdx + 1 < args.length)
+    final String triggerSource = (sourceIdx != -1 && sourceIdx + 1 < args.length)
         ? args[sourceIdx + 1].toUpperCase()
         : 'MANUAL';
 
-    await logToFile(
-      'dart_analyze.dart started in $currentPath (Trigger: $triggerSource)',
-    );
+    await logToFile('dart_analyze.dart started in $currentPath (Trigger: $triggerSource)');
 
     try {
       // Get list of all Dart files in the package not ignored by git
@@ -66,28 +60,18 @@ class DartAnalyzeHook {
       );
 
       if (gitResult.exitCode != 0) {
-        await logToFile(
-          'ERROR: Failed to get git files. Exit code ${gitResult.exitCode}',
-        );
+        await logToFile('ERROR: Failed to get git files. Exit code ${gitResult.exitCode}');
         await logToFile(gitResult.stderr as String);
-        printStdout(
-          jsonEncode({
-            'decision': 'continue',
-            'reason': 'Failed to get git files.',
-          }),
-        );
+        printStdout(jsonEncode({'decision': 'continue', 'reason': 'Failed to get git files.'}));
         onExit(0); // Exit 0 so Antigravity captures the stdout JSON
       }
 
       final List<String> files = (gitResult.stdout as String)
           .split('\n')
           .where((line) => line.isNotEmpty && line.endsWith('.dart'))
-          .where(
-            (line) =>
-                !line.endsWith('.g.dart') && !line.endsWith('.mocks.dart'),
-          )
-          .map((path) => '$packageRoot/$path')
-          .where((path) => fileExists(path))
+          .where((line) => !line.endsWith('.g.dart') && !line.endsWith('.mocks.dart'))
+          .map((filePath) => path.join(packageRoot, filePath))
+          .where((filePath) => fileExists(filePath))
           .toList();
 
       if (files.isEmpty) {
@@ -121,18 +105,14 @@ class DartAnalyzeHook {
       // If there are issues, tell Antigravity to CONTINUE and provide the reason.
       await logToFile('Analysis failed');
 
-      final reason =
-          'Analyzer issues found. Please fix these before finishing:\n\n$output$error';
+      final reason = 'Analyzer issues found. Please fix these before finishing:\n\n$output$error';
       printStdout(jsonEncode({'decision': 'continue', 'reason': reason}));
       onExit(0); // Exit 0 so Antigravity captures the stdout JSON.
     } catch (e, stackTrace) {
       await logToFile('UNHANDLED EXCEPTION: $e');
       await logToFile(stackTrace.toString());
       printStdout(
-        jsonEncode({
-          'decision': 'continue',
-          'reason': 'Unhandled exception in dart_analyze hook.',
-        }),
+        jsonEncode({'decision': 'continue', 'reason': 'Unhandled exception in dart_analyze hook.'}),
       );
       onExit(1);
     }

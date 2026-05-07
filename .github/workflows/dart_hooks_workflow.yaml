@@ -1,0 +1,50 @@
+name: dart_hooks
+permissions: read-all
+
+on:
+  pull_request:
+    paths:
+      - 'tool/dart_hooks/**'
+      - '.github/workflows/dart_hooks_workflow.yaml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'tool/dart_hooks/**'
+      - '.github/workflows/dart_hooks_workflow.yaml'
+  schedule:
+    - cron: '0 0 * * 0' # weekly
+
+defaults:
+  run:
+    working-directory: tool/dart_hooks
+
+jobs:
+  analyze_and_test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - run: dart pub get
+
+      - run: dart analyze --fatal-infos
+
+      - run: dart test
+
+  formatting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - run: dart pub get
+
+      - run: dart format --output=none --set-exit-if-changed .

@@ -13,21 +13,15 @@ void main() {
       String? loggedMessage;
 
       final hook = DartFormatHook(
-        runProcess:
-            (
-              cmd,
-              args, {
-              bool runInShell = false,
-              String? workingDirectory,
-            }) async {
-              if (cmd == 'git' && args.first == 'rev-parse') {
-                return ProcessResult(0, 0, '/repo/root', '');
-              }
-              if (cmd == 'git' && args.first == 'status') {
-                return ProcessResult(0, 0, '', '');
-              }
-              return ProcessResult(0, 0, '', '');
-            },
+        runProcess: (cmd, args, {bool runInShell = false, String? workingDirectory}) async {
+          if (cmd == 'git' && args.first == 'rev-parse') {
+            return ProcessResult(0, 0, '/repo/root', '');
+          }
+          if (cmd == 'git' && args.first == 'status') {
+            return ProcessResult(0, 0, '', '');
+          }
+          return ProcessResult(0, 0, '', '');
+        },
         fileExists: (path) => true,
         printStdout: (msg) {},
         logToFile: (msg) async => loggedMessage = msg,
@@ -42,18 +36,12 @@ void main() {
       String? loggedMessage;
 
       final hook = DartFormatHook(
-        runProcess:
-            (
-              cmd,
-              args, {
-              bool runInShell = false,
-              String? workingDirectory,
-            }) async {
-              if (cmd == 'git' && args.first == 'rev-parse') {
-                return ProcessResult(0, 0, '/repo/root', '');
-              }
-              return ProcessResult(0, 0, '', '');
-            },
+        runProcess: (cmd, args, {bool runInShell = false, String? workingDirectory}) async {
+          if (cmd == 'git' && args.first == 'rev-parse') {
+            return ProcessResult(0, 0, '/repo/root', '');
+          }
+          return ProcessResult(0, 0, '', '');
+        },
         fileExists: (path) => true,
         logToFile: (msg) async => loggedMessage = msg,
       );
@@ -68,24 +56,18 @@ void main() {
       int? exitCode;
 
       final hook = DartFormatHook(
-        runProcess:
-            (
-              cmd,
-              args, {
-              bool runInShell = false,
-              String? workingDirectory,
-            }) async {
-              if (cmd == 'git' && args.first == 'rev-parse') {
-                return ProcessResult(0, 0, '/repo/root', '');
-              }
-              if (cmd == 'git' && args.first == 'status') {
-                return ProcessResult(0, 0, 'M  file.dart', '');
-              }
-              if (cmd == 'dart' && args.first == 'format') {
-                return ProcessResult(0, 0, 'Formatted file.dart', '');
-              }
-              return ProcessResult(0, 0, '', '');
-            },
+        runProcess: (cmd, args, {bool runInShell = false, String? workingDirectory}) async {
+          if (cmd == 'git' && args.first == 'rev-parse') {
+            return ProcessResult(0, 0, '/repo/root', '');
+          }
+          if (cmd == 'git' && args.first == 'status') {
+            return ProcessResult(0, 0, 'M  file.dart', '');
+          }
+          if (cmd == 'dart' && args.first == 'format') {
+            return ProcessResult(0, 0, 'Formatted file.dart', '');
+          }
+          return ProcessResult(0, 0, '', '');
+        },
         fileExists: (path) => true,
         printStdout: (msg) => stdoutMessage = msg,
         logToFile: (msg) async {},

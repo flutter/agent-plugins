@@ -4,6 +4,7 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'package:path/path.dart' as path;
 
 /// Implements the dart format hook logic.
 class DartFormatHook {
@@ -47,14 +48,11 @@ class DartFormatHook {
     }
 
     final int sourceIdx = args.indexOf('--source');
-    final String triggerSource =
-        (sourceIdx != -1 && sourceIdx + 1 < args.length)
+    final String triggerSource = (sourceIdx != -1 && sourceIdx + 1 < args.length)
         ? args[sourceIdx + 1].toUpperCase()
         : 'MANUAL';
 
-    await logToFile(
-      'dart_format.dart started in $currentPath (Trigger: $triggerSource)',
-    );
+    await logToFile('dart_format.dart started in $currentPath (Trigger: $triggerSource)');
 
     try {
       // Get the repo root to resolve paths in monorepo.
@@ -77,9 +75,7 @@ class DartFormatHook {
       ], runInShell: true);
 
       if (gitResult.exitCode != 0) {
-        await logToFile(
-          'ERROR: git status failed with exit code ${gitResult.exitCode}',
-        );
+        await logToFile('ERROR: git status failed with exit code ${gitResult.exitCode}');
         await logToFile(gitResult.stderr as String);
         emitEmptyResult();
         onExit(1);
@@ -94,8 +90,8 @@ class DartFormatHook {
             final List<String> parts = line.split(RegExp(r'\s+'));
             return parts.length > 1 ? parts.last : '';
           })
-          .map((path) => '$repoRoot/$path')
-          .where((path) => path.isNotEmpty && fileExists(path))
+          .map((filePath) => path.join(repoRoot, filePath))
+          .where((filePath) => filePath.isNotEmpty && fileExists(filePath))
           .toList();
 
       if (modifiedDartFiles.isEmpty) {
@@ -104,9 +100,7 @@ class DartFormatHook {
         onExit(0);
       }
 
-      await logToFile(
-        'Running dart format on: ${modifiedDartFiles.join(', ')}',
-      );
+      await logToFile('Running dart format on: ${modifiedDartFiles.join(', ')}');
 
       // 2. Run dart format ONLY on the modified files.
       final ProcessResult result = await runProcess('dart', [

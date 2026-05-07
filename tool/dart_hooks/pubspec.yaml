@@ -1,5 +1,5 @@
 name: dart_hooks
-description: Hooks for camera_android_camerax package
+description: A package containing hooks for Dart projects, such as format and analyze.
 version: 0.0.1
 publish_to: 'none'
 

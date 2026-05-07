@@ -54,15 +54,8 @@ environment:
       );
 
       // Create an initial commit to make the repo fully operational
-      await File(
-        path.join(repoRoot, 'README.md'),
-      ).writeAsString('Initial file');
-      await Process.run(
-        'git',
-        ['add', '.'],
-        workingDirectory: repoRoot,
-        runInShell: true,
-      );
+      await File(path.join(repoRoot, 'README.md')).writeAsString('Initial file');
+      await Process.run('git', ['add', '.'], workingDirectory: repoRoot, runInShell: true);
       await Process.run(
         'git',
         ['commit', '-m', 'Initial commit'],
@@ -81,27 +74,21 @@ environment:
       await fileToAnalyze.writeAsString('void main() {}'); // Valid file
 
       // Stage the file
-      await Process.run(
-        'git',
-        ['add', '.'],
-        workingDirectory: repoRoot,
-        runInShell: true,
-      );
+      await Process.run('git', ['add', '.'], workingDirectory: repoRoot, runInShell: true);
 
       String? stdoutMessage;
       int? exitCode;
       final List<String> logs = [];
 
       final hook = DartAnalyzeHook(
-        runProcess:
-            (cmd, args, {bool runInShell = false, String? workingDirectory}) {
-              return Process.run(
-                cmd,
-                args,
-                runInShell: runInShell,
-                workingDirectory: workingDirectory ?? packageRoot,
-              );
-            },
+        runProcess: (cmd, args, {bool runInShell = false, String? workingDirectory}) {
+          return Process.run(
+            cmd,
+            args,
+            runInShell: runInShell,
+            workingDirectory: workingDirectory ?? packageRoot,
+          );
+        },
         fileExists: (p) => File(p).existsSync(),
         printStdout: (msg) => stdoutMessage = msg,
         logToFile: (msg) async => logs.add(msg),
@@ -114,10 +101,7 @@ environment:
       await hook.run([], agentsDir, packageRoot);
 
       // Verify JSON output
-      expect(
-        stdoutMessage,
-        equals(jsonEncode({'decision': 'stop'})),
-      ); // Success decision
+      expect(stdoutMessage, equals(jsonEncode({'decision': 'stop'}))); // Success decision
       expect(exitCode, equals(0));
 
       // Verify files were actually found and analyzed

@@ -13,23 +13,15 @@ void main() {
       String? loggedMessage;
 
       final hook = DartAnalyzeHook(
-        runProcess:
-            (
-              cmd,
-              args, {
-              bool runInShell = false,
-              String? workingDirectory,
-            }) async {
-              if (cmd == 'git' && args.first == 'rev-parse') {
-                return ProcessResult(0, 0, '/repo/root', '');
-              }
-              if (cmd == 'git' && args.first == 'ls-files') {
-                return ProcessResult(0, 0, '', '');
-              }
-              return ProcessResult(0, 0, '', '');
-            },
+        runProcess: (cmd, args, {bool runInShell = false, String? workingDirectory}) async {
+          if (cmd == 'git' && args.first == 'ls-files') {
+            return ProcessResult(0, 0, '', '');
+          }
+          return ProcessResult(0, 0, '', '');
+        },
         fileExists: (path) => true,
         logToFile: (msg) async => loggedMessage = msg,
+        onExit: (code) {},
       );
 
       await hook.run(['--source', 'hook'], '/current/path', '/package/root');
@@ -42,24 +34,15 @@ void main() {
       int? exitCode;
 
       final hook = DartAnalyzeHook(
-        runProcess:
-            (
-              cmd,
-              args, {
-              bool runInShell = false,
-              String? workingDirectory,
-            }) async {
-              if (cmd == 'git' && args.first == 'rev-parse') {
-                return ProcessResult(0, 0, '/repo/root', '');
-              }
-              if (cmd == 'git' && args.first == 'ls-files') {
-                return ProcessResult(0, 0, 'lib/file.dart', '');
-              }
-              if (cmd == 'dart' && args.first == 'analyze') {
-                return ProcessResult(0, 0, 'No issues found.', '');
-              }
-              return ProcessResult(0, 0, '', '');
-            },
+        runProcess: (cmd, args, {bool runInShell = false, String? workingDirectory}) async {
+          if (cmd == 'git' && args.first == 'ls-files') {
+            return ProcessResult(0, 0, 'lib/file.dart', '');
+          }
+          if (cmd == 'dart' && args.first == 'analyze') {
+            return ProcessResult(0, 0, 'No issues found.', '');
+          }
+          return ProcessResult(0, 0, '', '');
+        },
         fileExists: (path) => true,
         printStdout: (msg) => stdoutMessage = msg,
         logToFile: (msg) async {},
@@ -77,24 +60,15 @@ void main() {
       int? exitCode;
 
       final hook = DartAnalyzeHook(
-        runProcess:
-            (
-              cmd,
-              args, {
-              bool runInShell = false,
-              String? workingDirectory,
-            }) async {
-              if (cmd == 'git' && args.first == 'rev-parse') {
-                return ProcessResult(0, 0, '/repo/root', '');
-              }
-              if (cmd == 'git' && args.first == 'ls-files') {
-                return ProcessResult(0, 0, 'lib/file.dart', '');
-              }
-              if (cmd == 'dart' && args.first == 'analyze') {
-                return ProcessResult(1, 0, 'Issue found.', '');
-              }
-              return ProcessResult(0, 0, '', '');
-            },
+        runProcess: (cmd, args, {bool runInShell = false, String? workingDirectory}) async {
+          if (cmd == 'git' && args.first == 'ls-files') {
+            return ProcessResult(0, 0, 'lib/file.dart', '');
+          }
+          if (cmd == 'dart' && args.first == 'analyze') {
+            return ProcessResult(1, 0, 'Issue found.', '');
+          }
+          return ProcessResult(0, 0, '', '');
+        },
         fileExists: (path) => true,
         printStdout: (msg) => stdoutMessage = msg,
         logToFile: (msg) async {},
