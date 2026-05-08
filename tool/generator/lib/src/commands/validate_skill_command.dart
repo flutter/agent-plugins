@@ -6,6 +6,7 @@ import 'dart:io';
 
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
+import 'package:yaml/yaml.dart';
 
 import '../models/skill_params.dart';
 import '../services/gemini_service.dart';
@@ -31,6 +32,142 @@ class ValidateSkillCommand extends BaseSkillCommand {
   @override
   String get description =>
       'Validates skills using existing skill files and yaml configuration.';
+
+  @override
+  Future<void> run() async {
+    final inputFile = argResults!.rest.isNotEmpty
+        ? argResults!.rest.first
+        : 'resources/flutter_skills.yaml';
+
+    final file = File(inputFile);
+    if (!file.existsSync()) {
+      logger.severe('Configuration file not found: $inputFile');
+      return;
+    }
+
+    final yamlContent = file.readAsStringSync();
+    YamlList yamlList;
+    try {
+      final decoded = loadYaml(yamlContent);
+      if (decoded is! YamlList) {
+        logger.severe('Invalid configuration: Root must be a YAML list.');
+        return;
+      }
+      yamlList = decoded;
+    } on Object catch (e) {
+      logger.severe('Invalid YAML syntax in $inputFile: $e');
+      return;
+    }
+
+    final isValid = _validateYamlStructure(yamlList, p.basename(file.path));
+    if (!isValid) {
+      logger.severe('Configuration validation failed.');
+      return;
+    }
+
+    await super.run();
+  }
+
+  bool _validateYamlStructure(YamlList yamlList, String fileName) {
+    if (yamlList.isEmpty) {
+      logger.severe('Configuration list must not be empty.');
+      return false;
+    }
+
+    var isValid = true;
+    final kabobCase = RegExp(r'^[a-z0-9]+(-[a-z0-9]+)*$');
+
+    for (var i = 0; i < yamlList.length; i++) {
+      final item = yamlList[i];
+      if (item is! Map) {
+        logger.severe('Item $i is not a Map.');
+        isValid = false;
+        continue;
+      }
+
+      final rawName = item['name'];
+      final name = rawName is String ? rawName : 'Item $i';
+      if (rawName == null) {
+        logger.severe('Item $i is missing required field "name".');
+        isValid = false;
+      } else if (rawName is! String) {
+        logger.severe('Item $i field "name" must be a string.');
+        isValid = false;
+      }
+
+      final rawDescription = item['description'];
+      if (rawDescription == null) {
+        logger.severe('Skill "$name" is missing required field "description".');
+        isValid = false;
+      } else if (rawDescription is! String) {
+        logger.severe('Skill "$name" field "description" must be a string.');
+        isValid = false;
+      }
+
+      if (item['resources'] == null) {
+        logger.severe('Skill "$name" is missing required field "resources".');
+        isValid = false;
+      }
+
+      if (item['instructions'] != null && item['instructions'] is! String) {
+        logger.severe('Skill "$name" field "instructions" must be a string.');
+        isValid = false;
+      }
+
+      if (rawName is String) {
+        if (!kabobCase.hasMatch(name)) {
+          logger.severe(
+            'Skill name "$name" must be kabob-case (e.g. abc-def).',
+          );
+          isValid = false;
+        }
+
+        if (fileName == 'flutter_skills.yaml') {
+          if (!name.startsWith('flutter-')) {
+            logger.severe(
+              'Skill name "$name" in flutter_skills.yaml must start with "flutter-".',
+            );
+            isValid = false;
+          }
+        } else if (fileName == 'dart_skills.yaml') {
+          if (!name.startsWith('dart-')) {
+            logger.severe(
+              'Skill name "$name" in dart_skills.yaml must start with "dart-".',
+            );
+            isValid = false;
+          }
+        }
+      }
+
+      final resources = item['resources'];
+      if (resources != null) {
+        if (resources is! List) {
+          logger.severe('Skill "$name" field "resources" must be a list.');
+          isValid = false;
+        } else if (resources.isEmpty) {
+          logger.severe('Skill "$name" field "resources" must not be empty.');
+          isValid = false;
+        } else {
+          for (final resource in resources) {
+            if (resource is! String) {
+              logger.severe('Skill "$name" resource must be a string.');
+              isValid = false;
+            } else {
+              if (resource.contains('://') &&
+                  !resource.startsWith('https://')) {
+                logger.severe(
+                  'Skill "$name" resource URL "$resource" must use secure HTTPS.',
+                );
+                isValid = false;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return isValid;
+  }
 
   @override
   Future<void> runSkill(
