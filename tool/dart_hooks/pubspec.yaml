@@ -1,0 +1,17 @@
+name: dart_hooks
+description: A package containing hooks for Dart projects, such as format and analyze.
+version: 0.0.1
+publish_to: 'none'
+
+environment:
+  sdk: '^3.11.0'
+
+dependencies:
+  args: ^2.4.0
+  logging: ^1.1.0
+  meta: ^1.9.0
+  path: ^1.9.1
+
+dev_dependencies:
+  mockito: ^5.4.0
+  test: ^1.24.0

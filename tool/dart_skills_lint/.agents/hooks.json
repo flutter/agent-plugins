@@ -1,0 +1,20 @@
+{
+  "dart-format": {
+    "Stop": [
+      {
+        "type": "command",
+        "command": "../../dart_hooks/bin/agent_dart_format.dart --source hook",
+        "timeout": 30
+      }
+    ]
+  },
+  "dart-analyze": {
+    "Stop": [
+      {
+        "type": "command",
+        "command": "../../dart_hooks/bin/agent_dart_analyze.dart --source hook",
+        "timeout": 90
+      }
+    ]
+  }
+}
