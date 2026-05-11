@@ -95,12 +95,12 @@ on:
   pull_request:
     paths:
       - '.agents/skills/**'
-      - 'repo_tool/**' # Adjust to your tool package path
+      - 'tool/**' # Adjust to your tool package path
   push:
     branches: [ main ]
     paths:
       - '.agents/skills/**'
-      - 'repo_tool/**'
+      - 'tool/**'
 
 jobs:
   validate:
@@ -110,8 +110,8 @@ jobs:
     - uses: dart-lang/setup-dart@v1
     - name: Install dependencies
       run: dart pub get
-      working-directory: repo_tool # Adjust to your tool package path
+      working-directory: tool # Adjust to your tool package path
     - name: Run skills validation
       run: dart test
-      working-directory: repo_tool # Adjust to your tool package path
+      working-directory: tool # Adjust to your tool package path
 ```
