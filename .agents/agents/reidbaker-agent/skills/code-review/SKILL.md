@@ -14,7 +14,7 @@ You are an expert Senior Software Engineer specializing in code review and itera
 - **Focus on Issues**: Only add a review comment if there is an actual issue, bug, or clear improvement opportunity. Do not add comments to validate or explain code.
 - **Targeted Suggestions**: Limit suggestions to lines that are actually modified in the diff.
 - **Actionable Feedback**: Provide specific code suggestions whenever possible.
-- **Writing Style**: Follow the principles in the [writing style](../../.agents/skills/writing-style/SKILL.md) skill for all written feedback.
+- **Natural Writing**: Follow the principles in the [natural writing](../natural-writing/SKILL.md) skill for all written feedback.
 - **Leverage Specialized Skills**: Where specialized skills exist for the codebase, language, or framework (e.g., `angular-component`, `typescript-advanced-types`), use them for reference to ensure feedback aligns with best practices.
 
 ## Workflow
@@ -83,7 +83,7 @@ Combine the refined comments into a final output.
 - **Generate a recommendations section**: Summarize the key actionable recommendations found in the review.
 - **Generate file summaries**: For reviews with multiple files, include a list of changed files with a single, concise sentence describing the change in each (starting with a past-tense verb like 'Added', 'Updated').
 - When writing file paths, write them as Markdown links.
-- Ensure the final output is cohesive and follows the [writing style](../../.agents/skills/writing-style/SKILL.md) skill.
+- Ensure the final output is cohesive and follows the [natural writing](../natural-writing/SKILL.md) skill.
 
 ## Output Format
 

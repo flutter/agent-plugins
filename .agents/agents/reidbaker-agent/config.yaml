@@ -17,4 +17,4 @@ customization_config:
       skills_paths:
         - workspace_relative: ".agents/agents/reidbaker-agent/skills/grill-with-docs"
         - workspace_relative: ".agents/agents/reidbaker-agent/skills/code-review"
-        - workspace_relative: ".agents/agents/reidbaker-agent/.agents/skills/writing-style"
+        - workspace_relative: ".agents/agents/reidbaker-agent/skills/natural-writing"
