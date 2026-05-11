@@ -64,6 +64,7 @@ Setup validation in your Dart project:
    ```
 
 3. (Optional) Create a configuration file `dart_skills_lint.yaml` in the root of your project to customize rules and directories for the CLI:
+   **Note:** If you use `validateSkills` directly in tests, the `dart_skills_lint.yaml` file is ignored by default, and you should pass configuration programmatically if needed.
    ```yaml
    dart_skills_lint:
      rules:
@@ -77,6 +78,7 @@ Setup validation in your Dart project:
 ## Initial Integration in a Repository
 When adding `dart_skills_lint` to a repository for the first time, follow these best practices:
 - **Isolate the dependency**: Add it to a specific package that handles tooling or tests (e.g., `tool/pubspec.yaml`) rather than the root.
+- **Keep hashes in sync**: If you must add it to multiple `pubspec.yaml` files (e.g., root and a tool package), ensure the `ref` (commit hash) is identical to avoid resolution conflicts.
 - **Generating a Baseline**: If integrating into a repository with existing skills that have legacy errors, use the baseline feature:
   ```bash
   dart run dart_skills_lint:cli --skills-directory=.agents/skills --generate-baseline
@@ -92,19 +94,19 @@ permissions: read-all
 on:
   pull_request:
     paths:
-      - 'skills/**'
+      - '.agents/skills/**'
       - 'repo_tool/**' # Adjust to your tool package path
   push:
     branches: [ main ]
     paths:
-      - 'skills/**'
+      - '.agents/skills/**'
       - 'repo_tool/**'
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - uses: dart-lang/setup-dart@v1
     - name: Install dependencies
       run: dart pub get
