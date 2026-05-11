@@ -45,7 +45,7 @@ def split_diff(diff_content, output_dir):
             file_name = safe_name
 
         file_path = os.path.join(output_dir, safe_name)
-        with open(file_path, "w") as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             f.write(file_diff)
 
         summary.append(f"- {file_name} -> {safe_name}")
