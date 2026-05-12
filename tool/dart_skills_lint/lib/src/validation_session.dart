@@ -569,11 +569,7 @@ List<String> computeLineDiff(String original, String modified) {
   final String tokenizedOriginal = tokenize(original);
   final String tokenizedModified = tokenize(modified);
 
-  final List<dmp.Diff> diffs = dmp.diff(
-    tokenizedOriginal,
-    tokenizedModified,
-    checklines: false,
-  );
+  final List<dmp.Diff> diffs = dmp.diff(tokenizedOriginal, tokenizedModified, checklines: false);
 
   final output = <String>[];
   var originalLineNumber = 1;

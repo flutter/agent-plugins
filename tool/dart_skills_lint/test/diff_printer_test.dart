@@ -15,10 +15,7 @@ void main() {
       const original = 'line1\nline2  \nline3';
       const modified = 'line1\nline2\nline3';
 
-      expect(computeLineDiff(original, modified), <String>[
-        '- Line 2: line2  ',
-        '+ Line 2: line2',
-      ]);
+      expect(computeLineDiff(original, modified), <String>['- Line 2: line2  ', '+ Line 2: line2']);
     });
 
     test('emits only + lines for a pure insertion at the end', () {
