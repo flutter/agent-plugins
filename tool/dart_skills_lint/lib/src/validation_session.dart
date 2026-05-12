@@ -551,7 +551,7 @@ class ValidationSession {
 /// each input is treated atomically (no intra-line diffs).
 @visibleForTesting
 List<String> computeLineDiff(String original, String modified) {
-  final lineArray = <String>[''];
+  final lineArray = <String>[];
   final lineToIndex = <String, int>{};
 
   String tokenize(String text) {
@@ -561,7 +561,8 @@ List<String> computeLineDiff(String original, String modified) {
         lineArray.add(line);
         return lineArray.length - 1;
       });
-      buf.writeCharCode(idx);
+      // Offset by 1 so the first line never collides with char code 0 (NUL).
+      buf.writeCharCode(idx + 1);
     }
     return buf.toString();
   }
@@ -583,12 +584,12 @@ List<String> computeLineDiff(String original, String modified) {
         modifiedLineNumber += codes.length;
       case dmp.DIFF_DELETE:
         for (final c in codes) {
-          output.add('- Line $originalLineNumber: ${lineArray[c]}');
+          output.add('- Line $originalLineNumber: ${lineArray[c - 1]}');
           originalLineNumber++;
         }
       case dmp.DIFF_INSERT:
         for (final c in codes) {
-          output.add('+ Line $modifiedLineNumber: ${lineArray[c]}');
+          output.add('+ Line $modifiedLineNumber: ${lineArray[c - 1]}');
           modifiedLineNumber++;
         }
     }
