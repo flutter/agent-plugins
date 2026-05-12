@@ -34,25 +34,22 @@ class SkillLintHook extends BaseGitHook {
   /// CLI entrypoint inside the `dart_skills_lint` package.
   static const String _lintBinRelativePath = 'bin/cli.dart';
 
+  /// Filters the raw git status modified files by extension (e.g., ['.md']) before
+  /// scoping and chunking.
   @override
   List<String> get allowedExtensions => ['.md'];
 
   @override
   String get hookName => 'dart_skills_lint';
 
-  /// Each entry is rendered as `-s <dir>`, which adds 3 characters
-  /// (`-`, `s`, space) on top of the directory path itself.
-  @override
-  int get perEntryArgOverhead => 3;
-
-  /// Filters the scoped file list to entries whose basename is exactly
+  /// Filters the scoped file list to entries whose basename is case-insensitively
   /// `SKILL.md`, then maps each to its parent directory. Duplicates are
   /// removed and the result is sorted for deterministic command-line output.
   @override
   List<String> transformScopedFiles(List<String> scopedFiles) {
     final skillDirectories = <String>{};
     for (final file in scopedFiles) {
-      if (p.basename(file) == 'SKILL.md') {
+      if (p.basename(file).toLowerCase() == 'skill.md') {
         skillDirectories.add(p.normalize(p.dirname(file)));
       }
     }

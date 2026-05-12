@@ -18,29 +18,8 @@ void main() {
 
     setUp(() async {
       tempDir = await Directory.systemTemp.createTemp('skill_lint_test_');
-      // Resolve symlinks so the path matches what `git rev-parse --show-toplevel`
-      // reports (macOS symlinks /var → /private/var under /tmp).
       repoRoot = tempDir.resolveSymbolicLinksSync();
-
-      Future<void> git(List<String> args) async {
-        final ProcessResult r = await Process.run(
-          'git',
-          args,
-          workingDirectory: repoRoot,
-          runInShell: true,
-        );
-        if (r.exitCode != 0) {
-          throw Exception('git ${args.join(' ')} failed: ${r.stderr}');
-        }
-      }
-
-      await git(['init']);
-      await git(['config', 'user.email', 'test@example.com']);
-      await git(['config', 'user.name', 'Test User']);
-
-      await File(path.join(repoRoot, 'README.md')).writeAsString('initial');
-      await git(['add', '.']);
-      await git(['commit', '-m', 'initial']);
+      await setUpGitRepo(tempDir);
     });
 
     tearDown(() async {

@@ -16,23 +16,12 @@ void main() {
       List<String>? dartArgs;
       int? exitCode;
 
-      final hook = SkillLintHook(
-        processRunner: MockProcessRunner((cmd, args, {runInShell = false, workingDirectory}) async {
-          if (cmd == 'git' && args.contains('--show-toplevel')) {
-            return ProcessResult(0, 0, '/repo/root', '');
-          }
-          if (cmd == 'git' && args.first == 'status') {
-            return ProcessResult(0, 0, 'M  skills/foo/SKILL.md\x00M  skills/bar/SKILL.md\x00', '');
-          }
-          if (cmd == 'dart' && args.first == 'run') {
-            dartArgs = args;
-            return ProcessResult(0, 0, '', '');
-          }
+      final SkillLintHook hook = createHook(
+        gitStatusStdout: 'M  skills/foo/SKILL.md\x00M  skills/bar/SKILL.md\x00',
+        onDartRun: (cmd, args) async {
+          dartArgs = args;
           return ProcessResult(0, 0, '', '');
-        }),
-        fileExists: (path) => true,
-        printStdout: (msg) {},
-        logToFile: (msg) async {},
+        },
         onExit: (code) => exitCode = code,
       );
 
@@ -58,28 +47,13 @@ void main() {
       String? stdoutMessage;
       int? exitCode;
 
-      final hook = SkillLintHook(
-        processRunner: MockProcessRunner((cmd, args, {runInShell = false, workingDirectory}) async {
-          if (cmd == 'git' && args.contains('--show-toplevel')) {
-            return ProcessResult(0, 0, '/repo/root', '');
-          }
-          if (cmd == 'git' && args.first == 'status') {
-            return ProcessResult(
-              0,
-              0,
-              'M  skills/foo/README.md\x00M  skills/foo/skill.md\x00M  docs/CONTRIBUTING.md\x00',
-              '',
-            );
-          }
-          if (cmd == 'dart' && args.first == 'run') {
-            dartArgs = args;
-            return ProcessResult(0, 0, '', '');
-          }
+      final SkillLintHook hook = createHook(
+        gitStatusStdout: 'M  skills/foo/README.md\x00M  docs/CONTRIBUTING.md\x00',
+        onDartRun: (cmd, args) async {
+          dartArgs = args;
           return ProcessResult(0, 0, '', '');
-        }),
-        fileExists: (path) => true,
+        },
         printStdout: (msg) => stdoutMessage = msg,
-        logToFile: (msg) async {},
         onExit: (code) => exitCode = code,
       );
 
@@ -95,29 +69,40 @@ void main() {
       expect(exitCode, equals(0));
     });
 
+    test('matches skill.md case-insensitively', () async {
+      List<String>? dartArgs;
+      int? exitCode;
+
+      final SkillLintHook hook = createHook(
+        gitStatusStdout: 'M  skills/foo/skill.md\x00',
+        onDartRun: (cmd, args) async {
+          dartArgs = args;
+          return ProcessResult(0, 0, '', '');
+        },
+        onExit: (code) => exitCode = code,
+      );
+
+      await hook.run(
+        args: [],
+        currentPath: '/repo/root',
+        packageRoot: '/repo/root',
+        triggerSource: 'MANUAL',
+      );
+
+      expect(exitCode, equals(0));
+      expect(dartArgs, isNotNull);
+      expect(dartArgs, containsAllInOrder(<String>['-s', '/repo/root/skills/foo']));
+    });
+
     test('deduplicates skill directory when nested files also match', () async {
       List<String>? dartArgs;
 
-      final hook = SkillLintHook(
-        processRunner: MockProcessRunner((cmd, args, {runInShell = false, workingDirectory}) async {
-          if (cmd == 'git' && args.contains('--show-toplevel')) {
-            return ProcessResult(0, 0, '/repo/root', '');
-          }
-          if (cmd == 'git' && args.first == 'status') {
-            // Two SKILL.md modifications in different skill dirs, both should
-            // appear once (no accidental duplication from path normalization).
-            return ProcessResult(0, 0, 'M  skills/foo/SKILL.md\x00M  skills/foo/SKILL.md\x00', '');
-          }
-          if (cmd == 'dart' && args.first == 'run') {
-            dartArgs = args;
-            return ProcessResult(0, 0, '', '');
-          }
+      final SkillLintHook hook = createHook(
+        gitStatusStdout: 'M  skills/foo/SKILL.md\x00M  skills/foo/SKILL.md\x00',
+        onDartRun: (cmd, args) async {
+          dartArgs = args;
           return ProcessResult(0, 0, '', '');
-        }),
-        fileExists: (path) => true,
-        printStdout: (msg) {},
-        logToFile: (msg) async {},
-        onExit: (code) {},
+        },
       );
 
       await hook.run(
@@ -137,22 +122,12 @@ void main() {
       String? stdoutMessage;
       int? exitCode;
 
-      final hook = SkillLintHook(
-        processRunner: MockProcessRunner((cmd, args, {runInShell = false, workingDirectory}) async {
-          if (cmd == 'git' && args.contains('--show-toplevel')) {
-            return ProcessResult(0, 0, '/repo/root', '');
-          }
-          if (cmd == 'git' && args.first == 'status') {
-            return ProcessResult(0, 0, 'M  skills/foo/SKILL.md\x00', '');
-          }
-          if (cmd == 'dart' && args.first == 'run') {
-            return ProcessResult(0, 1, 'foo: trailing whitespace on line 3', '');
-          }
-          return ProcessResult(0, 0, '', '');
-        }),
-        fileExists: (path) => true,
+      final SkillLintHook hook = createHook(
+        gitStatusStdout: 'M  skills/foo/SKILL.md\x00',
+        onDartRun: (cmd, args) async {
+          return ProcessResult(0, 1, 'foo: trailing whitespace on line 3', '');
+        },
         printStdout: (msg) => stdoutMessage = msg,
-        logToFile: (msg) async {},
         onExit: (code) => exitCode = code,
       );
 
@@ -173,22 +148,12 @@ void main() {
       String? stdoutMessage;
       int? exitCode;
 
-      final hook = SkillLintHook(
-        processRunner: MockProcessRunner((cmd, args, {runInShell = false, workingDirectory}) async {
-          if (cmd == 'git' && args.contains('--show-toplevel')) {
-            return ProcessResult(0, 0, '/repo/root', '');
-          }
-          if (cmd == 'git' && args.first == 'status') {
-            return ProcessResult(0, 0, 'M  skills/foo/SKILL.md\x00', '');
-          }
-          if (cmd == 'dart' && args.first == 'run') {
-            return ProcessResult(0, 0, 'All skills passed.', '');
-          }
-          return ProcessResult(0, 0, '', '');
-        }),
-        fileExists: (path) => true,
+      final SkillLintHook hook = createHook(
+        gitStatusStdout: 'M  skills/foo/SKILL.md\x00',
+        onDartRun: (cmd, args) async {
+          return ProcessResult(0, 0, 'All skills passed.', '');
+        },
         printStdout: (msg) => stdoutMessage = msg,
-        logToFile: (msg) async {},
         onExit: (code) => exitCode = code,
       );
 
@@ -203,4 +168,30 @@ void main() {
       expect(exitCode, equals(0));
     });
   });
+}
+
+SkillLintHook createHook({
+  required String gitStatusStdout,
+  required Future<ProcessResult> Function(String cmd, List<String> args) onDartRun,
+  void Function(String)? printStdout,
+  void Function(int)? onExit,
+}) {
+  return SkillLintHook(
+    processRunner: MockProcessRunner((cmd, args, {runInShell = false, workingDirectory}) async {
+      if (cmd == 'git' && args.contains('--show-toplevel')) {
+        return ProcessResult(0, 0, '/repo/root', '');
+      }
+      if (cmd == 'git' && args.first == 'status') {
+        return ProcessResult(0, 0, gitStatusStdout, '');
+      }
+      if (cmd == 'dart' && args.first == 'run') {
+        return onDartRun(cmd, args);
+      }
+      return ProcessResult(0, 0, '', '');
+    }),
+    fileExists: (path) => true,
+    printStdout: printStdout ?? (msg) {},
+    logToFile: (msg) async {},
+    onExit: onExit ?? (code) {},
+  );
 }

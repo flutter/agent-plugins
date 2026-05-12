@@ -34,7 +34,7 @@ abstract class BaseGitHook {
   /// Absolute path to the repository root. Set during [run] before any
   /// invocation of [executeCommand] or [transformScopedFiles].
   @protected
-  late final String repoRoot;
+  late String repoRoot;
 
   /// Optional hook for subclasses to rewrite the scoped file list before
   /// chunking. The default implementation is the identity function.
@@ -46,15 +46,12 @@ abstract class BaseGitHook {
   @protected
   List<String> transformScopedFiles(List<String> scopedFiles) => scopedFiles;
 
-  /// Extra per-entry argument overhead that [executeCommand] introduces
-  /// around each chunk entry. Counted by the chunker on top of the entry's
-  /// own length so subclasses that prepend flags (e.g., `-s <dir>`) don't
-  /// undercount and produce oversized command lines.
-  ///
-  /// Defaults to 0 (no extra overhead). Override to return the number of
-  /// additional characters per entry, including any flag and its separator.
+  /// Prints a stop decision and invokes the exit callback with a success code.
   @protected
-  int get perEntryArgOverhead => 0;
+  void stopHook() {
+    printStdout(jsonEncode({'decision': 'stop'}));
+    onExit(0);
+  }
 
   /// Runs the specific command on the files (e.g., `dart analyze`).
   @protected
@@ -113,16 +110,14 @@ abstract class BaseGitHook {
 
       if (scopedFiles.isEmpty) {
         await logToFile('No matching files found to process in scope: $scopeDir.');
-        printStdout(jsonEncode({'decision': 'stop'}));
-        onExit(0);
+        stopHook();
         return;
       }
 
       final List<String> transformedFiles = transformScopedFiles(scopedFiles);
       if (transformedFiles.isEmpty) {
         await logToFile('No files to process after transform.');
-        printStdout(jsonEncode({'decision': 'stop'}));
-        onExit(0);
+        stopHook();
         return;
       }
 
@@ -139,9 +134,8 @@ abstract class BaseGitHook {
       var currentChunkLength = 0;
 
       for (final file in transformedFiles) {
-        // Add 1 for the space separator between arguments, plus any
-        // per-entry flag overhead the subclass introduces.
-        final int fileLen = file.length + 1 + perEntryArgOverhead;
+        // Add 1 for the space separator between arguments.
+        final int fileLen = file.length + 1;
 
         if (currentChunkLength + fileLen > maxCharsPerChunk && currentChunk.isNotEmpty) {
           await logToFile('Running command on chunk of ${currentChunk.length} files...');
@@ -182,8 +176,7 @@ abstract class BaseGitHook {
       // 5. Handle result
       if (exitCode == 0) {
         await logToFile('Command passed');
-        printStdout(jsonEncode({'decision': 'stop'}));
-        onExit(0);
+        stopHook();
         return;
       }
 
