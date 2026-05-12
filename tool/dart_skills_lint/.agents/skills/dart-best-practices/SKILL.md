@@ -45,6 +45,16 @@ without horizontal scrolling.
 Target 80 characters for wrapping text. Exceptions are allowed for long URLs
 or identifiers that cannot be broken.
 
+### Filesystem Case-Sensitivity (Scanner / Git Hooks)
+On case-insensitive filesystems (like macOS and Windows), a file named `skill.md` or `Skill.md` resolves successfully in local test executions, but will fail on case-sensitive CI systems (like Ubuntu Linux) that strictly enforce the spec's uppercase `SKILL.md` casing.
+
+**Prefer:**
+When scanning for specific basenames inside Git pre-commit hooks or validation engines, perform a case-insensitive check:
+```dart
+if (p.basename(file).toLowerCase() == 'skill.md') { ... }
+```
+This forces local checks to trigger and correctly surface capitalization errors locally before code is pushed to CI.
+
 ## Discovery
 
 ### Multi-line Strings

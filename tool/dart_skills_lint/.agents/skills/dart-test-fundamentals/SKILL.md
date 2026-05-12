@@ -108,7 +108,36 @@ test('can create and delete a file', () {
 });
 ```
 
-### 4. Configuration (`dart_test.yaml`)
+### 4. Minimizing Test Boilerplate
+
+When writing unit and integration tests, setup boilerplate (like mock environment provisioning or complex class configurations) can quickly duplicate across test blocks. Abstract this redundant code into shared test factories or setup helpers.
+
+#### Shared Environment Setup
+If multiple integration tests require complex mock environment prep (such as Git repository configuration, directory structures, or mock users), move it into a shared `setUpGitRepo()` helper inside a standard `test_utils.dart` file:
+```dart
+Future<void> setUpGitRepo(Directory tempDir) async {
+  final String repoRoot = tempDir.resolveSymbolicLinksSync();
+  // Run git init, git config, create initial commit, etc.
+}
+```
+
+#### Test-Local Boilerplate Factories
+If tests require constructing mocked class instances with extensive runner parameters, define a helper factory (e.g., `createMockedInstance()`) that encapsulates default process executions and accepts specific assert/execute closures as parameters:
+```dart
+MyClass createInstance({
+  required String statusPayload,
+  required Future<ProcessResult> Function(List<String> args) onExecute,
+  void Function(int)? onExit,
+}) {
+  return MyClass(
+    runner: MockRunner((args) => onExecute(args)),
+    onExit: onExit ?? (_) {},
+  );
+}
+```
+This localizes mocking logic, isolates the assert definitions, and vastly increases suite legibility.
+
+### 5. Configuration (`dart_test.yaml`)
 
 The `dart_test.yaml` file configures the test runner. Common configurations
 include:
@@ -148,7 +177,7 @@ timeouts:
   2x # Double the default timeout
 ```
 
-### 5. File Naming
+### 6. File Naming
 - Test files **must** end in `_test.dart` to be picked up by the test runner.
 - Place tests in the `test/` directory.
 
