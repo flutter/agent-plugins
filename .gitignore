@@ -20,3 +20,11 @@ coverage/
 
 # Validation output from the validate-skill command
 validation/
+
+# Gas Town (added by gt)
+.runtime/
+.logs/
+__pycache__/
+state.json
+CLAUDE.md
+CLAUDE.local.md
