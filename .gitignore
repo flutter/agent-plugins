@@ -28,8 +28,3 @@ __pycache__/
 state.json
 CLAUDE.md
 CLAUDE.local.md
-
-# Beads / Dolt files (added by bd init)
-.dolt/
-*.db
-.beads-credential-key
