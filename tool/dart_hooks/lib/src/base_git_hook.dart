@@ -46,6 +46,16 @@ abstract class BaseGitHook {
   @protected
   List<String> transformScopedFiles(List<String> scopedFiles) => scopedFiles;
 
+  /// Extra per-entry argument overhead that [executeCommand] introduces
+  /// around each chunk entry. Counted by the chunker on top of the entry's
+  /// own length so subclasses that prepend flags (e.g., `-s <dir>`) don't
+  /// undercount and produce oversized command lines.
+  ///
+  /// Defaults to 0 (no extra overhead). Override to return the number of
+  /// additional characters per entry, including any flag and its separator.
+  @protected
+  int get perEntryArgOverhead => 0;
+
   /// Runs the specific command on the files (e.g., `dart analyze`).
   @protected
   Future<ProcessResult> executeCommand(List<String> files);
@@ -129,8 +139,9 @@ abstract class BaseGitHook {
       var currentChunkLength = 0;
 
       for (final file in transformedFiles) {
-        // Add 1 for the space separator between arguments
-        final int fileLen = file.length + 1;
+        // Add 1 for the space separator between arguments, plus any
+        // per-entry flag overhead the subclass introduces.
+        final int fileLen = file.length + 1 + perEntryArgOverhead;
 
         if (currentChunkLength + fileLen > maxCharsPerChunk && currentChunk.isNotEmpty) {
           await logToFile('Running command on chunk of ${currentChunk.length} files...');

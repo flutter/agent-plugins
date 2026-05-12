@@ -40,6 +40,11 @@ class SkillLintHook extends BaseGitHook {
   @override
   String get hookName => 'dart_skills_lint';
 
+  /// Each entry is rendered as `-s <dir>`, which adds 3 characters
+  /// (`-`, `s`, space) on top of the directory path itself.
+  @override
+  int get perEntryArgOverhead => 3;
+
   /// Filters the scoped file list to entries whose basename is exactly
   /// `SKILL.md`, then maps each to its parent directory. Duplicates are
   /// removed and the result is sorted for deterministic command-line output.
