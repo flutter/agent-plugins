@@ -22,12 +22,7 @@ void main() {
             return ProcessResult(0, 0, '/repo/root', '');
           }
           if (cmd == 'git' && args.first == 'status') {
-            return ProcessResult(
-              0,
-              0,
-              'M  skills/foo/SKILL.md\x00M  skills/bar/SKILL.md\x00',
-              '',
-            );
+            return ProcessResult(0, 0, 'M  skills/foo/SKILL.md\x00M  skills/bar/SKILL.md\x00', '');
           }
           if (cmd == 'dart' && args.first == 'run') {
             dartArgs = args;
@@ -111,12 +106,7 @@ void main() {
           if (cmd == 'git' && args.first == 'status') {
             // Two SKILL.md modifications in different skill dirs, both should
             // appear once (no accidental duplication from path normalization).
-            return ProcessResult(
-              0,
-              0,
-              'M  skills/foo/SKILL.md\x00M  skills/foo/SKILL.md\x00',
-              '',
-            );
+            return ProcessResult(0, 0, 'M  skills/foo/SKILL.md\x00M  skills/foo/SKILL.md\x00', '');
           }
           if (cmd == 'dart' && args.first == 'run') {
             dartArgs = args;
