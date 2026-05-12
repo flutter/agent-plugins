@@ -9,6 +9,7 @@ environment:
 
 dependencies:
   args: ^2.4.0
+  diff_match_patch: ^0.4.1
   io: ^1.0.4
   logging: ^1.2.0
   meta: ^1.11.0

@@ -5,6 +5,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:diff_match_patch/diff_match_patch.dart' as dmp;
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
@@ -462,29 +463,9 @@ class ValidationSession {
     return result;
   }
 
-  /// Prints a simple line-by-line diff between [original] and [modified].
-  ///
-  /// **Limitation**: This naive diff algorithm does not handle line additions
-  /// or removals well, as it compares lines at the same index. It is
-  /// sufficient for current fixers that only modify existing lines, but
-  /// should be replaced with a more robust diffing solution (e.g.,
-  /// `package:diff`) if future fixers add or remove lines.
+  /// Prints a line-level diff between [original] and [modified] to the logger.
   void _printDiff(String original, String modified) {
-    final List<String> origLines = original.split('\n');
-    final List<String> modLines = modified.split('\n');
-    final int maxLines = origLines.length > modLines.length ? origLines.length : modLines.length;
-    for (var i = 0; i < maxLines; i++) {
-      final String orig = i < origLines.length ? origLines[i] : '';
-      final String mod = i < modLines.length ? modLines[i] : '';
-      if (orig != mod) {
-        if (orig.isNotEmpty) {
-          _log.info('- Line ${i + 1}: $orig');
-        }
-        if (mod.isNotEmpty) {
-          _log.info('+ Line ${i + 1}: $mod');
-        }
-      }
-    }
+    computeLineDiff(original, modified).forEach(_log.info);
   }
 
   /// Mutates [ignores] in place to add baseline entries for any non-ignored
@@ -556,4 +537,65 @@ class ValidationSession {
     }
     return path;
   }
+}
+
+/// Computes a line-level diff between [original] and [modified] suitable for
+/// dry-run preview output.
+///
+/// Returns a list of formatted strings, one per changed line:
+/// `'- Line N: <text>'` for removed lines (numbered against [original]) and
+/// `'+ Line N: <text>'` for added lines (numbered against [modified]).
+/// Unchanged lines are not emitted.
+///
+/// Handles insertions, deletions, and modifications correctly. Each line of
+/// each input is treated atomically (no intra-line diffs).
+@visibleForTesting
+List<String> computeLineDiff(String original, String modified) {
+  final lineArray = <String>[''];
+  final lineToIndex = <String, int>{};
+
+  String tokenize(String text) {
+    final buf = StringBuffer();
+    for (final String line in text.split('\n')) {
+      final int idx = lineToIndex.putIfAbsent(line, () {
+        lineArray.add(line);
+        return lineArray.length - 1;
+      });
+      buf.writeCharCode(idx);
+    }
+    return buf.toString();
+  }
+
+  final String tokenizedOriginal = tokenize(original);
+  final String tokenizedModified = tokenize(modified);
+
+  final List<dmp.Diff> diffs = dmp.diff(
+    tokenizedOriginal,
+    tokenizedModified,
+    checklines: false,
+  );
+
+  final output = <String>[];
+  var originalLineNumber = 1;
+  var modifiedLineNumber = 1;
+
+  for (final d in diffs) {
+    final List<int> codes = d.text.codeUnits;
+    switch (d.operation) {
+      case dmp.DIFF_EQUAL:
+        originalLineNumber += codes.length;
+        modifiedLineNumber += codes.length;
+      case dmp.DIFF_DELETE:
+        for (final c in codes) {
+          output.add('- Line $originalLineNumber: ${lineArray[c]}');
+          originalLineNumber++;
+        }
+      case dmp.DIFF_INSERT:
+        for (final c in codes) {
+          output.add('+ Line $modifiedLineNumber: ${lineArray[c]}');
+          modifiedLineNumber++;
+        }
+    }
+  }
+  return output;
 }
