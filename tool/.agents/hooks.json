@@ -16,5 +16,14 @@
         "timeout": 90
       }
     ]
+  },
+  "skill-lint": {
+    "Stop": [
+      {
+        "type": "command",
+        "command": "../dart_hooks/bin/agent_skill_lint.dart --source hook --log",
+        "timeout": 120
+      }
+    ]
   }
 }

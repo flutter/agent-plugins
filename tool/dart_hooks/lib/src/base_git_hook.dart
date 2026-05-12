@@ -31,6 +31,21 @@ abstract class BaseGitHook {
   /// The name of the hook for logging purposes.
   String get hookName;
 
+  /// Absolute path to the repository root. Set during [run] before any
+  /// invocation of [executeCommand] or [transformScopedFiles].
+  @protected
+  late final String repoRoot;
+
+  /// Optional hook for subclasses to rewrite the scoped file list before
+  /// chunking. The default implementation is the identity function.
+  ///
+  /// Subclasses can use this to apply additional filtering (e.g., matching
+  /// only specific basenames) or to map file paths to other arguments
+  /// (e.g., mapping `path/to/SKILL.md` to `path/to`). Returning an empty
+  /// list short-circuits the hook to `{"decision": "stop"}`.
+  @protected
+  List<String> transformScopedFiles(List<String> scopedFiles) => scopedFiles;
+
   /// Runs the specific command on the files (e.g., `dart analyze`).
   @protected
   Future<ProcessResult> executeCommand(List<String> files);
@@ -57,7 +72,7 @@ abstract class BaseGitHook {
         onExit(0);
         return;
       }
-      final String repoRoot = (repoRootResult.stdout as String).trim();
+      repoRoot = (repoRootResult.stdout as String).trim();
 
       // 2. Get modified files
       final List<String> files;
@@ -93,7 +108,15 @@ abstract class BaseGitHook {
         return;
       }
 
-      await logToFile('Running command on ${scopedFiles.length} files...');
+      final List<String> transformedFiles = transformScopedFiles(scopedFiles);
+      if (transformedFiles.isEmpty) {
+        await logToFile('No files to process after transform.');
+        printStdout(jsonEncode({'decision': 'stop'}));
+        onExit(0);
+        return;
+      }
+
+      await logToFile('Running command on ${transformedFiles.length} files...');
 
       // 4. Execute the specific command in chunks to avoid ARG_MAX limits.
       // Determining the exact ARG_MAX is hard as it varies by OS and depends on environment size.
@@ -105,7 +128,7 @@ abstract class BaseGitHook {
       var currentChunk = <String>[];
       var currentChunkLength = 0;
 
-      for (final file in scopedFiles) {
+      for (final file in transformedFiles) {
         // Add 1 for the space separator between arguments
         final int fileLen = file.length + 1;
 
