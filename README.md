@@ -14,7 +14,7 @@ The `--agent universal` flag puts it in the standard `.agents/skills`
 folder that most agents use.
 
 ```bash
-npx skills add flutter/skills --skill '*' --agent universal
+npx skills add flutter/skills --skill '*' --agent universal --yes
 ```
 
 ## Updating Skills
