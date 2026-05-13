@@ -59,10 +59,10 @@ class SkillLintHook extends BaseGitHook {
   @override
   Future<ProcessResult> executeCommand(List<String> skillDirectories) {
     final String lintPackageDir = p.join(repoRoot, _lintPackageRelativePath);
+    final String lintBinPath = p.join(lintPackageDir, _lintBinRelativePath);
     final args = <String>[
       'run',
-      '--directory=$lintPackageDir',
-      _lintBinRelativePath,
+      lintBinPath,
       for (final dir in skillDirectories) ...['-s', dir],
     ];
     return processRunner.run('dart', args);

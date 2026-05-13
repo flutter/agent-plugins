@@ -35,8 +35,7 @@ void main() {
       expect(exitCode, equals(0));
       expect(dartArgs, isNotNull);
       expect(dartArgs!.first, equals('run'));
-      expect(dartArgs, contains('--directory=/repo/root/tool/dart_skills_lint'));
-      expect(dartArgs, contains('bin/cli.dart'));
+      expect(dartArgs, contains('/repo/root/tool/dart_skills_lint/bin/cli.dart'));
       // Each skill dir is preceded by -s.
       expect(dartArgs, containsAllInOrder(<String>['-s', '/repo/root/skills/bar']));
       expect(dartArgs, containsAllInOrder(<String>['-s', '/repo/root/skills/foo']));

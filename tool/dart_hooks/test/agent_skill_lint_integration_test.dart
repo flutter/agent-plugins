@@ -73,7 +73,7 @@ void main() {
       );
 
       expect(dartArgs, isNotNull, reason: 'dart_skills_lint must run');
-      expect(dartArgs, contains('--directory=${path.join(repoRoot, 'tool/dart_skills_lint')}'));
+      expect(dartArgs, contains(path.join(repoRoot, 'tool/dart_skills_lint/bin/cli.dart')));
       // -s should appear for foo and bar only (not for README.md's dir).
       final sTargets = <String>[];
       for (var i = 0; i < dartArgs!.length - 1; i++) {
