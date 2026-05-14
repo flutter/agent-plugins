@@ -1,0 +1,23 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../../website"
+		},
+		{
+			"path": "../../../../flutter-work"
+		},
+		{
+			"path": "../../../dash_skills"
+		},
+		{
+			"path": "../../../dart-skills"
+		},
+		{
+			"path": "../../../devtools"
+		}
+	],
+	"settings": {}
+}
