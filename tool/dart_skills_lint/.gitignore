@@ -9,6 +9,7 @@ build/
 .vscode/
 .idea/
 *.iml
+*.code-workspace
 
 # OS files
 .DS_Store
