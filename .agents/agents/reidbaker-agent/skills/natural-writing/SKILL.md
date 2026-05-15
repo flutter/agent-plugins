@@ -29,6 +29,13 @@ Do not replace simple "is/are" verbs with flowery equivalents.
 
 Do not use synonyms just to avoid repeating a subject's name (e.g., "the eponymous character," "the titular protagonist," "the celebrated author"). It is acceptable to repeat the name or use pronouns naturally.
 
+### Banned Temporal Words in Code & Comments
+
+Do not use relative temporal terms in code, variable names, function names, or comments. These words lose their meaning as the codebase evolves over time.
+* **Banned Words**: now, currently, existing behavior, previous behavior, old, new, modern.
+* **Bad**: `// This function now uses the config parser instead of hardcoding.`
+* **Good**: `// Resolves paths via [ConfigParser.loadConfig] to support custom config locations.`
+
 ## 2. Content & Tone
 
 ### No "Puffery" or Forced Significance

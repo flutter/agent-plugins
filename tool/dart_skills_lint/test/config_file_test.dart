@@ -75,6 +75,64 @@ dart_skills_lint:
       await process.shouldExit(0);
     });
 
+    test('obeys path-specific rules with tilde in config', () async {
+      final Directory skillDir = await Directory('${tempDir.path}/test-skill').create();
+      await File('${skillDir.path}/SKILL.md').writeAsString('''
+---
+name: test-skill
+description: A test skill
+---
+Line with 1 space 
+'''); // Trailing space
+
+      await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+dart_skills_lint:
+  directories:
+    - path: "~/test-skill"
+      rules:
+        check-trailing-whitespace: error
+''');
+
+      final TestProcess process = await TestProcess.start(
+        'dart',
+        [p.normalize(p.absolute('bin/cli.dart')), '-s', '~/test-skill'],
+        environment: {'HOME': tempDir.path},
+        workingDirectory: tempDir.path,
+      );
+
+      final List<String> stderr = await process.stderr.rest.toList();
+      expect(stderr.join('\n'), contains('has 1 trailing space(s)'));
+      await process.shouldExit(1);
+    });
+
+    test('CLI flags override path-specific config', () async {
+      final Directory skillDir = await Directory('${tempDir.path}/test-skill').create();
+      await File('${skillDir.path}/SKILL.md').writeAsString('''
+---
+name: test-skill
+description: A test skill
+---
+Line with 1 space 
+'''); // Trailing space
+
+      await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+dart_skills_lint:
+  directories:
+    - path: "test-skill"
+      rules:
+        check-trailing-whitespace: error
+''');
+
+      final TestProcess process = await TestProcess.start('dart', [
+        p.normalize(p.absolute('bin/cli.dart')),
+        '-s',
+        'test-skill',
+        '--no-check-trailing-whitespace',
+      ], workingDirectory: tempDir.path);
+
+      await process.shouldExit(0);
+    });
+
     test('CLI flags override config', () async {
       final Directory skillDir = await Directory('${tempDir.path}/test-skill').create();
       await File('${skillDir.path}/SKILL.md').writeAsString('''

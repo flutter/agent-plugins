@@ -79,7 +79,9 @@ abstract class BaseGitHook {
         onExit(0);
         return;
       }
-      repoRoot = (repoRootResult.stdout as String).trim();
+      final String repoRootRaw = (repoRootResult.stdout as String).trim();
+      final repoDir = Directory(repoRootRaw);
+      repoRoot = repoDir.existsSync() ? repoDir.resolveSymbolicLinksSync() : repoRootRaw;
 
       // 2. Get modified files
       final List<String> files;
@@ -102,10 +104,22 @@ abstract class BaseGitHook {
       // 3. Filter files (Hierarchical scoping)
       // The scope is the directory containing the .agents folder.
       // packageRoot is passed as the directory containing .agents.
-      final scopeDir = packageRoot;
+      final scopeDirEntity = Directory(packageRoot);
+      final String scopeDir = scopeDirEntity.existsSync()
+          ? scopeDirEntity.resolveSymbolicLinksSync()
+          : packageRoot;
 
       final List<String> scopedFiles = files.where((file) {
-        return path.isWithin(scopeDir, file);
+        var canonicalFile = file;
+        try {
+          final fileEntity = File(file);
+          if (fileEntity.existsSync()) {
+            canonicalFile = fileEntity.resolveSymbolicLinksSync();
+          }
+        } on FileSystemException {
+          // Intentionally ignored to fall back.
+        }
+        return path.isWithin(scopeDir, canonicalFile);
       }).toList();
 
       if (scopedFiles.isEmpty) {

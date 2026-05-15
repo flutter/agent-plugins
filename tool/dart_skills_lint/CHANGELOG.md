@@ -1,3 +1,9 @@
+## 0.3.0
+
+- Exposed `ConfigParser.loadConfig()` API to load configuration files programmatically.
+- Supported tilde expansion (`~/`) in configuration file paths.
+- Updated documentation to clarify CLI vs. Dart Test usage.
+
 ## 0.2.0
 
 - Refactored validator to a pluggable rule-based architecture.

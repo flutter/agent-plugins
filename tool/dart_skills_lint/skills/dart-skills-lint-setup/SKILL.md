@@ -47,12 +47,11 @@ Setup validation in your Dart project:
            Logger.root.onRecord.listen((record) => print(record.message));
 
        try {
+         // Load configuration from the default file (dart_skills_lint.yaml)
+         final config = await ConfigParser.loadConfig();
+
          final isValid = await validateSkills(
-           skillDirPaths: ['.agents/skills'],
-           resolvedRules: {
-             'check-relative-paths': AnalysisSeverity.error,
-             'check-trailing-whitespace': AnalysisSeverity.error,
-           },
+           config: config,
          );
          expect(isValid, isTrue, reason: 'Skills validation failed. See above for details.');
        } finally {
@@ -63,8 +62,8 @@ Setup validation in your Dart project:
    }
    ```
 
-3. (Optional) Create a configuration file `dart_skills_lint.yaml` in the root of your project to customize rules and directories for the CLI:
-   **Note:** If you use `validateSkills` directly in tests, the `dart_skills_lint.yaml` file is ignored by default, and you should pass configuration programmatically if needed.
+3. **Recommended**: Create a configuration file `dart_skills_lint.yaml` in the root of your project to centralize your rules and directory settings. This ensures both the CLI and your automated tests use the same configuration.
+   **Note:** If you use `validateSkills` directly in tests, you can load the `dart_skills_lint.yaml` file using `ConfigParser.loadConfig()` and pass it to `validateSkills` to share the same configuration as the CLI.
    ```yaml
    dart_skills_lint:
      rules:

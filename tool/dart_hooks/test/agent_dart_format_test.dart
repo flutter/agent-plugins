@@ -31,7 +31,8 @@ void main() {
         }),
         fileExists: (path) => true,
         printStdout: (msg) {},
-        logToFile: (msg) async => loggedMessage = msg,
+        logToFile: (msg) async => loggedMessage = "${loggedMessage ?? ''}$msg\n",
+        onExit: (code) {},
       );
 
       await hook.run(
@@ -60,7 +61,8 @@ void main() {
           return ProcessResult(0, 0, '', '');
         }),
         fileExists: (path) => true,
-        logToFile: (msg) async => loggedMessage = msg,
+        logToFile: (msg) async => loggedMessage = "${loggedMessage ?? ''}$msg\n",
+        onExit: (code) {},
       );
 
       await hook.run(
@@ -181,7 +183,7 @@ void main() {
       expect(exitCode, equals(1));
     });
 
-    test('Exits 1 when git rev-parse fails', () async {
+    test('Exits 0 and continues when git rev-parse fails', () async {
       int? exitCode;
 
       final hook = DartFormatHook(
@@ -209,7 +211,7 @@ void main() {
         triggerSource: 'MANUAL',
       );
 
-      expect(exitCode, equals(1));
+      expect(exitCode, equals(0));
     });
   });
 }

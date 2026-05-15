@@ -9,6 +9,7 @@ import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 
 import 'config_parser.dart';
+import 'missing_defaults_exception.dart';
 import 'models/analysis_severity.dart';
 import 'models/check_type.dart';
 import 'models/skill_rule.dart';
@@ -68,30 +69,10 @@ Future<void> runApp(List<String> args) async {
     return;
   }
 
-  var skillDirPaths = results[_skillsDirectoryFlag] as List<String>;
+  final skillDirPaths = results[_skillsDirectoryFlag] as List<String>;
   final individualSkillPaths = results[_skillOption] as List<String>;
 
-  if (skillDirPaths.isEmpty && individualSkillPaths.isEmpty) {
-    if (config.directoryConfigs.isNotEmpty) {
-      skillDirPaths = config.directoryConfigs.map((e) => e.path).toList();
-    } else {
-      final defaults = ['.claude/skills', '.agents/skills'];
-      final existingDefaults = <String>[];
-      for (final path in defaults) {
-        if (Directory(path).existsSync()) {
-          existingDefaults.add(path);
-        }
-      }
-      if (existingDefaults.isEmpty) {
-        _printUsage(parser, 'Missing skills directory. Checked defaults: ${defaults.join(', ')}');
-        exitCode = 64;
-        return;
-      }
-      skillDirPaths = existingDefaults;
-    }
-  }
-
-  final Map<String, AnalysisSeverity> resolvedRules = resolveRules(results, config);
+  final Map<String, AnalysisSeverity> resolvedRules = resolveRules(results);
 
   final printWarnings = results[_printWarningsFlag] as bool;
   final fastFail = results[_fastFailFlag] as bool;
@@ -103,23 +84,34 @@ Future<void> runApp(List<String> args) async {
   String? ignoreFileOverride;
   if (results.wasParsed(_ignoreFileOption)) {
     ignoreFileOverride = results[_ignoreFileOption] as String?;
+  } else {
+    ignoreFileOverride = null;
   }
 
-  final bool success = await validateSkillsInternal(
-    skillDirPaths: skillDirPaths,
-    individualSkillPaths: individualSkillPaths,
-    resolvedRules: resolvedRules,
-    printWarnings: printWarnings,
-    fastFail: fastFail,
-    quiet: quiet,
-    generateBaseline: generateBaseline,
-    fix: fix,
-    fixApply: fixApply,
-    ignoreFileOverride: ignoreFileOverride,
-    config: config,
-  );
-
-  exitCode = success ? 0 : 1;
+  var success = false;
+  try {
+    success = await validateSkillsInternal(
+      skillDirPaths: skillDirPaths,
+      individualSkillPaths: individualSkillPaths,
+      resolvedRules: resolvedRules,
+      printWarnings: printWarnings,
+      fastFail: fastFail,
+      quiet: quiet,
+      generateBaseline: generateBaseline,
+      fix: fix,
+      fixApply: fixApply,
+      ignoreFileOverride: ignoreFileOverride,
+      config: config,
+    );
+    if (success) {
+      exitCode = 0;
+    } else {
+      exitCode = 1;
+    }
+  } on MissingDefaultsException catch (e) {
+    _printUsage(parser, 'Missing skills directory. Checked defaults: ${e.defaults.join(', ')}');
+    exitCode = 64;
+  }
 }
 
 /// Creates the [ArgParser] for the CLI, adding all supported flags and options.
@@ -186,7 +178,12 @@ ArgParser _createArgParser(String helpFlag) {
 
 Future<Configuration?> _loadConfig(ArgResults results) async {
   final ignoreConfig = results[_ignoreConfigFlag] as bool;
-  final Configuration config = ignoreConfig ? Configuration() : await ConfigParser.loadConfig();
+  final Configuration config;
+  if (ignoreConfig) {
+    config = Configuration();
+  } else {
+    config = await ConfigParser.loadConfig();
+  }
   if (ignoreConfig && !(results[_quietFlag] as bool)) {
     _log.info('Ignoring configuration file due to $_ignoreConfigFlag flag');
   }
@@ -211,7 +208,7 @@ Future<Configuration?> _loadConfig(ArgResults results) async {
 /// Validates skills based on the provided configuration.
 ///
 /// This is the public API for validating skills. It does not support fixing
-/// lints as that feature is currently considered internal to the CLI.
+/// lints as that feature is considered internal to the CLI.
 ///
 /// [skillDirPaths] is a list of directories containing multiple skills.
 /// [individualSkillPaths] is a list of paths to individual skill directories.
@@ -223,7 +220,9 @@ Future<Configuration?> _loadConfig(ArgResults results) async {
 /// [ignoreFileOverride] is an optional path to a baseline file to use.
 /// [config] is the loaded configuration.
 ///
-/// Returns `true` if all validations passed (or if generating a baseline), `false` otherwise.
+/// Returns a [Future] that resolves to `true` if all skills validated successfully
+/// (or if [generateBaseline] is true), and `false` if any validation failures
+/// were encountered.
 Future<bool> validateSkills({
   List<String> skillDirPaths = const [],
   List<String> individualSkillPaths = const [],
@@ -253,6 +252,8 @@ Future<bool> validateSkills({
 /// Internal implementation of skill validation that supports fixing.
 ///
 /// Kept internal to avoid exposing experimental fix parameters in the public API.
+///
+/// Returns `true` if all validations passed (or if generating a baseline), `false` otherwise.
 @visibleForTesting
 Future<bool> validateSkillsInternal({
   List<String> skillDirPaths = const [],
@@ -268,6 +269,12 @@ Future<bool> validateSkillsInternal({
   Configuration? config,
   List<SkillRule> customRules = const [],
 }) async {
+  final List<String> effectiveSkillDirPaths = _getEffectiveSkillDirPaths(
+    skillDirPaths: skillDirPaths,
+    individualSkillPaths: individualSkillPaths,
+    config: config,
+  );
+
   final session = ValidationSession(
     config: config ?? Configuration(),
     resolvedRules: resolvedRules,
@@ -291,14 +298,14 @@ Future<bool> validateSkillsInternal({
     return false;
   }
 
-  for (final rootPath in skillDirPaths) {
+  for (final rootPath in effectiveSkillDirPaths) {
     final bool keepGoing = await session.processSkillRoot(rootPath);
     if (!keepGoing) {
       break;
     }
   }
 
-  session.reportNoSkillsValidated(skillDirPaths);
+  session.reportNoSkillsValidated(effectiveSkillDirPaths);
 
   if (generateBaseline) {
     return true;
@@ -306,38 +313,59 @@ Future<bool> validateSkillsInternal({
   return !session.anyFailed;
 }
 
-@visibleForTesting
-Map<String, AnalysisSeverity> resolveRules(ArgResults results, Configuration config) {
-  final resolved = <String, AnalysisSeverity>{};
+/// Computes the list of skill directory paths to validate.
+///
+/// If paths are not explicitly provided, falls back to configured directory
+/// paths, and then to default locations (`.claude/skills`, `.agents/skills`).
+/// Throws [MissingDefaultsException] if no directories are found.
+List<String> _getEffectiveSkillDirPaths({
+  required List<String> skillDirPaths,
+  required List<String> individualSkillPaths,
+  Configuration? config,
+}) {
+  final effectiveSkillDirPaths = List<String>.from(skillDirPaths);
 
-  // 1. Initialize with default severities from the registry.
-  for (final CheckType check in RuleRegistry.allChecks) {
-    resolved[check.name] = check.defaultSeverity;
+  if (effectiveSkillDirPaths.isEmpty && individualSkillPaths.isEmpty) {
+    if (config != null && config.directoryConfigs.isNotEmpty) {
+      return config.directoryConfigs.map((e) => e.path).toList();
+    } else {
+      final defaults = ['.claude/skills', '.agents/skills'];
+      final existingDefaults = <String>[];
+      for (final path in defaults) {
+        if (Directory(path).existsSync()) {
+          existingDefaults.add(path);
+        }
+      }
+      if (existingDefaults.isEmpty) {
+        throw MissingDefaultsException(defaults);
+      }
+      return existingDefaults;
+    }
   }
 
-  // 2. Override with configurations from the YAML file.
-  resolved.addAll(config.configuredRules);
+  return effectiveSkillDirPaths;
+}
 
-  // 3. Override with CLI flags. CLI flags take highest precedence.
+@visibleForTesting
+Map<String, AnalysisSeverity> resolveRules(ArgResults results) {
+  final resolved = <String, AnalysisSeverity>{};
+
+  // Only load rules explicitly set via CLI flags.
   for (final CheckType check in RuleRegistry.allChecks) {
     final String name = check.name;
 
-    // Skip if the flag was not passed on the command line.
     if (!results.wasParsed(name)) {
       continue;
     }
 
-    // TODO(reidbaker): Handle options in addition to flags.
     final Object? value = results[name];
     if (value is! bool) {
       continue;
     }
 
     if (value) {
-      // If the user explicitly enabled the rule via flag (e.g., --rule), set to error.
       resolved[name] = AnalysisSeverity.error;
     } else {
-      // If the user explicitly disabled the rule via flag (e.g., --no-rule).
       resolved[name] = AnalysisSeverity.disabled;
     }
   }

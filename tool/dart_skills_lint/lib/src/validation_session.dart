@@ -17,6 +17,7 @@ import 'models/skill_context.dart';
 import 'models/skill_rule.dart';
 import 'models/skills_ignores.dart';
 import 'models/validation_error.dart';
+import 'path_utils.dart';
 import 'skills_ignores_storage.dart';
 import 'validator.dart';
 
@@ -62,7 +63,7 @@ class ValidationSession {
     required this.fixApply,
   }) : _normalizedDirectoryConfigs = [
          for (final dc in config.directoryConfigs)
-           (normalizedPath: p.normalize(dc.path), config: dc),
+           (normalizedPath: p.absolute(p.normalize(expandPath(dc.path))), config: dc),
        ];
 
   final Configuration config;
@@ -96,7 +97,7 @@ class ValidationSession {
   /// a missing directory contributes to [anyFailed] but still allows the
   /// caller to continue.
   Future<bool> processIndividualSkill(String skillPath) async {
-    final String normalizedSkillPath = p.normalize(_expandPath(skillPath));
+    final String normalizedSkillPath = p.normalize(expandPath(skillPath));
     if (!quiet) {
       _log.info('$evaluatingDirMsg $normalizedSkillPath');
     }
@@ -108,8 +109,8 @@ class ValidationSession {
       return true;
     }
 
-    final Map<String, AnalysisSeverity> localRules = _resolveRulesForPath(normalizedSkillPath);
-    final String? localIgnoreFile = _resolveIgnoreFile(normalizedSkillPath);
+    final Map<String, AnalysisSeverity> localRules = resolveRulesForPath(normalizedSkillPath);
+    final String? localIgnoreFile = resolveIgnoreFile(normalizedSkillPath);
     final validator = Validator(ruleOverrides: localRules, customRules: customRules);
 
     final ({SkillsIgnores ignores, String ignorePath}) loaded = await _loadIgnores(
@@ -159,7 +160,7 @@ class ValidationSession {
   /// `false` if [fastFail] is set and any failure has accumulated across the
   /// run so far.
   Future<bool> processSkillRoot(String rootPath) async {
-    final String normalizedRootPath = p.normalize(_expandPath(rootPath));
+    final String normalizedRootPath = p.normalize(expandPath(rootPath));
     if (!quiet) {
       _log.info('$evaluatingDirMsg $normalizedRootPath');
     }
@@ -170,10 +171,6 @@ class ValidationSession {
       _anyFailed = true;
       return true;
     }
-
-    final Map<String, AnalysisSeverity> localRules = _resolveRulesForPath(normalizedRootPath);
-    final String? localIgnoreFile = _resolveIgnoreFile(normalizedRootPath);
-    final validator = Validator(ruleOverrides: localRules, customRules: customRules);
 
     List<FileSystemEntity> entities;
     try {
@@ -186,11 +183,9 @@ class ValidationSession {
     }
     entities.sort((a, b) => a.path.compareTo(b.path));
 
-    final ({SkillsIgnores ignores, String ignorePath}) loaded = await _loadIgnores(
-      localIgnoreFile,
-      rootDir,
-    );
-    final SkillsIgnores ignores = loaded.ignores;
+    // Keep a cache of loaded ignores to avoid loading/saving the same ignore file multiple times,
+    // and to accumulate ignore usages correctly across all skills.
+    final Map<String, SkillsIgnores> loadedIgnoresCache = {};
 
     for (final entity in entities) {
       if (entity is! Directory) {
@@ -198,6 +193,27 @@ class ValidationSession {
       }
       if (p.basename(entity.path).startsWith('.')) {
         continue;
+      }
+
+      final String normalizedSkillPath = p.normalize(entity.path);
+      final Map<String, AnalysisSeverity> localRules = resolveRulesForPath(normalizedSkillPath);
+      final String? localIgnoreFile = resolveIgnoreFile(normalizedSkillPath);
+      final validator = Validator(ruleOverrides: localRules, customRules: customRules);
+
+      final String ignorePath = localIgnoreFile != null
+          ? p.normalize(expandPath(localIgnoreFile))
+          : p.join(rootDir.path, defaultIgnoreFileName);
+
+      final SkillsIgnores ignores;
+      if (loadedIgnoresCache.containsKey(ignorePath)) {
+        ignores = loadedIgnoresCache[ignorePath]!;
+      } else {
+        final ({SkillsIgnores ignores, String ignorePath}) loaded = await _loadIgnores(
+          localIgnoreFile,
+          rootDir,
+        );
+        ignores = loaded.ignores;
+        loadedIgnoresCache[ignorePath] = ignores;
       }
 
       _anySkillsValidated = true;
@@ -215,18 +231,24 @@ class ValidationSession {
       }
     }
 
-    if (generateBaseline) {
-      await _saveBaseline(loaded.ignorePath, ignores);
-    } else {
-      for (final MapEntry<String, List<IgnoreEntry>> entry in ignores.skills.entries) {
-        final String skillName = entry.key;
-        for (final IgnoreEntry ignore in entry.value) {
-          if (!ignore.used) {
-            final String fullPath = p.absolute(p.join(rootDir.path, skillName));
-            _log.info(
-              "Stale ignore entry found for rule '${ignore.ruleId}' in skill "
-              "'$skillName' at '$fullPath'. Consider removing it.",
-            );
+    // Save baselines and report stale entries for each loaded ignore file
+    for (final MapEntry<String, SkillsIgnores> entry in loadedIgnoresCache.entries) {
+      final String ignorePath = entry.key;
+      final SkillsIgnores ignores = entry.value;
+
+      if (generateBaseline) {
+        await _saveBaseline(ignorePath, ignores);
+      } else {
+        for (final MapEntry<String, List<IgnoreEntry>> skillEntry in ignores.skills.entries) {
+          final String skillName = skillEntry.key;
+          for (final IgnoreEntry ignore in skillEntry.value) {
+            if (!ignore.used) {
+              final String fullPath = p.absolute(p.join(rootDir.path, skillName));
+              _log.info(
+                "Stale ignore entry found for rule '${ignore.ruleId}' in skill "
+                "'$skillName' at '$fullPath'. Consider removing it.",
+              );
+            }
           }
         }
       }
@@ -244,7 +266,7 @@ class ValidationSession {
 
     var foundSingleSkillPassedToD = false;
     for (final rootPath in rootPaths) {
-      final String expandedRootPath = _expandPath(rootPath);
+      final String expandedRootPath = expandPath(rootPath);
       final skillMdFile = File(p.join(expandedRootPath, SkillContext.skillFileName));
       if (skillMdFile.existsSync()) {
         _log.severe(
@@ -260,29 +282,47 @@ class ValidationSession {
     _anyFailed = true;
   }
 
-  Map<String, AnalysisSeverity> _resolveRulesForPath(String normalizedPath) {
-    final localRules = Map<String, AnalysisSeverity>.from(resolvedRules);
+  @visibleForTesting
+  Map<String, AnalysisSeverity> resolveRulesForPath(String path) {
+    final String normalizedPath = p.absolute(path);
+    final localRules = <String, AnalysisSeverity>{};
+
+    // 1. Global Config (from YAML)
+    localRules.addAll(config.configuredRules);
+
+    // 2. Path-Specific Config (from YAML)
     for (final ({String normalizedPath, DirectoryConfig config}) entry
         in _normalizedDirectoryConfigs) {
-      if (normalizedPath.startsWith(entry.normalizedPath)) {
+      final String configPath = entry.normalizedPath;
+      if (p.equals(configPath, normalizedPath) || p.isWithin(configPath, normalizedPath)) {
         localRules.addAll(entry.config.rules);
-        break;
       }
     }
+
+    // 3. Overrides (CLI flags or API caller) take highest precedence
+    localRules.addAll(resolvedRules);
+
     return localRules;
   }
 
-  String? _resolveIgnoreFile(String normalizedPath) {
+  @visibleForTesting
+  String? resolveIgnoreFile(String path) {
+    final String normalizedPath = p.absolute(path);
     if (ignoreFileOverride != null) {
       return ignoreFileOverride;
     }
+    String? resolvedIgnoreFile;
     for (final ({String normalizedPath, DirectoryConfig config}) entry
         in _normalizedDirectoryConfigs) {
-      if (normalizedPath.startsWith(entry.normalizedPath)) {
-        return entry.config.ignoreFile;
+      final String configPath = entry.normalizedPath;
+      if (p.equals(configPath, normalizedPath) || p.isWithin(configPath, normalizedPath)) {
+        final String? ignoreFile = entry.config.ignoreFile;
+        if (ignoreFile != null) {
+          resolvedIgnoreFile = ignoreFile;
+        }
       }
     }
-    return null;
+    return resolvedIgnoreFile;
   }
 
   /// Loads the ignore JSON for a root, returning both the parsed
@@ -297,7 +337,7 @@ class ValidationSession {
     Directory rootDir,
   ) async {
     final String ignorePath = localIgnoreFile != null
-        ? p.normalize(_expandPath(localIgnoreFile))
+        ? p.normalize(expandPath(localIgnoreFile))
         : p.join(rootDir.path, defaultIgnoreFileName);
 
     final file = File(ignorePath);
@@ -545,15 +585,5 @@ class ValidationSession {
         _log.warning('    - $warning');
       }
     }
-  }
-
-  String _expandPath(String path) {
-    if (path.startsWith('~/')) {
-      final String? homeDir = Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
-      if (homeDir != null) {
-        return p.join(homeDir, path.substring(2));
-      }
-    }
-    return path;
   }
 }

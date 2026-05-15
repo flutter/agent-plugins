@@ -79,8 +79,9 @@ class MyCustomRule extends SkillRule {
 
 Use it in your test:
 ```dart
+final config = await ConfigParser.loadConfig();
 await validateSkills(
-  skillDirPaths: ['.agents/skills'],
+  config: config,
   customRules: [MyCustomRule()],
 );
 ```
