@@ -1,8 +1,19 @@
 name: dart_skills_lint
-description: A static analysis linter for agent skills.
-version: 0.2.0
+description: >-
+  A static analysis linter for Agent Skills (SKILL.md) written in Dart.
+  Validates frontmatter, naming, paths, and structure for use in CI and
+  pre-commit hooks.
+version: 0.3.0
 resolution: workspace
 repository: https://github.com/flutter/skills
+issue_tracker: https://github.com/flutter/skills/issues
+
+topics:
+  - agent-skills
+  - linter
+  - static-analysis
+  - cli
+  - validation
 
 environment:
   sdk: ^3.10.8
