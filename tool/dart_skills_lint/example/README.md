@@ -28,11 +28,22 @@ Exit code: `0`.
 
 ## Run the invalid fixture
 
+With default rule severities, only `invalid-skill-name` fires (the other
+two violations are below their default threshold):
+
 ```bash
 dart run dart_skills_lint --skill ./example/invalid
 ```
 
-The exit code is `1`, and three rules report failures:
+Exit code: `1`. To see every violation surface as an error, escalate the
+other two rules with explicit flags:
+
+```bash
+dart run dart_skills_lint --skill ./example/invalid \
+  --disallowed-field --check-absolute-paths
+```
+
+Three rules now report failures:
 
 - `invalid-skill-name` — names the offending frontmatter value, calls
   out the directory mismatch, and suggests a corrected form.
