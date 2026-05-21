@@ -28,8 +28,17 @@ const _ignoreFileOption = 'ignore-file';
 const _ignoreConfigFlag = 'ignore-config';
 const _generateBaselineFlag = 'generate-baseline';
 const _fixFlag = 'fix';
+const _dryRunFlag = 'dry-run';
 const _fixApplyFlag = 'fix-apply';
 const _allowMisconfiguredKeysFlag = 'allow-misconfigured-keys';
+
+/// User-visible deprecation notice for the legacy `--fix-apply` alias.
+///
+/// Exposed (not `_`-prefixed) so integration tests can assert it appears on
+/// stderr when the alias is used.
+const fixApplyDeprecationMsg =
+    '--fix-apply is deprecated; --fix now applies fixes by default. '
+    'Use --fix --dry-run (or --fix --no-apply-fixes) to preview instead.';
 
 /// Main entrypoint execution logic for the CLI tool.
 ///
@@ -97,8 +106,19 @@ Future<void> runApp(List<String> args) async {
   final fastFail = results[_fastFailFlag] as bool;
   final quiet = results[_quietFlag] as bool;
   final generateBaseline = results[_generateBaselineFlag] as bool;
-  final fix = results[_fixFlag] as bool;
-  final fixApply = results[_fixApplyFlag] as bool;
+  final bool fixFlag = results[_fixFlag] as bool;
+  final bool dryRun = results[_dryRunFlag] as bool;
+  final bool fixApplyAlias = results[_fixApplyFlag] as bool;
+
+  if (fixApplyAlias) {
+    stderr.writeln(fixApplyDeprecationMsg);
+  }
+
+  // --fix now applies by default (matches prettier/eslint/ruff). Preview with
+  // --fix --dry-run. The legacy --fix-apply flag continues to apply but is
+  // deprecated.
+  final bool fix = fixFlag && dryRun;
+  final bool fixApply = (fixFlag && !dryRun) || fixApplyAlias;
 
   String? ignoreFileOverride;
   if (results.wasParsed(_ignoreFileOption)) {
@@ -172,8 +192,22 @@ ArgParser _createArgParser(String helpFlag) {
       negatable: false,
       help: 'Ignore the YAML configuration file entirely.',
     )
-    ..addFlag(_fixFlag, negatable: false, help: 'Preview fixes for failing lints (dry run).')
-    ..addFlag(_fixApplyFlag, negatable: false, help: 'Apply fixes for failing lints.')
+    ..addFlag(
+      _fixFlag,
+      negatable: false,
+      help: 'Apply fixes for failing lints. Combine with --dry-run to preview without writing.',
+    )
+    ..addFlag(
+      _dryRunFlag,
+      negatable: false,
+      help: 'When passed with --fix, preview proposed changes without writing.',
+    )
+    ..addFlag(
+      _fixApplyFlag,
+      negatable: false,
+      hide: true,
+      help: 'DEPRECATED: alias for --fix. Use --fix instead.',
+    )
     ..addFlag(
       _allowMisconfiguredKeysFlag,
       negatable: false,

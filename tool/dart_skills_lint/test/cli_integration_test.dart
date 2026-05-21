@@ -563,7 +563,7 @@ dart_skills_lint:
       await process.shouldExit(1);
     });
 
-    test('--fix dry-runs and shows diff but does not modify file', () async {
+    test('--fix --dry-run shows diff but does not modify file', () async {
       final Directory skillDir = await Directory('${tempDir.path}/test-skill').create();
       await File(
         '${skillDir.path}/SKILL.md',
@@ -574,6 +574,7 @@ dart_skills_lint:
         '-s',
         skillDir.path,
         '--fix',
+        '--dry-run',
         '--check-trailing-whitespace',
       ]);
 
@@ -588,7 +589,7 @@ dart_skills_lint:
       expect(content, contains('Line with 1 space \n'));
     });
 
-    test('--fix-apply modifies file', () async {
+    test('--fix (no --dry-run) applies fixes by default and modifies file', () async {
       final Directory skillDir = await Directory('${tempDir.path}/test-skill').create();
       await File(
         '${skillDir.path}/SKILL.md',
@@ -598,7 +599,7 @@ dart_skills_lint:
         'bin/cli.dart',
         '-s',
         skillDir.path,
-        '--fix-apply',
+        '--fix',
         '--check-trailing-whitespace',
       ]);
 
@@ -613,7 +614,33 @@ dart_skills_lint:
       expect(content, contains('Line with 1 space\n'));
     });
 
-    test('--fix-apply does not modify file if lint is ignored', () async {
+    test('--fix-apply alias still works but prints a deprecation notice', () async {
+      final Directory skillDir = await Directory('${tempDir.path}/test-skill').create();
+      await File(
+        '${skillDir.path}/SKILL.md',
+      ).writeAsString('${buildFrontmatter(name: 'test-skill')}Line with 1 space \n');
+
+      final TestProcess process = await TestProcess.start('dart', [
+        'bin/cli.dart',
+        '-s',
+        skillDir.path,
+        '--fix-apply',
+        '--check-trailing-whitespace',
+      ]);
+
+      final List<String> stdout = await process.stdout.rest.toList();
+      final List<String> stderr = await process.stderr.rest.toList();
+      expect(stderr.join('\n'), contains(fixApplyDeprecationMsg));
+      expect(stdout.join('\n'), contains('Applied fixes for test-skill'));
+
+      await process.shouldExit(0);
+
+      // File still modified — alias preserves behavior.
+      final String content = await File('${skillDir.path}/SKILL.md').readAsString();
+      expect(content, contains('Line with 1 space\n'));
+    });
+
+    test('--fix does not modify file if lint is ignored', () async {
       final Directory skillDir = await Directory('${tempDir.path}/test-skill').create();
       await File(
         '${skillDir.path}/SKILL.md',
@@ -637,7 +664,7 @@ dart_skills_lint:
         'bin/cli.dart',
         '-s',
         skillDir.path,
-        '--fix-apply',
+        '--fix',
         '--check-trailing-whitespace',
       ]);
 
@@ -647,7 +674,7 @@ dart_skills_lint:
       expect(content, contains('Line with 1 space \n'));
     });
 
-    test('--fix-apply does not modify file if invalid-skill-name is ignored', () async {
+    test('--fix does not modify file if invalid-skill-name is ignored', () async {
       final Directory skillDir = await Directory('${tempDir.path}/my_skill').create();
       await File('${skillDir.path}/SKILL.md').writeAsString('''
 ---
@@ -671,7 +698,7 @@ Body''');
         'bin/cli.dart',
         '-s',
         skillDir.path,
-        '--fix-apply',
+        '--fix',
       ]);
 
       await process.shouldExit(0);
