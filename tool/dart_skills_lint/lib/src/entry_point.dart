@@ -40,6 +40,31 @@ const fixApplyDeprecationMsg =
     '--fix-apply is deprecated; --fix now applies fixes by default. '
     'Use --fix --dry-run (or --fix --no-apply-fixes) to preview instead.';
 
+/// Welcoming first-run guide shown when no args are passed and no default
+/// skills directory exists. Exposed so integration tests can assert the
+/// exact greeting (drift here changes the new-user experience).
+const firstRunGuideMsg = '''
+dart_skills_lint: a linter for Agent Skills (SKILL.md).
+
+No skills were found to validate. Get started in one of three ways:
+
+  1. Lint a single skill directory:
+       dart run dart_skills_lint --skill ./path/to/my-skill
+
+  2. Lint every skill under a root directory:
+       dart run dart_skills_lint --skills-directory ./path/to/skills-root
+
+  3. Drop a skill into one of the auto-discovered default paths
+     (relative to the current directory) and re-run with no flags:
+       .claude/skills/<my-skill>/SKILL.md
+       .agents/skills/<my-skill>/SKILL.md
+
+For repo-wide config, create dart_skills_lint.yaml with a
+`dart_skills_lint.directories` entry.
+
+Spec: https://agentskills.io/specification
+Run with --help to see every flag.''';
+
 /// Main entrypoint execution logic for the CLI tool.
 ///
 /// Parses arguments and runs validation on the specified directory.
@@ -92,7 +117,7 @@ Future<void> runApp(List<String> args) async {
         }
       }
       if (existingDefaults.isEmpty) {
-        _printUsage(parser, 'Missing skills directory. Checked defaults: ${defaults.join(', ')}');
+        stdout.writeln(firstRunGuideMsg);
         exitCode = 64;
         return;
       }

@@ -308,13 +308,20 @@ dart_skills_lint:
       final List<String> rest = await process.stdout.rest.toList();
       expect(rest, isEmpty);
     });
-    test('fails with 64 when no flags passed and both defaults are missing', () async {
+    test('prints a first-run guide to stdout and exits 64 when no defaults exist', () async {
       final TestProcess process = await TestProcess.start('dart', [
         p.normalize(p.absolute('bin/cli.dart')),
       ], workingDirectory: tempDir.path);
 
-      final List<String> stderr = await process.stderr.rest.toList();
-      expect(stderr.join('\n'), contains('Missing skills directory. Checked defaults:'));
+      final List<String> stdout = await process.stdout.rest.toList();
+      final String stdoutStr = stdout.join('\n');
+      expect(stdoutStr, contains('dart_skills_lint: a linter for Agent Skills'));
+      expect(stdoutStr, contains('--skill ./path/to/my-skill'));
+      expect(stdoutStr, contains('--skills-directory ./path/to/skills-root'));
+      expect(stdoutStr, contains('.claude/skills/<my-skill>/SKILL.md'));
+      expect(stdoutStr, contains('.agents/skills/<my-skill>/SKILL.md'));
+      expect(stdoutStr, contains('agentskills.io/specification'));
+      expect(stdoutStr, contains('--help'));
       await process.shouldExit(64);
     });
 
