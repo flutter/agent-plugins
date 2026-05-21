@@ -9,6 +9,7 @@ A static analysis linter for Agent Skills to ensure they meet the specification 
 - [Configuration](#configuration)
 - [Specification Validation](#specification-validation)
 - [Recipes](#recipes)
+- [Support](#support)
 - [Best Practices](#best-practices)
 
 ## Overview
@@ -267,6 +268,23 @@ chmod +x .git/hooks/pre-commit
 The hook exits non-zero on lint failure, blocking the commit. To
 auto-apply fixable lints inside the hook, append `--fix` (see DT2 for
 the new `--fix` / `--dry-run` semantics).
+
+## Support
+
+- **Bug report or feature request:** open an issue at
+  <https://github.com/flutter/skills/issues>. Please include the
+  output of `dart pub global run dart_skills_lint --help` and the
+  failing `SKILL.md` (or a minimal reproducer) so the maintainers
+  can replay it locally.
+- **Questions, ideas, "is this the right rule for me?":** start a
+  thread in
+  [GitHub Discussions](https://github.com/flutter/skills/discussions).
+  Discussions is enabled on the repo; if you land on a 404 the feature
+  has been temporarily disabled — open an issue in the meantime and
+  flag the discussions outage there.
+- **Security issues:** do **not** file a public issue. Email the
+  maintainers via the address listed in the repository's
+  `SECURITY.md` (or in `AUTHORS` if `SECURITY.md` is not present).
 
 ## Contributing
 
