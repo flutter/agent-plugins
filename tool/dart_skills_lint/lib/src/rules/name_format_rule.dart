@@ -41,58 +41,51 @@ class NameFormatRule extends SkillRule implements FixableRule {
       return errors; // Handled by required fields check
     }
 
+    final String suggestion = suggestNormalizedName(skillName);
+
     if (skillName != skillName.toLowerCase()) {
       errors.add(
-        ValidationError(
-          ruleId: name,
-          severity: severity,
-          file: _skillFileName,
-          message: 'Skill name must be lowercase: $skillName (see $_nameFieldUrl)',
+        _err(
+          'Frontmatter `name` "$skillName" must be lowercase. '
+          'Suggested: "$suggestion"',
         ),
       );
     }
 
     if (skillName.length > maxNameLength) {
       errors.add(
-        ValidationError(
-          ruleId: name,
-          severity: severity,
-          file: _skillFileName,
-          message: 'Skill name too long. Maximum $maxNameLength characters (see $_nameFieldUrl)',
+        _err(
+          'Frontmatter `name` is ${skillName.length} characters; '
+          'maximum is $maxNameLength. '
+          'Shorten the `name:` field in SKILL.md.',
         ),
       );
     }
 
     if (!_validNameRegex.hasMatch(skillName)) {
       errors.add(
-        ValidationError(
-          ruleId: name,
-          severity: severity,
-          file: _skillFileName,
-          message:
-              'Skill name contains invalid characters. Only lowercase letters, digits, and hyphens allowed (see $_nameFieldUrl)',
+        _err(
+          'Frontmatter `name` "$skillName" contains invalid characters. '
+          'Only lowercase letters, digits, and hyphens are allowed. '
+          'Suggested: "$suggestion"',
         ),
       );
     }
 
     if (skillName.startsWith('-') || skillName.endsWith('-')) {
       errors.add(
-        ValidationError(
-          ruleId: name,
-          severity: severity,
-          file: _skillFileName,
-          message: 'Skill name cannot have leading or trailing hyphens (see $_nameFieldUrl)',
+        _err(
+          'Frontmatter `name` "$skillName" has leading or trailing hyphens. '
+          'Suggested: "$suggestion"',
         ),
       );
     }
 
     if (skillName.contains('--')) {
       errors.add(
-        ValidationError(
-          ruleId: name,
-          severity: severity,
-          file: _skillFileName,
-          message: 'Skill name cannot have consecutive hyphens (see $_nameFieldUrl)',
+        _err(
+          'Frontmatter `name` "$skillName" has consecutive hyphens. '
+          'Suggested: "$suggestion"',
         ),
       );
     }
@@ -100,17 +93,42 @@ class NameFormatRule extends SkillRule implements FixableRule {
     final String dirName = basename(context.directory.path);
     if (skillName != dirName) {
       errors.add(
-        ValidationError(
-          ruleId: name,
-          severity: severity,
-          file: _skillFileName,
-          message:
-              'Skill name ($skillName) must exactly match the parent directory name ($dirName) (see $_nameFieldUrl)',
+        _err(
+          'Frontmatter `name` "$skillName" does not match the parent '
+          'directory name "$dirName". '
+          'Fix by either setting `name: $dirName` in SKILL.md '
+          'or renaming the directory from "$dirName" to "$skillName".',
         ),
       );
     }
 
     return errors;
+  }
+
+  ValidationError _err(String message) => ValidationError(
+    ruleId: name,
+    severity: severity,
+    file: _skillFileName,
+    message: '$message (see $_nameFieldUrl)',
+  );
+
+  /// Returns a best-effort normalization of [input] that conforms to the
+  /// skill name format: lowercase, hyphens only, no consecutive/leading/
+  /// trailing hyphens, truncated to [maxNameLength].
+  ///
+  /// This is intentionally a *suggestion* — the author still picks the final
+  /// name. The output is not guaranteed to match a directory name.
+  @visibleForTesting
+  static String suggestNormalizedName(String input) {
+    var s = input.toLowerCase();
+    s = s.replaceAll(RegExp(r'[^a-z0-9\-]+'), '-');
+    s = s.replaceAll(RegExp(r'-+'), '-');
+    s = s.replaceAll(RegExp(r'^-+|-+$'), '');
+    if (s.length > maxNameLength) {
+      s = s.substring(0, maxNameLength);
+      s = s.replaceAll(RegExp(r'-+$'), '');
+    }
+    return s;
   }
 
   @override
