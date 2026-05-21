@@ -21,6 +21,7 @@ class AbsolutePathsRule extends SkillRule implements FixableRule {
 
   static final _markdownLinkRegex = RegExp(r'\[.*?\]\((.*?)\)');
   static const String _skillFileName = SkillContext.skillFileName;
+  static const _docsUrl = 'https://agentskills.io/specification#content';
 
   @override
   Future<List<ValidationError>> validate(SkillContext context) async {
@@ -41,7 +42,10 @@ class AbsolutePathsRule extends SkillRule implements FixableRule {
             ruleId: name,
             severity: severity,
             file: _skillFileName,
-            message: 'Absolute filepath found in link: $path',
+            message:
+                'Absolute filepath found in link: $path. '
+                'Skills must use paths relative to SKILL.md so they remain '
+                'portable across machines (see $_docsUrl).',
           ),
         );
       }

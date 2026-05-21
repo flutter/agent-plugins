@@ -20,6 +20,7 @@ class RelativePathsRule extends SkillRule {
 
   static final _markdownLinkRegex = RegExp(r'\[.*?\]\((.*?)\)');
   static const _skillFileName = 'SKILL.md';
+  static const _docsUrl = 'https://agentskills.io/specification#content';
 
   @override
   Future<List<ValidationError>> validate(SkillContext context) async {
@@ -54,14 +55,19 @@ class RelativePathsRule extends SkillRule {
         // If Uri parsing fails, treat it as a potential filepath.
       }
 
-      final linkedFile = File(join(context.directory.path, effectivePath));
+      final String resolvedPath = absolute(normalize(join(context.directory.path, effectivePath)));
+      final linkedFile = File(resolvedPath);
       if (!linkedFile.existsSync()) {
+        final String? suggestion = findSiblingSuggestion(resolvedPath);
+        final String suggestionClause = suggestion != null ? ' Did you mean "$suggestion"?' : '';
         errors.add(
           ValidationError(
             ruleId: name,
             severity: severity,
             file: _skillFileName,
-            message: 'Linked file does not exist: $path',
+            message:
+                'Linked file does not exist: $path (resolved to $resolvedPath).'
+                '$suggestionClause (see $_docsUrl)',
           ),
         );
       }
@@ -69,4 +75,75 @@ class RelativePathsRule extends SkillRule {
 
     return errors;
   }
+}
+
+/// Finds the existing sibling file most similar to the (missing) basename
+/// of [resolvedPath], using Levenshtein distance over case-folded names.
+///
+/// Returns the suggested path as it would have appeared in the link (parent
+/// directory of the original link joined to the matched basename), or `null`
+/// if the parent directory does not exist or no close match was found.
+///
+/// The distance threshold is `max(1, basename.length ~/ 3)` — tight enough to
+/// avoid surfacing unrelated files in a busy directory, loose enough to catch
+/// typos in moderately long filenames.
+String? findSiblingSuggestion(String resolvedPath) {
+  final String parentPath = dirname(resolvedPath);
+  final parentDir = Directory(parentPath);
+  if (!parentDir.existsSync()) {
+    return null;
+  }
+
+  final String missingBase = basename(resolvedPath).toLowerCase();
+  if (missingBase.isEmpty) {
+    return null;
+  }
+
+  final int threshold = (missingBase.length ~/ 3).clamp(1, missingBase.length);
+
+  String? best;
+  int bestDistance = threshold + 1;
+  for (final entity in parentDir.listSync()) {
+    final String candidate = basename(entity.path);
+    if (candidate == basename(resolvedPath)) {
+      continue;
+    }
+    final int distance = _levenshtein(missingBase, candidate.toLowerCase());
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = candidate;
+    }
+  }
+
+  if (best == null || bestDistance > threshold) {
+    return null;
+  }
+  return best;
+}
+
+/// Plain Levenshtein edit distance over runes. O(n*m) time, O(m) space.
+int _levenshtein(String a, String b) {
+  if (a == b) return 0;
+  if (a.isEmpty) return b.length;
+  if (b.isEmpty) return a.length;
+
+  final List<int> aCodes = a.runes.toList();
+  final List<int> bCodes = b.runes.toList();
+
+  List<int> previous = List<int>.generate(bCodes.length + 1, (j) => j);
+  List<int> current = List<int>.filled(bCodes.length + 1, 0);
+  for (var i = 1; i <= aCodes.length; i++) {
+    current[0] = i;
+    for (var j = 1; j <= bCodes.length; j++) {
+      final int cost = aCodes[i - 1] == bCodes[j - 1] ? 0 : 1;
+      final int del = previous[j] + 1;
+      final int ins = current[j - 1] + 1;
+      final int sub = previous[j - 1] + cost;
+      current[j] = del < ins ? (del < sub ? del : sub) : (ins < sub ? ins : sub);
+    }
+    final List<int> swap = previous;
+    previous = current;
+    current = swap;
+  }
+  return previous[bCodes.length];
 }
