@@ -8,6 +8,7 @@ A static analysis linter for Agent Skills to ensure they meet the specification 
 - [Usage](#usage)
 - [Configuration](#configuration)
 - [Specification Validation](#specification-validation)
+- [Recipes](#recipes)
 - [Best Practices](#best-practices)
 
 ## Overview
@@ -197,6 +198,75 @@ The linter checks against the criteria defined in `documentation/knowledge/SPECI
 ### 4. Content Constraints
 - **Trailing Whitespace**: Lines in `SKILL.md` should not have trailing whitespace. Exactly 2 spaces at the end of a line are allowed to support Markdown hard line breaks, per the [CommonMark Spec](https://spec.commonmark.org/0.31.2/#hard-line-breaks).
 - **Path Constraints**: Checks that **inline** Markdown links do not use absolute paths to enforce portability. Can optionally be configured to check that relative paths point to valid, existing files (disabled by default). *Note: This rule only supports inline Markdown links and does not detect HTML or reference-style links.*
+
+## Recipes
+
+Drop-in snippets for the two most common ways to wire `dart_skills_lint`
+into a project's quality gates. Each recipe is exercised by
+[`test/recipe_drift_test.dart`](test/recipe_drift_test.dart), so if a
+flag here goes stale, CI fails.
+
+### Recipe: GitHub Actions
+
+Save the following as `.github/workflows/lint-skills.yml`. It runs on
+every push and PR, installs `dart_skills_lint` globally on the runner,
+and validates every skill under `.claude/skills/`. Adjust the path to
+match where your skills live.
+
+```yaml
+# .github/workflows/lint-skills.yml
+name: Lint Agent Skills
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions: read-all
+
+jobs:
+  lint-skills:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dart-lang/setup-dart@v1
+      - run: dart pub global activate dart_skills_lint
+      - run: dart pub global run dart_skills_lint --skills-directory ./.claude/skills
+```
+
+To validate a single skill directory instead, swap the last step:
+
+```yaml
+      - run: dart pub global run dart_skills_lint --skill ./.claude/skills/my-skill
+```
+
+### Recipe: Dart-native pre-commit hook
+
+A pre-commit hook that calls into the linter directly — no Husky, no
+Python `pre-commit` framework, just Dart and the existing
+`dart pub global` tooling.
+
+Activate the linter once per machine:
+
+```bash
+dart pub global activate dart_skills_lint
+```
+
+Then install the hook into the repository (run from the repo root):
+
+```bash
+cat > .git/hooks/pre-commit <<'HOOK'
+#!/bin/sh
+set -e
+# Lint every skill under .claude/skills before each commit.
+# Add --skill arguments for other locations as needed.
+exec dart pub global run dart_skills_lint --skills-directory ./.claude/skills --quiet
+HOOK
+chmod +x .git/hooks/pre-commit
+```
+
+The hook exits non-zero on lint failure, blocking the commit. To
+auto-apply fixable lints inside the hook, append `--fix` (see DT2 for
+the new `--fix` / `--dry-run` semantics).
 
 ## Contributing
 
