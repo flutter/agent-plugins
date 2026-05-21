@@ -149,8 +149,36 @@ Body''');
         expect(result.isValid, isFalse);
         expect(
           result.errors,
-          contains(contains('Maximum ${DescriptionLengthRule.maxDescriptionLength} characters')),
+          contains(contains('maximum is ${DescriptionLengthRule.maxDescriptionLength}')),
         );
+      });
+
+      test('error message includes char count and |HERE| cutoff excerpt', () async {
+        // 50 chars before, 50 chars after the cutoff for a distinctive excerpt.
+        final String before = 'B' * 50;
+        final String after = 'A' * 50;
+        final String longDesc =
+            'P' * (DescriptionLengthRule.maxDescriptionLength - 50) + before + after;
+        expect(longDesc.length, DescriptionLengthRule.maxDescriptionLength + 50);
+
+        final Directory skillDir = await Directory('${tempDir.path}/skill-name').create();
+        await File(
+          '${skillDir.path}/SKILL.md',
+        ).writeAsString('${buildFrontmatter(name: 'skill-name', description: longDesc)}Body');
+        final validator = Validator();
+        final ValidationResult result = await validator.validate(skillDir);
+        expect(result.isValid, isFalse);
+
+        final String error = result.errors.firstWhere((e) => e.contains('Description field is'));
+        expect(error, contains('Description field is ${longDesc.length} characters'));
+        expect(error, contains('maximum is ${DescriptionLengthRule.maxDescriptionLength}'));
+        expect(
+          error,
+          contains('Cutoff at character ${DescriptionLengthRule.maxDescriptionLength}'),
+        );
+        expect(error, contains('|HERE|'));
+        // The chars right before/after the cutoff should appear in the excerpt.
+        expect(error, contains('BBBBB|HERE|AAAAA'));
       });
     });
 
