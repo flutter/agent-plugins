@@ -15,8 +15,9 @@ analyzer:
     strict-casts: true
     strict-inference: true
     strict-raw-types: true
-  plugins:
-    - dart_code_linter
+  # dart_code_linter is intentionally NOT registered as an analyzer
+  # `plugin` here. When it was, `dart analyze` had racy false positives. 
+  # See https://github.com/flutter/skills/issues/144
   errors:
     # allow deprecated members (we do this because otherwise we have to annotate
     # every member in every test, assert, etc, when we or the Dart SDK deprecates
@@ -286,11 +287,20 @@ dart_code_linter:
     - no-empty-block
     - avoid-redundant-async
     - avoid-passing-async-when-sync-expected
-    - avoid-late-keyword
+    # `late` for fields initialized in `setUp` is the idiomatic Dart test
+    # fixture pattern; enforce this rule on lib only.
+    - avoid-late-keyword:
+        exclude:
+          - test/**
     - prefer-named-record-fields
 
     # Clean up
     - avoid-unused-parameters
     - prefer-moving-to-variable
-    - prefer-match-file-name
+    # Test files must be named `*_test.dart` for the test runner, and commonly
+    # hold several small fixture/mock classes, so they can never match this
+    # rule's "file name == first class name" convention. Enforce it on lib only.
+    - prefer-match-file-name:
+        exclude:
+          - test/**
     - always-remove-listener

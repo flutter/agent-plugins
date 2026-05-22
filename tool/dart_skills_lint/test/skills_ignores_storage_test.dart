@@ -12,7 +12,7 @@ void main() {
   late Directory tempDir;
   late SkillsIgnoresStorage storage;
 
-  setUp(() async {
+  setUp(() {
     tempDir = Directory.systemTemp.createTempSync('storage_test.');
     storage = SkillsIgnoresStorage();
   });

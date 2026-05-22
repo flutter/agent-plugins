@@ -26,7 +26,7 @@ class MockInaccessibleFile implements File {
   }
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  Object? noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 base class TestIOOverrides extends IOOverrides {
