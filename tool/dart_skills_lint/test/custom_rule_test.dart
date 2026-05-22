@@ -4,6 +4,8 @@ import 'package:dart_skills_lint/dart_skills_lint.dart';
 import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 
+import 'test_utils.dart';
+
 class CustomRule extends SkillRule {
   @override
   final String name = 'custom-rule';
@@ -50,16 +52,11 @@ class MismatchRule extends SkillRule {
 
 void main() {
   group('Custom Rules', () {
-    late Directory tempDir;
+    // Reassigned in setUp; the placeholder keeps the field non-`late`.
+    Directory tempDir = Directory.systemTemp;
 
     setUp(() async {
-      tempDir = await Directory.systemTemp.createTemp('custom_rule_test.');
-    });
-
-    tearDown(() async {
-      if (tempDir.existsSync()) {
-        await tempDir.delete(recursive: true);
-      }
+      tempDir = await createTempDir('custom_rule_test.');
     });
 
     test('Validator runs custom rule', () async {

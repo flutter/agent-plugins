@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:path/path.dart' as p;
+import 'package:test/test.dart';
 
 String buildFrontmatter({
   String name = 'Skill-Name',
@@ -20,6 +21,19 @@ String buildFrontmatter({
   }
   sb.writeln('---');
   return sb.toString();
+}
+
+/// Creates a fresh temporary directory and registers automatic cleanup via
+/// [addTearDown]. Assign the result to a (non-`late`) variable in `setUp`; the
+/// directory is deleted after the test completes.
+Future<Directory> createTempDir(String prefix) async {
+  final Directory tempDir = await Directory.systemTemp.createTemp(prefix);
+  addTearDown(() async {
+    if (tempDir.existsSync()) {
+      await tempDir.delete(recursive: true);
+    }
+  });
+  return tempDir;
 }
 
 /// Creates a temporary directory for testing and automatically cleans it up.

@@ -9,18 +9,15 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:test_process/test_process.dart';
 
+import 'test_utils.dart';
+
 void main() {
   group('Configuration File Integration', () {
-    late Directory tempDir;
+    // Reassigned in setUp; the placeholder keeps the field non-`late`.
+    Directory tempDir = Directory.systemTemp;
 
     setUp(() async {
-      tempDir = await Directory.systemTemp.createTemp('config_test.');
-    });
-
-    tearDown(() async {
-      if (tempDir.existsSync()) {
-        await tempDir.delete(recursive: true);
-      }
+      tempDir = await createTempDir('config_test.');
     });
 
     test('obeys disabled relative paths in config', () async {

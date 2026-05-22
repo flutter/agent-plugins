@@ -13,6 +13,8 @@ import 'package:dart_skills_lint/src/models/validation_error.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
+import 'test_utils.dart';
+
 class RuleA extends SkillRule implements FixableRule {
   @override
   String get name => 'rule-a';
@@ -90,14 +92,11 @@ class RuleThrows extends SkillRule implements FixableRule {
 
 void main() {
   group('Fixer Sequential Execution', () {
-    late Directory tempDir;
+    // Reassigned in setUp; the placeholder keeps the field non-`late`.
+    Directory tempDir = Directory.systemTemp;
 
     setUp(() async {
-      tempDir = await Directory.systemTemp.createTemp('fixer_test.');
-    });
-
-    tearDown(() async {
-      await tempDir.delete(recursive: true);
+      tempDir = await createTempDir('fixer_test.');
     });
 
     test('applies fixes in order', () async {

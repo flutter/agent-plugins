@@ -16,16 +16,11 @@ import 'test_utils.dart';
 
 void main() {
   group('Absolute Paths Validation', () {
-    late Directory tempDir;
+    // Reassigned in setUp; the placeholder keeps the field non-`late`.
+    Directory tempDir = Directory.systemTemp;
 
     setUp(() async {
-      tempDir = await Directory.systemTemp.createTemp('absolute_path_test.');
-    });
-
-    tearDown(() async {
-      if (tempDir.existsSync()) {
-        await tempDir.delete(recursive: true);
-      }
+      tempDir = await createTempDir('absolute_path_test.');
     });
 
     test('flags absolute path starting with / as warning by default', () async {

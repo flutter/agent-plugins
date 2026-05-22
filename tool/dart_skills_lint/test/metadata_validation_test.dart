@@ -13,16 +13,11 @@ import 'test_utils.dart';
 
 void main() {
   group('Metadata (YAML) Validation', () {
-    late Directory tempDir;
+    // Reassigned in setUp; the placeholder keeps the field non-`late`.
+    Directory tempDir = Directory.systemTemp;
 
     setUp(() async {
-      tempDir = await Directory.systemTemp.createTemp('metadata_test.');
-    });
-
-    tearDown(() async {
-      if (tempDir.existsSync()) {
-        await tempDir.delete(recursive: true);
-      }
+      tempDir = await createTempDir('metadata_test.');
     });
 
     test('fails if YAML metadata is invalid', () async {
