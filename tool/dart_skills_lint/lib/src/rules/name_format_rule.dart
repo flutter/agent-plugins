@@ -45,7 +45,7 @@ class NameFormatRule extends SkillRule implements FixableRule {
 
     if (skillName != skillName.toLowerCase()) {
       errors.add(
-        _err(
+        _buildNameFormatError(
           'Frontmatter `name` "$skillName" must be lowercase. '
           'Suggested: "$suggestion"',
         ),
@@ -54,7 +54,7 @@ class NameFormatRule extends SkillRule implements FixableRule {
 
     if (skillName.length > maxNameLength) {
       errors.add(
-        _err(
+        _buildNameFormatError(
           'Frontmatter `name` is ${skillName.length} characters; '
           'maximum is $maxNameLength. '
           'Shorten the `name:` field in SKILL.md.',
@@ -64,7 +64,7 @@ class NameFormatRule extends SkillRule implements FixableRule {
 
     if (!_validNameRegex.hasMatch(skillName)) {
       errors.add(
-        _err(
+        _buildNameFormatError(
           'Frontmatter `name` "$skillName" contains invalid characters. '
           'Only lowercase letters, digits, and hyphens are allowed. '
           'Suggested: "$suggestion"',
@@ -74,7 +74,7 @@ class NameFormatRule extends SkillRule implements FixableRule {
 
     if (skillName.startsWith('-') || skillName.endsWith('-')) {
       errors.add(
-        _err(
+        _buildNameFormatError(
           'Frontmatter `name` "$skillName" has leading or trailing hyphens. '
           'Suggested: "$suggestion"',
         ),
@@ -83,7 +83,7 @@ class NameFormatRule extends SkillRule implements FixableRule {
 
     if (skillName.contains('--')) {
       errors.add(
-        _err(
+        _buildNameFormatError(
           'Frontmatter `name` "$skillName" has consecutive hyphens. '
           'Suggested: "$suggestion"',
         ),
@@ -93,7 +93,7 @@ class NameFormatRule extends SkillRule implements FixableRule {
     final String dirName = basename(context.directory.path);
     if (skillName != dirName) {
       errors.add(
-        _err(
+        _buildNameFormatError(
           'Frontmatter `name` "$skillName" does not match the parent '
           'directory name "$dirName". '
           'Fix by either setting `name: $dirName` in SKILL.md '
@@ -105,7 +105,7 @@ class NameFormatRule extends SkillRule implements FixableRule {
     return errors;
   }
 
-  ValidationError _err(String message) => ValidationError(
+  ValidationError _buildNameFormatError(String message) => ValidationError(
     ruleId: name,
     severity: severity,
     file: _skillFileName,
