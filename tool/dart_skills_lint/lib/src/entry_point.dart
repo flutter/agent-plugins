@@ -131,9 +131,9 @@ Future<void> runApp(List<String> args) async {
   final fastFail = results[_fastFailFlag] as bool;
   final quiet = results[_quietFlag] as bool;
   final generateBaseline = results[_generateBaselineFlag] as bool;
-  final bool fixFlag = results[_fixFlag] as bool;
-  final bool dryRun = results[_dryRunFlag] as bool;
-  final bool fixApplyAlias = results[_fixApplyFlag] as bool;
+  final fixFlag = results[_fixFlag] as bool;
+  final dryRun = results[_dryRunFlag] as bool;
+  final fixApplyAlias = results[_fixApplyFlag] as bool;
 
   if (fixApplyAlias) {
     stderr.writeln(fixApplyDeprecationMsg);

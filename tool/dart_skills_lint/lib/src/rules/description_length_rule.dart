@@ -63,8 +63,8 @@ class DescriptionLengthRule extends SkillRule {
     final int end = (maxDescriptionLength + _excerptContextChars).clamp(0, description.length);
     final String before = description.substring(start, maxDescriptionLength);
     final String after = description.substring(maxDescriptionLength, end);
-    final String leadingEllipsis = start > 0 ? '...' : '';
-    final String trailingEllipsis = end < description.length ? '...' : '';
+    final leadingEllipsis = start > 0 ? '...' : '';
+    final trailingEllipsis = end < description.length ? '...' : '';
     final String escapedBefore = _escapeForOneLine(before);
     final String escapedAfter = _escapeForOneLine(after);
     return '$leadingEllipsis$escapedBefore|HERE|$escapedAfter$trailingEllipsis';

@@ -65,9 +65,9 @@ void main() {
 
     test('did-you-mean: suggests near-miss sibling file when one exists', () async {
       final Directory skillDir = await Directory('${tempDir.path}/test-skill').create();
-      await File('${skillDir.path}/SKILL.md').writeAsString(
-        '${buildFrontmatter(name: 'test-skill')}[Link](references/DEATILS.md)\n',
-      );
+      await File(
+        '${skillDir.path}/SKILL.md',
+      ).writeAsString('${buildFrontmatter(name: 'test-skill')}[Link](references/DEATILS.md)\n');
       final Directory refs = await Directory('${skillDir.path}/references').create();
       await File('${refs.path}/DETAILS.md').writeAsString('Details');
 
@@ -81,9 +81,9 @@ void main() {
 
     test('did-you-mean: stays silent when nothing in the sibling dir is close', () async {
       final Directory skillDir = await Directory('${tempDir.path}/test-skill').create();
-      await File('${skillDir.path}/SKILL.md').writeAsString(
-        '${buildFrontmatter(name: 'test-skill')}[Link](references/MISSING.md)\n',
-      );
+      await File(
+        '${skillDir.path}/SKILL.md',
+      ).writeAsString('${buildFrontmatter(name: 'test-skill')}[Link](references/MISSING.md)\n');
       final Directory refs = await Directory('${skillDir.path}/references').create();
       await File('${refs.path}/UNRELATED.txt').writeAsString('Nope');
 

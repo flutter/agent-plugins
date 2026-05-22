@@ -40,8 +40,8 @@ void main() {
     });
 
     test('README has both expected recipes with non-empty bodies', () {
-      final yamlBlocks = blocks.where((b) => b.language == 'yaml').toList();
-      final shellBlocks = blocks.where((b) => b.language == 'bash').toList();
+      final List<_RecipeBlock> yamlBlocks = blocks.where((b) => b.language == 'yaml').toList();
+      final List<_RecipeBlock> shellBlocks = blocks.where((b) => b.language == 'bash').toList();
       expect(yamlBlocks, isNotEmpty, reason: 'GitHub Actions YAML recipe missing');
       expect(shellBlocks, isNotEmpty, reason: 'pre-commit hook shell recipe missing');
       for (final block in blocks) {
@@ -57,25 +57,25 @@ void main() {
 
       final dynamic parsed = loadYaml(yamlBlock.body);
       expect(parsed, isA<YamlMap>());
-      final YamlMap doc = parsed as YamlMap;
+      final doc = parsed as YamlMap;
       expect(doc['name'], 'Lint Agent Skills');
 
-      final YamlMap jobs = doc['jobs'] as YamlMap;
+      final jobs = doc['jobs'] as YamlMap;
       expect(jobs.keys, contains('lint-skills'));
-      final YamlMap lintJob = jobs['lint-skills'] as YamlMap;
-      final YamlList steps = lintJob['steps'] as YamlList;
+      final lintJob = jobs['lint-skills'] as YamlMap;
+      final steps = lintJob['steps'] as YamlList;
 
       final List<String> usesValues = steps
           .whereType<YamlMap>()
           .where((s) => s.containsKey('uses'))
-          .map((s) => (s['uses'] as String))
+          .map((s) => s['uses'] as String)
           .toList();
       expect(usesValues, contains('dart-lang/setup-dart@v1'));
 
       final List<String> runValues = steps
           .whereType<YamlMap>()
           .where((s) => s.containsKey('run'))
-          .map((s) => (s['run'] as String))
+          .map((s) => s['run'] as String)
           .toList();
       expect(
         runValues.any((r) => r.contains('dart pub global activate dart_skills_lint')),
@@ -84,7 +84,9 @@ void main() {
       );
       expect(
         runValues.any(
-          (r) => r.contains('dart pub global run dart_skills_lint') && r.contains('--skills-directory'),
+          (r) =>
+              r.contains('dart pub global run dart_skills_lint') &&
+              r.contains('--skills-directory'),
         ),
         isTrue,
         reason: 'workflow no longer runs the linter against a skills directory',
@@ -98,9 +100,9 @@ void main() {
       final _RecipeBlock yamlBlock = blocks.firstWhere(
         (b) => b.language == 'yaml' && b.body.contains('--skills-directory'),
       );
-      final List<String> commandLines = _extractRunCommands(yamlBlock.body)
-          .where((c) => c.contains('dart_skills_lint'))
-          .toList();
+      final List<String> commandLines = _extractRunCommands(
+        yamlBlock.body,
+      ).where((c) => c.contains('dart_skills_lint')).toList();
       expect(commandLines, isNotEmpty);
 
       for (final raw in commandLines) {
@@ -134,7 +136,7 @@ void main() {
       // Pull the body between <<'HOOK' ... HOOK markers and route the lint
       // command back to bin/cli.dart so we don't need a real pub global
       // install on the test machine.
-      final RegExp heredoc = RegExp(r"<<'HOOK'\n(.*?)\nHOOK", dotAll: true);
+      final heredoc = RegExp(r"<<'HOOK'\n(.*?)\nHOOK", dotAll: true);
       final RegExpMatch? match = heredoc.firstMatch(hookBlock.body);
       expect(match, isNotNull, reason: 'HEREDOC body could not be parsed');
       String hookBody = match!.group(1)!;
@@ -144,17 +146,11 @@ void main() {
       hookBody = hookBody.replaceAll('dart pub global run dart_skills_lint', 'dart "$cliPath"');
 
       // Run against example/valid → exit 0.
-      final String validHookBody = hookBody.replaceAll(
-        './.claude/skills',
-        validFixture,
-      );
+      final String validHookBody = hookBody.replaceAll('./.claude/skills', validFixture);
       await _runHook(validHookBody, expectZeroExit: true);
 
       // Run against example/invalid → non-zero exit.
-      final String invalidHookBody = hookBody.replaceAll(
-        './.claude/skills',
-        invalidFixture,
-      );
+      final String invalidHookBody = hookBody.replaceAll('./.claude/skills', invalidFixture);
       await _runHook(invalidHookBody, expectZeroExit: false);
     });
   }, skip: Platform.isWindows ? 'recipe drift uses POSIX shell' : null);
@@ -167,7 +163,7 @@ Future<void> _runHook(String body, {required bool expectZeroExit}) async {
       ? body.replaceAll('--skills-directory', '--skill')
       : body;
 
-  final tmp = await Directory.systemTemp.createTemp('recipe_hook.');
+  final Directory tmp = await Directory.systemTemp.createTemp('recipe_hook.');
   try {
     final hookFile = File(p.join(tmp.path, 'pre-commit'));
     await hookFile.writeAsString(runnable);
@@ -197,14 +193,14 @@ class _RecipeBlock {
 /// Returns every fenced code block that appears under the `## Recipes`
 /// heading (until the next `## ` heading).
 List<_RecipeBlock> _extractRecipeBlocks(String readme) {
-  final RegExp section = RegExp(r'^## Recipes\s*\n(.*?)(?=^## )', multiLine: true, dotAll: true);
+  final section = RegExp(r'^## Recipes\s*\n(.*?)(?=^## )', multiLine: true, dotAll: true);
   final RegExpMatch? match = section.firstMatch(readme);
   if (match == null) {
     return const [];
   }
   final String body = match.group(1)!;
 
-  final RegExp fence = RegExp(r'^```([a-zA-Z0-9_-]*)\s*\n(.*?)^```', multiLine: true, dotAll: true);
+  final fence = RegExp(r'^```([a-zA-Z0-9_-]*)\s*\n(.*?)^```', multiLine: true, dotAll: true);
   return [
     for (final RegExpMatch m in fence.allMatches(body))
       _RecipeBlock((m.group(1) ?? '').trim(), m.group(2)!),
@@ -216,19 +212,29 @@ List<_RecipeBlock> _extractRecipeBlocks(String readme) {
 List<String> _extractRunCommands(String yamlBody) {
   final dynamic doc = loadYaml(yamlBody);
   final List<String> out = [];
-  if (doc is! YamlMap) return out;
-  final YamlMap jobs = doc['jobs'] as YamlMap;
-  for (final dynamic job in jobs.values) {
-    if (job is! YamlMap) continue;
-    final YamlList? steps = job['steps'] as YamlList?;
-    if (steps == null) continue;
-    for (final step in steps) {
-      if (step is! YamlMap) continue;
+  if (doc is! YamlMap) {
+    return out;
+  }
+  final jobs = doc['jobs'] as YamlMap;
+  for (final Object? job in jobs.values) {
+    if (job is! YamlMap) {
+      continue;
+    }
+    final steps = job['steps'] as YamlList?;
+    if (steps == null) {
+      continue;
+    }
+    for (final Object? step in steps) {
+      if (step is! YamlMap) {
+        continue;
+      }
       final dynamic run = step['run'];
       if (run is String) {
-        for (final line in run.split('\n')) {
+        for (final String line in run.split('\n')) {
           final String trimmed = line.trim();
-          if (trimmed.isNotEmpty) out.add(trimmed);
+          if (trimmed.isNotEmpty) {
+            out.add(trimmed);
+          }
         }
       }
     }

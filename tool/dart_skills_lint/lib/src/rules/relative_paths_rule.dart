@@ -59,7 +59,7 @@ class RelativePathsRule extends SkillRule {
       final linkedFile = File(resolvedPath);
       if (!linkedFile.existsSync()) {
         final String? suggestion = findSiblingSuggestion(resolvedPath);
-        final String suggestionClause = suggestion != null ? ' Did you mean "$suggestion"?' : '';
+        final suggestionClause = suggestion != null ? ' Did you mean "$suggestion"?' : '';
         errors.add(
           ValidationError(
             ruleId: name,
@@ -103,7 +103,7 @@ String? findSiblingSuggestion(String resolvedPath) {
 
   String? best;
   int bestDistance = threshold + 1;
-  for (final entity in parentDir.listSync()) {
+  for (final FileSystemEntity entity in parentDir.listSync()) {
     final String candidate = basename(entity.path);
     if (candidate == basename(resolvedPath)) {
       continue;
@@ -123,25 +123,31 @@ String? findSiblingSuggestion(String resolvedPath) {
 
 /// Plain Levenshtein edit distance over runes. O(n*m) time, O(m) space.
 int _levenshtein(String a, String b) {
-  if (a == b) return 0;
-  if (a.isEmpty) return b.length;
-  if (b.isEmpty) return a.length;
+  if (a == b) {
+    return 0;
+  }
+  if (a.isEmpty) {
+    return b.length;
+  }
+  if (b.isEmpty) {
+    return a.length;
+  }
 
   final List<int> aCodes = a.runes.toList();
   final List<int> bCodes = b.runes.toList();
 
-  List<int> previous = List<int>.generate(bCodes.length + 1, (j) => j);
-  List<int> current = List<int>.filled(bCodes.length + 1, 0);
+  var previous = List<int>.generate(bCodes.length + 1, (j) => j);
+  var current = List<int>.filled(bCodes.length + 1, 0);
   for (var i = 1; i <= aCodes.length; i++) {
     current[0] = i;
     for (var j = 1; j <= bCodes.length; j++) {
-      final int cost = aCodes[i - 1] == bCodes[j - 1] ? 0 : 1;
+      final cost = aCodes[i - 1] == bCodes[j - 1] ? 0 : 1;
       final int del = previous[j] + 1;
       final int ins = current[j - 1] + 1;
       final int sub = previous[j - 1] + cost;
       current[j] = del < ins ? (del < sub ? del : sub) : (ins < sub ? ins : sub);
     }
-    final List<int> swap = previous;
+    final swap = previous;
     previous = current;
     current = swap;
   }

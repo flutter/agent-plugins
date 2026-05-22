@@ -120,7 +120,7 @@ class NameFormatRule extends SkillRule implements FixableRule {
   /// name. The output is not guaranteed to match a directory name.
   @visibleForTesting
   static String suggestNormalizedName(String input) {
-    var s = input.toLowerCase();
+    String s = input.toLowerCase();
     s = s.replaceAll(RegExp(r'[^a-z0-9\-]+'), '-');
     s = s.replaceAll(RegExp(r'-+'), '-');
     s = s.replaceAll(RegExp(r'^-+|-+$'), '');

@@ -55,10 +55,7 @@ void main() {
           result.errors,
           contains(contains('Frontmatter `name` is ${longName.length} characters')),
         );
-        expect(
-          result.errors,
-          contains(contains('maximum is ${NameFormatRule.maxNameLength}')),
-        );
+        expect(result.errors, contains(contains('maximum is ${NameFormatRule.maxNameLength}')));
       });
 
       test('fails if contains invalid characters; suggests hyphen-normalized form', () async {
@@ -84,10 +81,7 @@ void main() {
         final validator = Validator();
         final ValidationResult result = await validator.validate(skillDir);
         expect(result.isValid, isFalse);
-        expect(
-          result.errors,
-          contains(contains('"-skill-name" has leading or trailing hyphens')),
-        );
+        expect(result.errors, contains(contains('"-skill-name" has leading or trailing hyphens')));
         expect(result.errors, contains(contains('Suggested: "skill-name"')));
       });
 
@@ -99,10 +93,7 @@ void main() {
         final validator = Validator();
         final ValidationResult result = await validator.validate(skillDir);
         expect(result.isValid, isFalse);
-        expect(
-          result.errors,
-          contains(contains('"skill-name-" has leading or trailing hyphens')),
-        );
+        expect(result.errors, contains(contains('"skill-name-" has leading or trailing hyphens')));
         expect(result.errors, contains(contains('Suggested: "skill-name"')));
       });
 

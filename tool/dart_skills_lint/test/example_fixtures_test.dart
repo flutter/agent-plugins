@@ -26,11 +26,7 @@ void main() {
     final String invalidPath = p.normalize(p.absolute('example/invalid'));
 
     test('example/valid passes with default rules', () async {
-      final TestProcess process = await TestProcess.start('dart', [
-        cliPath,
-        '--skill',
-        validPath,
-      ]);
+      final TestProcess process = await TestProcess.start('dart', [cliPath, '--skill', validPath]);
 
       final List<String> stdout = await process.stdout.rest.toList();
       final String stdoutStr = stdout.join('\n');
