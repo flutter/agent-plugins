@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:path/path.dart';
+import '../levenshtein.dart';
 import '../models/analysis_severity.dart';
 import '../models/skill_context.dart';
 import '../models/skill_rule.dart';
@@ -107,7 +108,7 @@ String? findSiblingSuggestion(String resolvedPath) {
     if (candidate == basename(resolvedPath)) {
       continue;
     }
-    final int distance = _levenshtein(missingBase, candidate.toLowerCase());
+    final int distance = levenshtein(missingBase, candidate.toLowerCase());
     if (distance < bestDistance) {
       bestDistance = distance;
       best = candidate;
@@ -118,37 +119,4 @@ String? findSiblingSuggestion(String resolvedPath) {
     return null;
   }
   return best;
-}
-
-/// Plain Levenshtein edit distance over runes. O(n*m) time, O(m) space.
-int _levenshtein(String a, String b) {
-  if (a == b) {
-    return 0;
-  }
-  if (a.isEmpty) {
-    return b.length;
-  }
-  if (b.isEmpty) {
-    return a.length;
-  }
-
-  final List<int> aCodes = a.runes.toList();
-  final List<int> bCodes = b.runes.toList();
-
-  var previous = List<int>.generate(bCodes.length + 1, (j) => j);
-  var current = List<int>.filled(bCodes.length + 1, 0);
-  for (var i = 1; i <= aCodes.length; i++) {
-    current[0] = i;
-    for (var j = 1; j <= bCodes.length; j++) {
-      final cost = aCodes[i - 1] == bCodes[j - 1] ? 0 : 1;
-      final int del = previous[j] + 1;
-      final int ins = current[j - 1] + 1;
-      final int sub = previous[j - 1] + cost;
-      current[j] = del < ins ? (del < sub ? del : sub) : (ins < sub ? ins : sub);
-    }
-    final swap = previous;
-    previous = current;
-    current = swap;
-  }
-  return previous[bCodes.length];
 }
