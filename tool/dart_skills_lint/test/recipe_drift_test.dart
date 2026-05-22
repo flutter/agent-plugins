@@ -181,6 +181,14 @@ class _RecipeReader {
       (b) => b.body.contains('.git/hooks/pre-commit') && b.body.contains('HOOK'),
       orElse: () => fail('pre-commit HEREDOC recipe missing'),
     );
+    // Matches a shell HEREDOC of the form
+    //   <<'HOOK'
+    //   ...body lines...
+    //   HOOK
+    // capturing the body (everything between the opening `<<'HOOK'`
+    // newline and the closing `HOOK` line, exclusive). dotAll lets `.`
+    // span newlines so the body matches across lines; the inner `.*?`
+    // is non-greedy so we stop at the first closing `HOOK`.
     final heredoc = RegExp(r"<<'HOOK'\n(.*?)\nHOOK", dotAll: true);
     final RegExpMatch? match = heredoc.firstMatch(block.body);
     expect(match, isNotNull, reason: 'HEREDOC body could not be parsed');
@@ -200,12 +208,26 @@ class _RecipeReader {
       .toList(growable: false);
 
   static List<_RecipeBlock> _extractBlocks(String readme) {
+    // Matches the README's `## Recipes` heading and captures everything
+    // from the line after the heading up to (but not including) the
+    // next `## ` heading. multiLine makes `^` anchor at line starts so
+    // the lookahead picks up sibling H2 headings; dotAll lets the
+    // non-greedy body span line breaks.
     final section = RegExp(r'^## Recipes\s*\n(.*?)(?=^## )', multiLine: true, dotAll: true);
     final RegExpMatch? match = section.firstMatch(readme);
     if (match == null) {
       return const [];
     }
     final String body = match.group(1)!;
+    // Matches a fenced code block of the form
+    //   ```<lang>
+    //   ...body...
+    //   ```
+    // capturing the language tag (group 1, may be empty) and the body
+    // (group 2). The language tag is [a-zA-Z0-9_-]* so we accept
+    // ```yaml, ```bash, ```dart, etc. multiLine + dotAll let the
+    // opening/closing backticks anchor to line starts and the inner
+    // body span newlines.
     final fence = RegExp(r'^```([a-zA-Z0-9_-]*)\s*\n(.*?)^```', multiLine: true, dotAll: true);
     return [
       for (final RegExpMatch m in fence.allMatches(body))
