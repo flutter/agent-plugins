@@ -106,7 +106,7 @@ jobs:
         run: dart pub global activate pana
 
       # pana --exit-code-threshold N fails the step when
-      # (max - granted) > N. Current package score is 160/160, so a
-      # threshold of 10 gates at >= 150. Tighten as the score moves up.
-      - name: Pana score gate (>= 150)
-        run: dart pub global run pana --no-warning --exit-code-threshold 10 .
+      # (max - granted) > N. Threshold 0 means any point drop fails;
+      # current package score is 160/160 and we want to keep it there.
+      - name: Pana score gate (160/160 required)
+        run: dart pub global run pana --no-warning --exit-code-threshold 0 .
