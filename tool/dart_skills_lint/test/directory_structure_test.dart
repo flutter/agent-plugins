@@ -10,8 +10,6 @@ import 'package:dart_skills_lint/src/validator.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
-import 'test_utils.dart';
-
 class MockInaccessibleFile implements File {
   MockInaccessibleFile(this._path);
   final String _path;
@@ -46,11 +44,16 @@ base class TestIOOverrides extends IOOverrides {
 
 void main() {
   group('Directory Structure Validation', () {
-    // Reassigned in setUp; the placeholder keeps the field non-`late`.
-    Directory tempDir = Directory.systemTemp;
+    late Directory tempDir;
 
     setUp(() async {
-      tempDir = await createTempDir('skill_test.');
+      tempDir = await Directory.systemTemp.createTemp('skill_test.');
+    });
+
+    tearDown(() async {
+      if (tempDir.existsSync()) {
+        await tempDir.delete(recursive: true);
+      }
     });
 
     test('fails if directory does not exist', () async {

@@ -295,7 +295,11 @@ dart_code_linter:
     - no-empty-block
     - avoid-redundant-async
     - avoid-passing-async-when-sync-expected
-    - avoid-late-keyword
+    # `late` for fields initialized in `setUp` is the idiomatic Dart test
+    # fixture pattern; enforce this rule on lib only.
+    - avoid-late-keyword:
+        exclude:
+          - test/**
     - prefer-named-record-fields
 
     # Clean up

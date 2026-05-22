@@ -14,11 +14,16 @@ import 'test_utils.dart';
 
 void main() {
   group('Relative Path Flag Validation', () {
-    // Reassigned in setUp; the placeholder keeps the field non-`late`.
-    Directory tempDir = Directory.systemTemp;
+    late Directory tempDir;
 
     setUp(() async {
-      tempDir = await createTempDir('relative_path_test.');
+      tempDir = await Directory.systemTemp.createTemp('relative_path_test.');
+    });
+
+    tearDown(() async {
+      if (tempDir.existsSync()) {
+        await tempDir.delete(recursive: true);
+      }
     });
 
     test('validates links when relativePathsSeverity = warning', () async {

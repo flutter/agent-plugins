@@ -16,11 +16,16 @@ import 'test_utils.dart';
 
 void main() {
   group('Field Specific Constraints Validation', () {
-    // Reassigned in setUp; the placeholder keeps the field non-`late`.
-    Directory tempDir = Directory.systemTemp;
+    late Directory tempDir;
 
     setUp(() async {
-      tempDir = await createTempDir('fields_test.');
+      tempDir = await Directory.systemTemp.createTemp('fields_test.');
+    });
+
+    tearDown(() async {
+      if (tempDir.existsSync()) {
+        await tempDir.delete(recursive: true);
+      }
     });
 
     group('Skill Name', () {

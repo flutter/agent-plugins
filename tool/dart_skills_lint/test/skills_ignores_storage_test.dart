@@ -8,15 +8,17 @@ import 'package:dart_skills_lint/src/models/skills_ignores.dart';
 import 'package:dart_skills_lint/src/skills_ignores_storage.dart';
 import 'package:test/test.dart';
 
-import 'test_utils.dart';
-
 void main() {
-  final storage = SkillsIgnoresStorage();
-  // Reassigned in setUp; the placeholder keeps the field non-`late`.
-  Directory tempDir = Directory.systemTemp;
+  late Directory tempDir;
+  late SkillsIgnoresStorage storage;
 
-  setUp(() async {
-    tempDir = await createTempDir('storage_test.');
+  setUp(() {
+    tempDir = Directory.systemTemp.createTempSync('storage_test.');
+    storage = SkillsIgnoresStorage();
+  });
+
+  tearDown(() async {
+    await tempDir.delete(recursive: true);
   });
 
   group('SkillsIgnoresStorage.load Integration', () {

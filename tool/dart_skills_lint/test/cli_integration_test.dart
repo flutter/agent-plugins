@@ -19,11 +19,16 @@ import 'test_utils.dart';
 
 void main() {
   group('CLI Integration', () {
-    // Reassigned in setUp; the placeholder keeps the field non-`late`.
-    Directory tempDir = Directory.systemTemp;
+    late Directory tempDir;
 
     setUp(() async {
-      tempDir = await createTempDir('cli_test.');
+      tempDir = await Directory.systemTemp.createTemp('cli_test.');
+    });
+
+    tearDown(() async {
+      if (tempDir.existsSync()) {
+        await tempDir.delete(recursive: true);
+      }
     });
 
     test('de-duplicates baseline entries for multiple identical rule failures', () async {
