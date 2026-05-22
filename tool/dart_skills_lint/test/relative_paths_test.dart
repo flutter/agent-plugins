@@ -8,6 +8,7 @@ import 'package:dart_skills_lint/src/models/analysis_severity.dart';
 import 'package:dart_skills_lint/src/rules/absolute_paths_rule.dart';
 import 'package:dart_skills_lint/src/rules/relative_paths_rule.dart';
 import 'package:dart_skills_lint/src/validator.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import 'test_utils.dart';
@@ -59,8 +60,13 @@ void main() {
       expect(result.isValid, isTrue);
       expect(result.warnings, contains(contains('Linked file does not exist')));
       expect(result.warnings, contains(contains('references/MISSING.md')));
-      // Resolved path should be absolute and present.
-      expect(result.warnings, contains(contains('resolved to /')));
+      // The diagnostic includes the resolved absolute path. The exact
+      // shape differs by platform (POSIX `/...` vs Windows `C:\...`),
+      // so just assert the prefix and that what follows is absolute.
+      final String warning = result.warnings.firstWhere((w) => w.contains('resolved to '));
+      final int prefixIdx = warning.indexOf('resolved to ');
+      final String resolved = warning.substring(prefixIdx + 'resolved to '.length);
+      expect(p.isAbsolute(resolved), isTrue, reason: 'resolved path "$resolved" is not absolute');
     });
 
     test('did-you-mean: suggests near-miss sibling file when one exists', () async {
