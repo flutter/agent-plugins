@@ -6,13 +6,10 @@ A static analysis linter for Agent Skills to ensure they meet the specification 
 - [Overview](#overview)
 - [Installation](#installation)
 - [Usage](#usage)
-  - [CLI vs Dart Test](#cli-vs-dart-test)
   - [Rule Precedence](#rule-precedence)
-- [Configuration](#configuration)
 - [Specification Validation](#specification-validation)
 - [Recipes](#recipes)
-- [Support](#support)
-- [Best Practices](#best-practices)
+- [Contributing](#contributing)
 
 ## Overview
 
@@ -49,23 +46,11 @@ dart pub global activate dart_skills_lint
 
 ## Usage
 
-There are three ways to interact with `dart_skills_lint`.
-
-### CLI vs Dart Test
-
-Depending on your workflow, you should choose the appropriate interaction mode:
-
-*   **Use the CLI when:**
-    *   **Ad-hoc Validation**: You want to quickly check a specific skill you are working on without running the entire test suite.
-    *   **Baseline Generation**: You are integrating the tool into a legacy repo and need to generate an ignore file (`--generate-baseline`).
-    *   **Automated Fixes**: You want to preview or apply fixes (`--fix`, `--fix-apply`) directly to the files.
-    *   **Pre-commit Hooks**: You want a fast, isolated check in a Git pre-commit hook.
-*   **Use Dart Test when:**
-    *   **CI/CD Integration**: You want to guarantee that no invalid skills are merged by failing the build alongside unit tests.
-    *   **Programmatic Configuration**: You need to inject custom rules or dynamic configurations that are hard to express in static YAML.
-    *   **Ecosystem Consistency**: You want developers to rely on the familiar `dart test` command rather than learning a new tool invocation.
-
----
+`dart_skills_lint` runs as a command-line tool, configured by flags or by
+a `dart_skills_lint.yaml` file. The CLI is the user-facing surface; it
+also has a programmatic API for contributors who need to embed the
+linter in their own test suite — see
+[`CONTRIBUTING.md`](CONTRIBUTING.md#embedding-the-linter-in-tests).
 
 ### 1. As a Command Line Tool with Arguments
 Run the linter against your skills or root skills directories by passing arguments.
@@ -94,9 +79,9 @@ If no directory is specified, it automatically checks `.claude/skills` and `.age
 - `--fast-fail`: Halt execution immediately on the error.
 - `--ignore-config`: Ignore the YAML configuration file entirely.
 - `--[no-]check-trailing-whitespace`: Enable/disable checking for trailing whitespace. (Disabled by default).
-- `--fix`: Apply fixes for failing lints (matches `prettier --write` / `ruff --fix` / `eslint --fix`).
+- `--fix`: Write fixes for failing lints to disk.
 - `--dry-run`: When combined with `--fix`, prints the proposed diff without writing.
-- `--fix-apply`: *Deprecated.* Alias for `--fix`; prints a deprecation notice on use.
+- `--fix-apply`: *Deprecated* alias for `--fix`. Prints a deprecation notice on use.
 
 ### 2. As a Command Line Tool with a YAML Configuration File
 You can configure the linter using a configuration file (defaulting to `dart_skills_lint.yaml` in the current directory).
@@ -132,104 +117,20 @@ This ensures that you can always override configuration file settings for a spec
 
 ---
 
-### 3. As Dart Test Code
-You can integrate the linter into your automated tests by importing the package and calling `validateSkills`. This allows you to enforce skill validity as part of your standard test suite.
+### 3. Custom Rules
 
-Example `test/lint_skills_test.dart`:
-```dart
-import 'package:dart_skills_lint/dart_skills_lint.dart';
-import 'package:test/test.dart';
-
-void main() {
-  test('Run skills linter', () async {
-    final config = Configuration(
-      directoryConfigs: [
-        DirectoryConfig(
-          path: '../../skills',
-          rules: {},
-          ignoreFile: '.agents/skills/flutter_skills_ignore.json',
-        ),
-      ],
-    );
-
-    await validateSkills(
-      skillDirPaths: ['../../skills'],
-      resolvedRules: {
-        'check-relative-paths': AnalysisSeverity.error,
-        'check-absolute-paths': AnalysisSeverity.error,
-      },
-      config: config,
-    );
-  });
-}
-```
-
-You can also use `Validator` and `ValidationResult` directly if you need to inspect the errors programmatically.
-
-### Custom Rules
-
-You can author custom rules by extending the `SkillRule` class and passing them to `validateSkills` or the `Validator` constructor.
-
-Example custom rule:
-```dart
-import 'package:dart_skills_lint/dart_skills_lint.dart';
-
-class MyCustomRule extends SkillRule {
-  @override
-  final String name = 'my-custom-rule';
-
-  @override
-  final AnalysisSeverity severity = AnalysisSeverity.warning;
-
-  @override
-  Future<List<ValidationError>> validate(SkillContext context) async {
-    final errors = <ValidationError>[];
-    final yaml = context.parsedYaml;
-    if (yaml == null) return errors;
-
-    if (yaml['metadata']?['deprecated'] == true) {
-      errors.add(ValidationError(
-        ruleId: name,
-        severity: severity,
-        file: 'SKILL.md',
-        message: 'This skill is marked as deprecated.',
-      ));
-    }
-    return errors;
-  }
-}
-```
-
-Then use it in your test:
-```dart
-    await validateSkills(
-      skillDirPaths: ['../../skills'],
-      customRules: [MyCustomRule()],
-    );
-```
+Custom rule authoring lives in the
+[`dart-skills-lint-validation`](skills/dart-skills-lint-validation/SKILL.md)
+skill — that skill walks through extending `SkillRule` and passing the
+rule into the linter.
 
 ## Specification Validation
 
-The linter checks against the criteria defined in `documentation/knowledge/SPECIFICATION.md` (Section 5.1). Key checks include:
-
-### 1. Directory and File Structure
-- Path existence and directory verification.
-- Mandatory `SKILL.md` file at the root.
-- Directories starting with a dot `.` (e.g., `.dart_tool`) are ignored when scanning for skills.
-
-### 2. Metadata (YAML Frontmatter)
-- Valid YAML syntax.
-- Allowed fields: `name`, `description`, `license`, `allowed-tools`, `metadata`, `compatibility`, `category`, `tags`, `version`, `eval_task`.
-- Required fields: `name` and `description`.
-
-### 3. Field Specific Constraints
-- **Skill Name (`name`)**: Max 64 characters, lowercase alphanumeric and hyphens only, no leading/trailing/consecutive hyphens. **Must match the parent directory name.**
-- **Description (`description`)**: Max 1024 characters.
-- **Compatibility (`compatibility`)**: Max 500 characters.
-
-### 4. Content Constraints
-- **Trailing Whitespace**: Lines in `SKILL.md` should not have trailing whitespace. Exactly 2 spaces at the end of a line are allowed to support Markdown hard line breaks, per the [CommonMark Spec](https://spec.commonmark.org/0.31.2/#hard-line-breaks).
-- **Path Constraints**: Checks that **inline** Markdown links do not use absolute paths to enforce portability. Can optionally be configured to check that relative paths point to valid, existing files (disabled by default). *Note: This rule only supports inline Markdown links and does not detect HTML or reference-style links.*
+The linter checks each skill against the spec at
+[`documentation/knowledge/SPECIFICATION.md`](documentation/knowledge/SPECIFICATION.md).
+For the full list of built-in rules — default severities, exact
+diagnostic shapes, auto-fix behavior, and how to disable each — see
+[`RULES.md`](RULES.md).
 
 ## Recipes
 
@@ -297,25 +198,8 @@ chmod +x .git/hooks/pre-commit
 ```
 
 The hook exits non-zero on lint failure, blocking the commit. To
-auto-apply fixable lints inside the hook, append `--fix` (see DT2 for
-the new `--fix` / `--dry-run` semantics).
-
-## Support
-
-- **Bug report or feature request:** open an issue at
-  <https://github.com/flutter/skills/issues>. Please include the
-  output of `dart pub global run dart_skills_lint --help` and the
-  failing `SKILL.md` (or a minimal reproducer) so the maintainers
-  can replay it locally.
-- **Questions, ideas, "is this the right rule for me?":** start a
-  thread in
-  [GitHub Discussions](https://github.com/flutter/skills/discussions).
-  Discussions is enabled on the repo; if you land on a 404 the feature
-  has been temporarily disabled — open an issue in the meantime and
-  flag the discussions outage there.
-- **Security issues:** do **not** file a public issue. Email the
-  maintainers via the address listed in the repository's
-  `SECURITY.md` (or in `AUTHORS` if `SECURITY.md` is not present).
+auto-apply fixable lints inside the hook, append `--fix` to the linter
+invocation.
 
 ## Contributing
 
