@@ -117,7 +117,7 @@ environment:
       expect(exitCode, equals(0));
 
       // Verify files were actually found and analyzed
-      expect(logs.any((l) => l.contains('Running dart analyze on')), isTrue);
+      expect(logs.any((l) => l.contains('Running command on')), isTrue);
     });
 
     test('Only analyzes modified files', () async {

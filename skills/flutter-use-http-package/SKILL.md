@@ -107,7 +107,6 @@ Future<List<Photo>> fetchPhotos() async {
     throw Exception('Failed to load photos. Status: ${response.statusCode}');
   }
 }
-}
 
 // 3. Strongly typed model
 class Photo {

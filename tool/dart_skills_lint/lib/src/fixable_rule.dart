@@ -6,7 +6,7 @@ import 'dart:io';
 import 'models/skill_rule.dart';
 
 /// Interface for rules that support fixes.
-/// Kept internal to the package for now.
+/// Kept internal to the package.
 abstract class FixableRule extends SkillRule {
   /// Returns the updated content of the file at [filePath].
   /// [currentContent] is the content after previous fixes have been applied.

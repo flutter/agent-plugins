@@ -43,6 +43,31 @@ jobs:
 
       - run: dart test
 
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - run: dart pub get
+
+      - name: Collect coverage
+        run: dart test --coverage=coverage
+
+      - name: Format coverage to LCOV
+        run: dart run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --report-on=lib
+
+      # Action steps do not inherit defaults.run.working-directory, so this
+      # path is relative to the repository root.
+      - name: Enforce coverage threshold
+        uses: VeryGoodOpenSource/very_good_coverage@v3
+        with:
+          path: tool/dart_skills_lint/coverage/lcov.info
+          min_coverage: 73
+          exclude: '**/*.g.dart'
+
   validate_skills:
     runs-on: ubuntu-latest
     steps:

@@ -16,6 +16,7 @@ Before stating that a task is complete, you MUST execute and pass the following 
 3.  **Metrics/Linter**: Run `dart run dart_code_linter:metrics analyze lib` and ensure there are zero issues. This checks for cyclomatic complexity and custom rules like file naming and redundant async.
 4.  **Tests**: Run `dart test` and ensure all tests pass successfully.
 5.  **Skill Validation**: If any skill files were modified, run `dart run dart_skills_lint -d .agents/skills` to ensure they are valid.
+6.  **Temporal Words**: Ensure that code and code comments contain no relative temporal terms (e.g., 'now', 'currently', 'new', 'old', 'existing behavior').
 
 ## 🚦 Completion Checklist
 
@@ -24,4 +25,5 @@ Before stating that a task is complete, you MUST execute and pass the following 
 - [ ] Metrics/Linter are clean (`dart run dart_code_linter:metrics analyze lib`).
 - [ ] Tests are passing (`dart test`).
 - [ ] Skills validated if modified (`dart run dart_skills_lint -d .agents/skills`).
+- [ ] Verified that code and code comments contain no relative temporal terms (e.g., 'now', 'currently', 'new', 'old', 'existing behavior').
 - [ ] Documentation is updated.

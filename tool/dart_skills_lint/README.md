@@ -6,6 +6,8 @@ A static analysis linter for Agent Skills to ensure they meet the specification 
 - [Overview](#overview)
 - [Installation](#installation)
 - [Usage](#usage)
+  - [CLI vs Dart Test](#cli-vs-dart-test)
+  - [Rule Precedence](#rule-precedence)
 - [Configuration](#configuration)
 - [Specification Validation](#specification-validation)
 - [Recipes](#recipes)
@@ -47,7 +49,23 @@ dart pub global activate dart_skills_lint
 
 ## Usage
 
-There are three ways to interact with `dart_skills_lint`:
+There are three ways to interact with `dart_skills_lint`.
+
+### CLI vs Dart Test
+
+Depending on your workflow, you should choose the appropriate interaction mode:
+
+*   **Use the CLI when:**
+    *   **Ad-hoc Validation**: You want to quickly check a specific skill you are working on without running the entire test suite.
+    *   **Baseline Generation**: You are integrating the tool into a legacy repo and need to generate an ignore file (`--generate-baseline`).
+    *   **Automated Fixes**: You want to preview or apply fixes (`--fix`, `--fix-apply`) directly to the files.
+    *   **Pre-commit Hooks**: You want a fast, isolated check in a Git pre-commit hook.
+*   **Use Dart Test when:**
+    *   **CI/CD Integration**: You want to guarantee that no invalid skills are merged by failing the build alongside unit tests.
+    *   **Programmatic Configuration**: You need to inject custom rules or dynamic configurations that are hard to express in static YAML.
+    *   **Ecosystem Consistency**: You want developers to rely on the familiar `dart test` command rather than learning a new tool invocation.
+
+---
 
 ### 1. As a Command Line Tool with Arguments
 Run the linter against your skills or root skills directories by passing arguments.
@@ -100,6 +118,19 @@ Then you can simply run:
 ```bash
 dart run dart_skills_lint
 ```
+
+### Rule Precedence
+
+When resolving which severity to apply for a rule, `dart_skills_lint` evaluates settings in the following order of precedence (highest to lowest):
+
+1. **CLI Flags / API Overrides**: Explicit flags passed to the CLI (e.g., `--check-trailing-whitespace`) or rules passed to the `validateSkills` API via `resolvedRules`.
+2. **Path-Specific Config**: Rules defined under `directories:` in `dart_skills_lint.yaml` for a matching path.
+3. **Global Config**: Rules defined under the top-level `rules:` in `dart_skills_lint.yaml`.
+4. **Defaults**: The hardcoded default severity for each rule.
+
+This ensures that you can always override configuration file settings for a specific run by using CLI flags.
+
+---
 
 ### 3. As Dart Test Code
 You can integrate the linter into your automated tests by importing the package and calling `validateSkills`. This allows you to enforce skill validity as part of your standard test suite.

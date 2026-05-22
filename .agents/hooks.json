@@ -3,7 +3,7 @@
     "Stop": [
       {
         "type": "command",
-        "command": "../tool/dart_hooks/bin/agent_dart_format.dart --source hook",
+        "command": "../tool/dart_hooks/bin/agent_dart_format.dart --source hook --log",
         "timeout": 30
       }
     ]
@@ -12,7 +12,7 @@
     "Stop": [
       {
         "type": "command",
-        "command": "../tool/dart_hooks/bin/agent_dart_analyze.dart --source hook",
+        "command": "../tool/dart_hooks/bin/agent_dart_analyze.dart --source hook --log",
         "timeout": 90
       }
     ]

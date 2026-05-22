@@ -21,6 +21,12 @@ policy that governs every release from here on.
   directory now prints a champion-tier onboarding guide instead of
   a terse error. Still exits 64.
 
+### API
+
+- Exposed `ConfigParser.loadConfig()` API to load configuration files
+  programmatically.
+- Supported tilde expansion (`~/`) in configuration file paths.
+
 ### Rules
 
 Diagnostic polish only — no rule semantics changed, so every skill that
@@ -55,9 +61,11 @@ which rules fire are unchanged.
   the README and replays them against the example fixtures.
 - New "Support" section in `README.md` pointing to GitHub Issues,
   Discussions, and the private security-report path.
+- `README.md` clarifies CLI vs. Dart Test usage and documents rule
+  precedence.
 - `CONTRIBUTING.md` gains a SemVer rule-stability policy that
   describes exactly what kind of rule change requires which version
-  bump.
+  bump, plus testing-and-coverage instructions.
 
 ### CI
 
