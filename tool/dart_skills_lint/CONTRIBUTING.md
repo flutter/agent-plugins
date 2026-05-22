@@ -42,6 +42,35 @@ you edit an existing file, you shouldn't update the year.
     // for details. All rights reserved. Use of this source code is governed by a
     // BSD-style license that can be found in the LICENSE file.
 
+## Testing and coverage
+
+Run the test suite from the package root (`tool/dart_skills_lint`):
+
+```bash
+dart test
+```
+
+CI enforces a minimum line-coverage threshold for `lib/` (currently 73%),
+excluding generated `*.g.dart` files. To reproduce the coverage numbers
+locally:
+
+```bash
+dart test --coverage=coverage
+dart run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --report-on=lib
+```
+
+The local `lcov.info` includes the generated `*.g.dart` files, which CI
+excludes via the action's `exclude` input, so your local total reads slightly
+higher than the enforced threshold.
+
+CI feeds `coverage/lcov.info` to the
+[`very_good_coverage`](https://github.com/VeryGoodOpenSource/very_good_coverage)
+GitHub Action, which fails the build when coverage falls below the threshold.
+The threshold ratchets against regressions: when you raise overall coverage,
+bump `min_coverage` in `.github/workflows/dart_skills_lint_workflow.yaml` to
+lock in the gain. To inspect coverage locally, render `coverage/lcov.info` with
+`genhtml` or an editor LCOV viewer.
+
 ## Community Guidelines
 
 This project follows
