@@ -66,3 +66,42 @@ jobs:
       - run: dart pub get
 
       - run: dart format --output=none --set-exit-if-changed .
+
+  pana_score:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - run: dart pub get
+
+      - name: Install pana
+        run: dart pub global activate pana
+
+      - name: Run pana and gate on granted points >= 150
+        # pana exits 0 even on score regressions, so parse grantedPoints
+        # out of the JSON report and fail the job ourselves. The floor is
+        # 150 today; raise it as the package adds new metadata wins.
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          dart pub global run pana --no-warning --json . > build/pana.json
+          GRANTED=$(jq -r '.scores.grantedPoints' build/pana.json)
+          MAX=$(jq -r '.scores.maxPoints' build/pana.json)
+          echo "pana score: ${GRANTED}/${MAX}"
+          if [ "${GRANTED}" -lt 150 ]; then
+            echo "::error::pana score ${GRANTED} is below the floor of 150."
+            echo "Full report:"
+            jq '.' build/pana.json
+            exit 1
+          fi
+
+      - name: Upload pana report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pana-report
+          path: tool/dart_skills_lint/build/pana.json
+          if-no-files-found: ignore
