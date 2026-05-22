@@ -42,6 +42,33 @@ you edit an existing file, you shouldn't update the year.
     // for details. All rights reserved. Use of this source code is governed by a
     // BSD-style license that can be found in the LICENSE file.
 
+## Embedding the linter in tests
+
+If your project already uses `dart_skills_lint`, you can also call it
+from your own test suite — handy when you want skill validation to fail
+the same Dart-test pipeline that already gates the rest of your code:
+
+```dart
+import 'package:dart_skills_lint/dart_skills_lint.dart';
+import 'package:test/test.dart';
+
+void main() {
+  test('Run skills linter', () async {
+    // Load whatever's in dart_skills_lint.yaml so the CLI and tests
+    // share configuration. Pass `customRules: [...]` to inject any
+    // custom SkillRule implementations.
+    final config = await ConfigParser.loadConfig();
+    await validateSkills(config: config);
+  });
+}
+```
+
+`Validator` and `ValidationResult` are also exposed for tests that
+need to inspect errors programmatically. Custom rule authoring lives
+in the
+[`dart-skills-lint-validation`](skills/dart-skills-lint-validation/SKILL.md)
+skill.
+
 ## Testing and coverage
 
 Run the test suite from the package root (`tool/dart_skills_lint`):
