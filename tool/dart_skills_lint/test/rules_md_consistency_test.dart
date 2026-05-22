@@ -16,10 +16,19 @@ import 'package:test/test.dart';
 /// added, removed, renamed, or have its default severity / fixability
 /// changed without the docs catching up in the same commit.
 ///
-/// Per the answer to "What should T5 enforce?": this asserts all four
-/// invariants — registry-without-docs, docs-without-registry, severity
-/// mismatch, and fixable mismatch. Each failure prints which rule and
-/// which field diverged so the fix is obvious.
+/// Asserts four invariants between the doc and the registry:
+/// 1. Every registered rule has a RULES.md entry (catches missing docs).
+/// 2. Every RULES.md entry maps to a registered rule (catches stale
+///    docs after a rule is removed or renamed).
+/// 3. The documented `Default severity:` value equals the rule's
+///    `CheckType.defaultSeverity` (catches silent severity changes
+///    that should have been a major version bump per
+///    `CONTRIBUTING.md`).
+/// 4. The documented `Fixable:` value matches whether the rule's class
+///    actually implements `FixableRule`.
+///
+/// Each failure prints which rule and which field diverged so the fix
+/// is obvious.
 void main() {
   group('RULES.md consistency', () {
     late Map<String, _DocRule> docRules;

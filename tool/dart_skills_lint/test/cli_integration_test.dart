@@ -596,7 +596,7 @@ dart_skills_lint:
       expect(content, contains('Line with 1 space \n'));
     });
 
-    test('--fix (no --dry-run) applies fixes by default and modifies file', () async {
+    test('--fix without --dry-run writes fixes to disk', () async {
       final Directory skillDir = await Directory('${tempDir.path}/test-skill').create();
       await File(
         '${skillDir.path}/SKILL.md',

@@ -45,7 +45,8 @@ void main() {
       final List<String> stderr = await process.stderr.rest.toList();
       final String stderrStr = stderr.join('\n');
 
-      // DT4 wording — disambiguated frontmatter-vs-dir + suggestion.
+      // Disambiguated frontmatter-vs-dir wording plus a normalized
+      // suggestion — exercises the diagnostic shape from name_format_rule.
       expect(stderrStr, contains('Frontmatter `name` "NotInvalid" must be lowercase'));
       expect(stderrStr, contains('does not match the parent directory name "invalid"'));
       expect(stderrStr, contains('Suggested: "notinvalid"'));
@@ -69,7 +70,8 @@ void main() {
 
         // disallowed-field
         expect(stderrStr, contains('Disallowed field: secret_field'));
-        // check-absolute-paths — DT5 wording includes the rationale.
+        // check-absolute-paths now spells out the portability rationale
+        // in the error message itself.
         expect(stderrStr, contains('Absolute filepath found in link: /tmp/this/does/not/exist.md'));
         expect(stderrStr, contains('portable'));
         // invalid-skill-name still fires.
