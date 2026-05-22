@@ -37,12 +37,32 @@ void main() {
       reader = _RecipeReader.fromFile(p.normalize(p.absolute('README.md')));
     });
 
-    test('README has both expected recipes with non-empty bodies', () {
+    test('README has all expected recipes with non-empty bodies', () {
       expect(reader.yamlBlocks, isNotEmpty, reason: 'GitHub Actions YAML recipe missing');
       expect(reader.shellBlocks, isNotEmpty, reason: 'pre-commit hook shell recipe missing');
       for (final _RecipeBlock block in reader.allBlocks) {
         expect(block.body.trim(), isNotEmpty);
       }
+    });
+
+    test('agent recipe references both setup and validation skills by path', () {
+      // The "have an agent set it up for you" recipe is plain prose
+      // inside a blockquote, not a fenced code block, so check the raw
+      // README text for the skill paths it should point at.
+      final String readme = File(p.normalize(p.absolute('README.md'))).readAsStringSync();
+      final int recipesIdx = readme.indexOf('## Recipes');
+      expect(recipesIdx, isNonNegative, reason: 'README has no Recipes section');
+      final String recipesSection = readme.substring(recipesIdx);
+      expect(
+        recipesSection,
+        contains('skills/dart-skills-lint-setup/SKILL.md'),
+        reason: 'agent recipe lost its pointer to the setup skill',
+      );
+      expect(
+        recipesSection,
+        contains('skills/dart-skills-lint-validation/SKILL.md'),
+        reason: 'agent recipe lost its pointer to the validation skill',
+      );
     });
 
     test('GitHub Actions recipe parses and wires up setup-dart + install + invocation', () {

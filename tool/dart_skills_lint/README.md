@@ -201,6 +201,24 @@ The hook exits non-zero on lint failure, blocking the commit. To
 auto-apply fixable lints inside the hook, append `--fix` to the linter
 invocation.
 
+### Recipe: have an agent set it up for you
+
+If you're using Claude Code, Gemini, or another agent that can read
+repository-local skills, paste the following prompt to have the agent
+install and validate `dart_skills_lint` for you. The agent will
+follow the
+[`dart-skills-lint-setup`](skills/dart-skills-lint-setup/SKILL.md)
+skill for first-time wiring, then the
+[`dart-skills-lint-validation`](skills/dart-skills-lint-validation/SKILL.md)
+skill to run the linter and resolve any failures.
+
+> Set up dart_skills_lint in this project. Use the skill at
+> `tool/dart_skills_lint/skills/dart-skills-lint-setup/SKILL.md`
+> to add it as a dev_dependency, create the configuration file,
+> and wire it into CI. Then use the skill at
+> `tool/dart_skills_lint/skills/dart-skills-lint-validation/SKILL.md`
+> to run the linter and resolve any failures.
+
 ## Contributing
 
 Contributions are welcome! Please ensure that any PRs pass the linter themselves and align with the `documentation/knowledge/SPECIFICATION.md`.
