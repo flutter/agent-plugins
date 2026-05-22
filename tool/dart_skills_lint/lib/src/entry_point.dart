@@ -38,8 +38,8 @@ const _allowMisconfiguredKeysFlag = 'allow-misconfigured-keys';
 /// Exposed (not `_`-prefixed) so integration tests can assert it appears on
 /// stderr when the alias is used.
 const fixApplyDeprecationMsg =
-    '--fix-apply is deprecated; --fix now applies fixes by default. '
-    'Use --fix --dry-run (or --fix --no-apply-fixes) to preview instead.';
+    '--fix-apply is deprecated; use --fix instead. '
+    'Pass --fix --dry-run to preview changes without writing.';
 
 /// Welcoming first-run guide shown when no args are passed and no default
 /// skills directory exists. Exposed so integration tests can assert the
@@ -120,9 +120,9 @@ Future<void> runApp(List<String> args) async {
     stderr.writeln(fixApplyDeprecationMsg);
   }
 
-  // --fix now applies by default (matches prettier/eslint/ruff). Preview with
-  // --fix --dry-run. The legacy --fix-apply flag continues to apply but is
-  // deprecated.
+  // --fix writes fixes to disk; pair with --dry-run to preview without
+  // writing. --fix-apply is a deprecated alias for --fix that still
+  // writes (with a deprecation notice on stderr above).
   final bool fix = fixFlag && dryRun;
   final bool fixApply = (fixFlag && !dryRun) || fixApplyAlias;
 
@@ -212,19 +212,17 @@ ArgParser _createArgParser(String helpFlag) {
     ..addFlag(
       _fixFlag,
       negatable: false,
-      help: 'Apply fixes for failing lints. Combine with --dry-run to preview without writing.',
+      help: 'Write fixes for failing lints to disk. Combine with --dry-run to preview.',
     )
     ..addFlag(
       _dryRunFlag,
       negatable: false,
       help: 'When passed with --fix, preview proposed changes without writing.',
     )
-    ..addFlag(
-      _fixApplyFlag,
-      negatable: false,
-      hide: true,
-      help: 'DEPRECATED: alias for --fix. Use --fix instead.',
-    )
+    // help: omitted — flag is hide: true so --help skips it anyway.
+    // Adopters who hit it still get the runtime deprecation notice
+    // on stderr (see fixApplyDeprecationMsg above).
+    ..addFlag(_fixApplyFlag, negatable: false, hide: true)
     ..addFlag(
       _allowMisconfiguredKeysFlag,
       negatable: false,
