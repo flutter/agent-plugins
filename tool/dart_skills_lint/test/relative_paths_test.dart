@@ -76,7 +76,9 @@ void main() {
       );
       final ValidationResult result = await validator.validate(skillDir);
       expect(result.isValid, isTrue);
-      expect(result.warnings, contains(contains('Did you mean "DETAILS.md"?')));
+      // Suggestion preserves the link's directory prefix so the user
+      // gets back a copy-pasteable replacement, not just a basename.
+      expect(result.warnings, contains(contains('Did you mean "references/DETAILS.md"?')));
     });
 
     test('did-you-mean: stays silent when nothing in the sibling dir is close', () async {

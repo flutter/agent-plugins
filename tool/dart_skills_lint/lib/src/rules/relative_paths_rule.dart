@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart';
 import '../levenshtein.dart';
 import '../models/analysis_severity.dart';
@@ -58,7 +59,10 @@ class RelativePathsRule extends SkillRule {
       final String resolvedPath = absolute(normalize(join(context.directory.path, effectivePath)));
       final linkedFile = File(resolvedPath);
       if (!linkedFile.existsSync()) {
-        final String? suggestion = findSiblingSuggestion(resolvedPath);
+        final String? suggestion = findSiblingSuggestion(
+          originalLink: path,
+          resolvedPath: resolvedPath,
+        );
         final suggestionClause = suggestion != null ? ' Did you mean "$suggestion"?' : '';
         errors.add(
           ValidationError(
@@ -77,17 +81,26 @@ class RelativePathsRule extends SkillRule {
   }
 }
 
-/// Finds the existing sibling file most similar to the (missing) basename
-/// of [resolvedPath], using Levenshtein distance over case-folded names.
+/// Looks for a near-miss sibling **file** next to the missing
+/// [resolvedPath] and, if one exists, returns the full suggested link as
+/// it should appear in the SKILL.md author's markdown — the original
+/// link's directory prefix joined to the matched basename, normalized to
+/// forward slashes so the suggestion is portable across platforms.
 ///
-/// Returns the suggested path as it would have appeared in the link (parent
-/// directory of the original link joined to the matched basename), or `null`
-/// if the parent directory does not exist or no close match was found.
+/// Returns `null` when:
+/// - the original link has no parent dir on disk,
+/// - the parent dir can't be listed (e.g. permission error),
+/// - or no candidate is close enough to the missing basename.
 ///
-/// The distance threshold is `max(1, basename.length ~/ 3)` — tight enough to
-/// avoid surfacing unrelated files in a busy directory, loose enough to catch
-/// typos in moderately long filenames.
-String? findSiblingSuggestion(String resolvedPath) {
+/// [originalLink] is the link text as written in the SKILL.md
+/// (`docs/DEATILS.md`); [resolvedPath] is the same link resolved
+/// against the skill directory (`/abs/path/skill/docs/DEATILS.md`).
+///
+/// Subdirectories of the parent are intentionally excluded from the
+/// candidate set — links almost always point at files, and suggesting
+/// a directory would be misleading.
+@visibleForTesting
+String? findSiblingSuggestion({required String originalLink, required String resolvedPath}) {
   final String parentPath = dirname(resolvedPath);
   final parentDir = Directory(parentPath);
   if (!parentDir.existsSync()) {
@@ -99,11 +112,22 @@ String? findSiblingSuggestion(String resolvedPath) {
     return null;
   }
 
+  // Tunable; chosen to balance typo recall against false positives.
   final int threshold = (missingBase.length ~/ 3).clamp(1, missingBase.length);
+
+  final List<FileSystemEntity> entries;
+  try {
+    entries = parentDir.listSync();
+  } on FileSystemException {
+    return null;
+  }
 
   String? best;
   int bestDistance = threshold + 1;
-  for (final FileSystemEntity entity in parentDir.listSync()) {
+  for (final entity in entries) {
+    if (entity is Directory) {
+      continue;
+    }
     final String candidate = basename(entity.path);
     if (candidate == basename(resolvedPath)) {
       continue;
@@ -118,5 +142,10 @@ String? findSiblingSuggestion(String resolvedPath) {
   if (best == null || bestDistance > threshold) {
     return null;
   }
-  return best;
+
+  final String dir = dirname(originalLink);
+  if (dir == '.' || dir.isEmpty) {
+    return best;
+  }
+  return join(dir, best).replaceAll(r'\', '/');
 }
