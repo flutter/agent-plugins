@@ -15,17 +15,9 @@ analyzer:
     strict-casts: true
     strict-inference: true
     strict-raw-types: true
-  # NOTE: dart_code_linter is intentionally NOT registered as an analyzer
-  # `plugin` here. When it was, `dart analyze` loaded the plugin in a separate
-  # isolate that re-emitted the `dart_code_linter:` rules (below) as diagnostics
-  # over the plugin protocol, covering all non-excluded files (including test/).
-  # Delivery of those diagnostics to the `dart analyze` CLI is asynchronous and
-  # racy, so on slower runners (Windows CI) they intermittently appeared, and
-  # `--fatal-infos` turned them fatal — a flaky, platform-specific failure
-  # (https://github.com/flutter/skills/issues/144). The dedicated
-  # `dart run dart_code_linter:metrics analyze lib test` CI step reads the
-  # `dart_code_linter:` config below and enforces those rules deterministically,
-  # so the plugin registration is unnecessary.
+  # dart_code_linter is intentionally NOT registered as an analyzer
+  # `plugin` here. When it was, `dart analyze` had racy false positives. 
+  # See https://github.com/flutter/skills/issues/144
   errors:
     # allow deprecated members (we do this because otherwise we have to annotate
     # every member in every test, assert, etc, when we or the Dart SDK deprecates
