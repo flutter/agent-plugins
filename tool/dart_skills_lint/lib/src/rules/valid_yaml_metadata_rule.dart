@@ -1,4 +1,5 @@
 import 'package:yaml/yaml.dart';
+import '../cutoff_excerpt.dart';
 import '../models/analysis_severity.dart';
 import '../models/skill_context.dart';
 import '../models/skill_rule.dart';
@@ -62,8 +63,12 @@ class ValidYamlMetadataRule extends SkillRule {
             ruleId: name,
             severity: severity,
             file: _skillFileName,
-            message:
-                'Compatibility field is too long. Maximum $maxCompatibilityLength characters (see $_compatibilityFieldUrl)',
+            message: buildLengthDiagnostic(
+              fieldName: 'Compatibility',
+              value: compatibility,
+              maxLength: maxCompatibilityLength,
+              docUrl: _compatibilityFieldUrl,
+            ),
           ),
         );
       }
