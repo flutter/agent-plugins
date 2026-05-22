@@ -59,7 +59,7 @@ void main() {
       expect(result, isNull);
     });
 
-    test('returns null when the parent directory does not exist', () async {
+    test('returns null when the parent directory does not exist', () {
       final String? result = findSiblingSuggestion(
         originalLink: 'nonexistent/X.md',
         resolvedPath: p.join(tempDir.path, 'nonexistent', 'X.md'),

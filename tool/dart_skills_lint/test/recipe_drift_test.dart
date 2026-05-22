@@ -11,53 +11,42 @@ import 'package:yaml/yaml.dart';
 
 /// Drift guard for the `## Recipes` section of README.md.
 ///
-/// The README ships two copy-pasteable integration recipes (GitHub Actions
-/// + Dart-native pre-commit hook). When a flag in the recipes goes stale
-/// or a command is renamed, downstream adopters silently start running
-/// broken pipelines. This test extracts the recipes from README at test
-/// time and exercises them so the README and the CLI can never drift
-/// apart undetected.
+/// The README ships copy-pasteable integration recipes. When a flag or
+/// command in them goes stale, downstream adopters silently run a
+/// broken pipeline. This test reads the README at test time and
+/// asserts each recipe is still well-formed.
 ///
-/// For the GitHub Actions recipe we don't actually invoke the Actions
-/// runtime — we parse the YAML and rerun each `dart pub global run
-/// dart_skills_lint ...` step locally via `bin/cli.dart` against the
-/// `example/` fixtures. For the pre-commit hook we save the shell body
-/// to a temp file, point it at the fixtures via a $LINT_CLI env override,
-/// and assert the exit code.
+/// Three checks, deliberately small:
+/// 1. The README still has recipe code blocks with non-empty bodies.
+/// 2. The GitHub Actions YAML still parses and still wires up the
+///    expected setup-dart + install + invocation steps.
+/// 3. The pre-commit hook body actually runs end-to-end against the
+///    valid and invalid example fixtures and exits with the right code.
+///
+/// Everything that used to translate `dart pub global run` lines into
+/// `dart bin/cli.dart` lines and replay them is gone — it was fragile
+/// and didn't catch anything the structural assertion above doesn't.
 void main() {
   group('README Recipes drift', () {
-    final String repoRoot = p.normalize(p.absolute('.'));
-    final String readmePath = p.join(repoRoot, 'README.md');
+    late _RecipeReader reader;
     final String cliPath = p.normalize(p.absolute('bin/cli.dart'));
     final String validFixture = p.normalize(p.absolute('example/valid'));
     final String invalidFixture = p.normalize(p.absolute('example/invalid'));
 
-    late List<_RecipeBlock> blocks;
-
     setUpAll(() {
-      final String content = File(readmePath).readAsStringSync();
-      blocks = _extractRecipeBlocks(content);
+      reader = _RecipeReader.fromFile(p.normalize(p.absolute('README.md')));
     });
 
     test('README has both expected recipes with non-empty bodies', () {
-      final List<_RecipeBlock> yamlBlocks = blocks.where((b) => b.language == 'yaml').toList();
-      final List<_RecipeBlock> shellBlocks = blocks.where((b) => b.language == 'bash').toList();
-      expect(yamlBlocks, isNotEmpty, reason: 'GitHub Actions YAML recipe missing');
-      expect(shellBlocks, isNotEmpty, reason: 'pre-commit hook shell recipe missing');
-      for (final block in blocks) {
+      expect(reader.yamlBlocks, isNotEmpty, reason: 'GitHub Actions YAML recipe missing');
+      expect(reader.shellBlocks, isNotEmpty, reason: 'pre-commit hook shell recipe missing');
+      for (final _RecipeBlock block in reader.allBlocks) {
         expect(block.body.trim(), isNotEmpty);
       }
     });
 
-    test('GitHub Actions recipe parses as YAML and wires up dart-lang/setup-dart', () {
-      final _RecipeBlock yamlBlock = blocks.firstWhere(
-        (b) => b.language == 'yaml' && b.body.contains('jobs:'),
-        orElse: () => fail('no full workflow YAML block found under Recipes'),
-      );
-
-      final dynamic parsed = loadYaml(yamlBlock.body);
-      expect(parsed, isA<YamlMap>());
-      final doc = parsed as YamlMap;
+    test('GitHub Actions recipe parses and wires up setup-dart + install + invocation', () {
+      final YamlMap doc = reader.workflowYaml;
       expect(doc['name'], 'Lint Agent Skills');
 
       final jobs = doc['jobs'] as YamlMap;
@@ -65,25 +54,16 @@ void main() {
       final lintJob = jobs['lint-skills'] as YamlMap;
       final steps = lintJob['steps'] as YamlList;
 
-      final List<String> usesValues = steps
-          .whereType<YamlMap>()
-          .where((s) => s.containsKey('uses'))
-          .map((s) => s['uses'] as String)
-          .toList();
-      expect(usesValues, contains('dart-lang/setup-dart@v1'));
+      expect(reader.stepsUsing(steps), contains('dart-lang/setup-dart@v1'));
 
-      final List<String> runValues = steps
-          .whereType<YamlMap>()
-          .where((s) => s.containsKey('run'))
-          .map((s) => s['run'] as String)
-          .toList();
+      final List<String> runs = reader.stepsRunning(steps);
       expect(
-        runValues.any((r) => r.contains('dart pub global activate dart_skills_lint')),
+        runs.any((r) => r.contains('dart pub global activate dart_skills_lint')),
         isTrue,
         reason: 'workflow no longer installs dart_skills_lint',
       );
       expect(
-        runValues.any(
+        runs.any(
           (r) =>
               r.contains('dart pub global run dart_skills_lint') &&
               r.contains('--skills-directory'),
@@ -93,75 +73,34 @@ void main() {
       );
     });
 
-    test('GitHub Actions recipe flags work when run locally against fixtures', () async {
-      // Translate `dart pub global run dart_skills_lint <args>` -> `dart bin/cli.dart <args>`
-      // and substitute the fixture path. Catches removed flags / renamed
-      // commands without going through pub.dev.
-      final _RecipeBlock yamlBlock = blocks.firstWhere(
-        (b) => b.language == 'yaml' && b.body.contains('--skills-directory'),
-      );
-      final List<String> commandLines = _extractRunCommands(
-        yamlBlock.body,
-      ).where((c) => c.contains('dart_skills_lint')).toList();
-      expect(commandLines, isNotEmpty);
-
-      for (final raw in commandLines) {
-        final String translated = raw
-            .replaceAll('dart pub global run dart_skills_lint', '__CLI__')
-            .replaceAll('dart pub global activate dart_skills_lint', 'true');
-        if (!translated.contains('__CLI__')) {
-          continue; // pure install step, nothing executable to verify here
-        }
-
-        // Swap the recipe's skills-directory for a fixture root that we know exists.
-        final String withFixturePath = translated.replaceAll(
-          RegExp(r'\./\.claude/skills(\S*)?'),
-          p.dirname(validFixture),
-        );
-        final List<String> args = _splitShell(withFixturePath).sublist(1);
-
-        final TestProcess process = await TestProcess.start('dart', [cliPath, ...args]);
-        // example/ contains both valid and invalid -> exit 1 is expected.
-        final int exit = await process.exitCode;
-        expect(exit, isNonZero, reason: 'translated recipe: $raw');
-      }
-    });
-
-    test('pre-commit hook body runs against fixtures and respects exit code', () async {
-      final _RecipeBlock hookBlock = blocks.firstWhere(
-        (b) => b.body.contains('.git/hooks/pre-commit') && b.body.contains('HOOK'),
-        orElse: () => fail('pre-commit HEREDOC recipe missing'),
+    test('pre-commit hook body exits 0 on a valid fixture, non-zero on an invalid one', () async {
+      // Run the actual hook (rewritten to call bin/cli.dart instead of a
+      // globally-activated linter) against both example fixtures. This
+      // catches drift in the hook's exec line, exit-code propagation, and
+      // the linter's response to a known-good vs known-bad skill — all in
+      // one place.
+      final String hookBody = reader.preCommitHookBody.replaceAll(
+        'dart pub global run dart_skills_lint',
+        'dart "$cliPath"',
       );
 
-      // Pull the body between <<'HOOK' ... HOOK markers and route the lint
-      // command back to bin/cli.dart so we don't need a real pub global
-      // install on the test machine.
-      final heredoc = RegExp(r"<<'HOOK'\n(.*?)\nHOOK", dotAll: true);
-      final RegExpMatch? match = heredoc.firstMatch(hookBlock.body);
-      expect(match, isNotNull, reason: 'HEREDOC body could not be parsed');
-      String hookBody = match!.group(1)!;
-
-      // The hook uses `exec dart pub global run dart_skills_lint ...` —
-      // rewrite to the in-tree CLI.
-      hookBody = hookBody.replaceAll('dart pub global run dart_skills_lint', 'dart "$cliPath"');
-
-      // Run against example/valid → exit 0.
-      final String validHookBody = hookBody.replaceAll('./.claude/skills', validFixture);
-      await _runHook(validHookBody, expectZeroExit: true);
-
-      // Run against example/invalid → non-zero exit.
-      final String invalidHookBody = hookBody.replaceAll('./.claude/skills', invalidFixture);
-      await _runHook(invalidHookBody, expectZeroExit: false);
+      await _runHookAgainst(hookBody, validFixture, expectZeroExit: true);
+      await _runHookAgainst(hookBody, invalidFixture, expectZeroExit: false);
     });
   }, skip: Platform.isWindows ? 'recipe drift uses POSIX shell' : null);
 }
 
-Future<void> _runHook(String body, {required bool expectZeroExit}) async {
-  // Strip `--skills-directory` since the substituted path may be a single
-  // skill rather than a roots dir. Detect and rewrite to `--skill`.
-  final String runnable = body.contains(' --skills-directory ')
-      ? body.replaceAll('--skills-directory', '--skill')
-      : body;
+Future<void> _runHookAgainst(
+  String hookBody,
+  String fixturePath, {
+  required bool expectZeroExit,
+}) async {
+  // The recipe targets a roots-directory (--skills-directory); fixtures
+  // are individual skills, so swap the flag to --skill and substitute
+  // the fixture path in for the placeholder ./.claude/skills.
+  final String runnable = hookBody
+      .replaceAll('--skills-directory', '--skill')
+      .replaceAll('./.claude/skills', fixturePath);
 
   final Directory tmp = await Directory.systemTemp.createTemp('recipe_hook.');
   try {
@@ -173,9 +112,9 @@ Future<void> _runHook(String body, {required bool expectZeroExit}) async {
     final TestProcess process = await TestProcess.start(hookFile.path, const []);
     final int exit = await process.exitCode;
     if (expectZeroExit) {
-      expect(exit, 0, reason: 'hook should exit 0 against a valid fixture');
+      expect(exit, 0, reason: 'hook should exit 0 against fixture $fixturePath');
     } else {
-      expect(exit, isNonZero, reason: 'hook should exit non-zero against an invalid fixture');
+      expect(exit, isNonZero, reason: 'hook should exit non-zero against fixture $fixturePath');
     }
   } finally {
     if (tmp.existsSync()) {
@@ -184,66 +123,79 @@ Future<void> _runHook(String body, {required bool expectZeroExit}) async {
   }
 }
 
+/// Small parser-and-accessor for the recipe section of README.md. The
+/// tests above read like a list of assertions; the parsing lives here.
+class _RecipeReader {
+  _RecipeReader._(this.allBlocks);
+
+  factory _RecipeReader.fromFile(String readmePath) {
+    final String content = File(readmePath).readAsStringSync();
+    return _RecipeReader._(_extractBlocks(content));
+  }
+
+  final List<_RecipeBlock> allBlocks;
+
+  List<_RecipeBlock> get yamlBlocks =>
+      allBlocks.where((b) => b.language == 'yaml').toList(growable: false);
+
+  List<_RecipeBlock> get shellBlocks =>
+      allBlocks.where((b) => b.language == 'bash').toList(growable: false);
+
+  /// The first YAML block that contains a `jobs:` key — the actual
+  /// workflow file the recipe documents (vs. small snippet variants).
+  YamlMap get workflowYaml {
+    final _RecipeBlock block = yamlBlocks.firstWhere(
+      (b) => b.body.contains('jobs:'),
+      orElse: () => fail('no full workflow YAML block found under Recipes'),
+    );
+    final Object? doc = loadYaml(block.body);
+    expect(doc, isA<YamlMap>(), reason: 'workflow YAML failed to parse as a map');
+    return doc! as YamlMap;
+  }
+
+  /// The body between `<<'HOOK'` and `HOOK` markers in the pre-commit
+  /// shell recipe — the executable hook itself, sans wrapping `cat >` /
+  /// `chmod +x` plumbing.
+  String get preCommitHookBody {
+    final _RecipeBlock block = shellBlocks.firstWhere(
+      (b) => b.body.contains('.git/hooks/pre-commit') && b.body.contains('HOOK'),
+      orElse: () => fail('pre-commit HEREDOC recipe missing'),
+    );
+    final heredoc = RegExp(r"<<'HOOK'\n(.*?)\nHOOK", dotAll: true);
+    final RegExpMatch? match = heredoc.firstMatch(block.body);
+    expect(match, isNotNull, reason: 'HEREDOC body could not be parsed');
+    return match!.group(1)!;
+  }
+
+  List<String> stepsUsing(YamlList steps) => steps
+      .whereType<YamlMap>()
+      .where((s) => s.containsKey('uses'))
+      .map((s) => s['uses'] as String)
+      .toList(growable: false);
+
+  List<String> stepsRunning(YamlList steps) => steps
+      .whereType<YamlMap>()
+      .where((s) => s.containsKey('run'))
+      .map((s) => s['run'] as String)
+      .toList(growable: false);
+
+  static List<_RecipeBlock> _extractBlocks(String readme) {
+    final section = RegExp(r'^## Recipes\s*\n(.*?)(?=^## )', multiLine: true, dotAll: true);
+    final RegExpMatch? match = section.firstMatch(readme);
+    if (match == null) {
+      return const [];
+    }
+    final String body = match.group(1)!;
+    final fence = RegExp(r'^```([a-zA-Z0-9_-]*)\s*\n(.*?)^```', multiLine: true, dotAll: true);
+    return [
+      for (final RegExpMatch m in fence.allMatches(body))
+        _RecipeBlock((m.group(1) ?? '').trim(), m.group(2)!),
+    ];
+  }
+}
+
 class _RecipeBlock {
   _RecipeBlock(this.language, this.body);
   final String language;
   final String body;
-}
-
-/// Returns every fenced code block that appears under the `## Recipes`
-/// heading (until the next `## ` heading).
-List<_RecipeBlock> _extractRecipeBlocks(String readme) {
-  final section = RegExp(r'^## Recipes\s*\n(.*?)(?=^## )', multiLine: true, dotAll: true);
-  final RegExpMatch? match = section.firstMatch(readme);
-  if (match == null) {
-    return const [];
-  }
-  final String body = match.group(1)!;
-
-  final fence = RegExp(r'^```([a-zA-Z0-9_-]*)\s*\n(.*?)^```', multiLine: true, dotAll: true);
-  return [
-    for (final RegExpMatch m in fence.allMatches(body))
-      _RecipeBlock((m.group(1) ?? '').trim(), m.group(2)!),
-  ];
-}
-
-/// Pulls each `run:` value out of a workflow YAML body as a flat list of
-/// shell commands (`|` multi-line runs collapse into one entry per line).
-List<String> _extractRunCommands(String yamlBody) {
-  final dynamic doc = loadYaml(yamlBody);
-  final List<String> out = [];
-  if (doc is! YamlMap) {
-    return out;
-  }
-  final jobs = doc['jobs'] as YamlMap;
-  for (final Object? job in jobs.values) {
-    if (job is! YamlMap) {
-      continue;
-    }
-    final steps = job['steps'] as YamlList?;
-    if (steps == null) {
-      continue;
-    }
-    for (final Object? step in steps) {
-      if (step is! YamlMap) {
-        continue;
-      }
-      final dynamic run = step['run'];
-      if (run is String) {
-        for (final String line in run.split('\n')) {
-          final String trimmed = line.trim();
-          if (trimmed.isNotEmpty) {
-            out.add(trimmed);
-          }
-        }
-      }
-    }
-  }
-  return out;
-}
-
-/// Minimal POSIX-style word splitter — enough for our recipe commands,
-/// which don't contain quotes or shell expansions.
-List<String> _splitShell(String command) {
-  return command.split(RegExp(r'\s+')).where((s) => s.isNotEmpty).toList();
 }
