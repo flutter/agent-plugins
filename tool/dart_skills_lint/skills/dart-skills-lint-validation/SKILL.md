@@ -1,59 +1,64 @@
 ---
 name: dart-skills-lint-validation
 description: |-
-  Use this skill when you need to validate that AI agent skills meet the specification.
-  This includes running the linter via CLI, authoring custom rules, and following the validation workflow.
+  Use this skill when you need to validate AI agent skills with dart_skills_lint — running the linter, interpreting failures, fixing violations, and authoring custom rules.
 ---
 
 # Validating Skills with dart_skills_lint
 
-## Contents
-- [Usage for Agents (CLI)](#usage-for-agents-cli)
-- [Authoring Custom Rules](#authoring-custom-rules)
-- [Workflow: Validating Skills](#workflow-validating-skills)
-- [Specification Reference](#specification-reference)
+This skill covers **day-to-day use**: running the linter, walking
+through a failing run, and writing a custom rule when defaults
+aren't enough. For first-time wiring (adding the dep, creating the
+config file, generating a baseline) see
+[`dart-skills-lint-setup`](../dart-skills-lint-setup/SKILL.md). The
+full rule reference (default severities, diagnostic shapes,
+fixability) lives in [`RULES.md`](../../RULES.md).
 
-## Usage for Agents (CLI)
-Use the `dart_skills_lint` CLI to validate skills. Choose the appropriate workflow based on your environment:
+## Running the linter
 
-**Note on choosing the right method:**
-- **If you are a Dart developer**: The method where you add a test to your project (see the `dart-skills-lint-setup` skill) is preferred as it integrates with your existing testing workflow.
-- **If you are working on a non-Dart project**: The CLI and global install (Scenario B below) is the best way to use the linter without adding a dependency to your project.
+If `dart_skills_lint` is in `pubspec.yaml`:
 
-### Scenario A: The package is in your project dependencies
-Use this method if you are working within a project that has `dart_skills_lint` listed in `pubspec.yaml`.
-Run:
 ```bash
 dart run dart_skills_lint:cli -d .agents/skills
 ```
 
-### Scenario B: The package is activated globally
-Use this method if you want to validate skills across multiple projects without adding a dependency to each one.
-Run:
+If it's installed globally with `dart pub global activate`:
+
 ```bash
 dart pub global run dart_skills_lint:cli -d .agents/skills
 ```
 
-### Common Flags
-- `-d`, `--skills-directory`: Specifies a root directory containing sub-folders of skills to validate. Can be passed multiple times.
-- `-s`, `--skill`: Specifies an individual skill directory to validate directly. Can be passed multiple times.
-- `-q`, `--quiet`: Hide non-error validation output.
-- `-w`, `--print-warnings`: Enable printing of warning messages.
-- `--fast-fail`: Halt execution immediately on the error.
-- `--ignore-config`: Ignore the YAML configuration file entirely.
-- `--fix`: Preview fixes for failing lints (dry run).
-- `--fix-apply`: Apply fixes for failing lints.
+Run `dart run dart_skills_lint:cli --help` for the full flag list
+(skip the inline duplicate so it never goes stale).
 
-## Authoring Custom Rules
-To author custom rules, extend the `SkillRule` class and pass them to `validateSkills`.
+## Workflow for a failing run
 
-Example:
+1. **Run the validator.**
+2. **Read the errors.** Each diagnostic names the rule that fired,
+   the offending value, and a suggested fix when one applies.
+3. **Fix the violations.** For fixable rules
+   (`check-absolute-paths`, `check-trailing-whitespace`,
+   `invalid-skill-name`), pass `--fix` to write the corrections
+   to disk; add `--dry-run` to preview the diff first.
+4. **Re-run** to confirm the run is clean.
+
+### Task progress
+
+- [ ] Run validator
+- [ ] Read errors
+- [ ] Fix violations (manual or `--fix` / `--fix --dry-run`)
+- [ ] Verify clean run
+
+## Authoring a custom rule
+
+Extend `SkillRule` and pass the rule into `validateSkills`:
+
 ```dart
 import 'package:dart_skills_lint/dart_skills_lint.dart';
 
-class MyCustomRule extends SkillRule {
+class DeprecatedSkillRule extends SkillRule {
   @override
-  final String name = 'my-custom-rule';
+  final String name = 'deprecated-skill';
 
   @override
   final AnalysisSeverity severity = AnalysisSeverity.warning;
@@ -77,45 +82,27 @@ class MyCustomRule extends SkillRule {
 }
 ```
 
-Use it in your test:
+Wire it up in a Dart test:
+
 ```dart
-final config = await ConfigParser.loadConfig();
-await validateSkills(
-  config: config,
-  customRules: [MyCustomRule()],
-);
+import 'package:dart_skills_lint/dart_skills_lint.dart';
+import 'package:test/test.dart';
+
+void main() {
+  test('skills pass with deprecated-skill custom rule', () async {
+    final config = await ConfigParser.loadConfig();
+    await validateSkills(
+      config: config,
+      customRules: [DeprecatedSkillRule()],
+    );
+  });
+}
 ```
 
-## Workflow: Validating Skills
-Follow this workflow to validate skills:
+## Related
 
-1. **Run the validator**: Execute the linter on your skills directory.
-   ```bash
-   dart run dart_skills_lint:cli -d .agents/skills
-   ```
-2. **Review errors**: Check the output for any errors or warnings.
-3. **Fix violations**: Use `--fix-apply` or edit files manually to resolve issues.
-4. **Verify**: Re-run the validator to ensure all checks pass.
-
-### Task Progress
-- [ ] Run validator
-- [ ] Review errors
-- [ ] Fix violations
-- [ ] Verify clean run
-
-## Specification Reference
-<details>
-<summary>View Skill Specification Constraints</summary>
-
-### Directory and File Structure
-- Mandatory `SKILL.md` file at the root of the skill folder.
-- Directories starting with a dot `.` (e.g., `.dart_tool`) are ignored.
-
-### Metadata (YAML Frontmatter)
-- Required fields: `name` and `description`.
-
-### Field Constraints
-- **Name**: Max 64 characters, lowercase alphanumeric and hyphens only. Must match the parent directory name.
-- **Description**: Max 1024 characters.
-- **Compatibility**: Max 500 characters.
-</details>
+- [`dart-skills-lint-setup`](../dart-skills-lint-setup/SKILL.md) —
+  first-time wiring.
+- [`RULES.md`](../../RULES.md) — canonical rule reference.
+- [`README.md`](../../README.md) — installation, configuration,
+  integration recipes.
