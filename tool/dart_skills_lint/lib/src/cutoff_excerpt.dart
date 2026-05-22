@@ -13,11 +13,11 @@ const int _excerptContextChars = 40;
 /// Builds a length-overflow diagnostic for a frontmatter field whose
 /// value is longer than [maxLength].
 ///
-/// Output shape:
+/// Output shape (placeholders shown in backticks):
 ///
-///   <fieldName> field is <N> characters; maximum is <maxLength>.
-///   Cutoff at character <maxLength>: ...<context>|HERE|<context>...
-///   (see <docUrl>)
+///     `fieldName` field is `N` characters; maximum is `maxLength`.
+///     Cutoff at character `maxLength`: ...`context`|HERE|`context`...
+///     (see `docUrl`)
 ///
 /// The `(see ...)` clause is omitted when [docUrl] is null. Newlines in
 /// the excerpt are escaped to `\n` so the message stays on one line.
