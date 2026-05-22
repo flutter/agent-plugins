@@ -91,3 +91,22 @@ jobs:
       - run: dart pub get
 
       - run: dart format --output=none --set-exit-if-changed .
+
+  pana_score:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - run: dart pub get
+
+      - name: Install pana
+        run: dart pub global activate pana
+
+      # pana --exit-code-threshold N fails the step when
+      # (max - granted) > N. Threshold 0 means any point drop fails;
+      # current package score is 160/160 and we want to keep it there.
+      - name: Pana score gate (160/160 required)
+        run: dart pub global run pana --no-warning --exit-code-threshold 0 .

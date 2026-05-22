@@ -8,6 +8,7 @@ import 'package:dart_skills_lint/src/models/analysis_severity.dart';
 import 'package:dart_skills_lint/src/rules/absolute_paths_rule.dart';
 import 'package:dart_skills_lint/src/rules/relative_paths_rule.dart';
 import 'package:dart_skills_lint/src/validator.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import 'test_utils.dart';
@@ -45,7 +46,7 @@ void main() {
       expect(result.warnings, isEmpty);
     });
 
-    test('warns with missing relative file path', () async {
+    test('warns with missing relative file path and reports resolved path', () async {
       final Directory skillDir = await Directory('${tempDir.path}/test-skill').create();
       await File('${skillDir.path}/SKILL.md').writeAsString(
         '${buildFrontmatter(name: 'test-skill')}[Link to a references file missing](references/MISSING.md)\n',
@@ -58,6 +59,49 @@ void main() {
 
       expect(result.isValid, isTrue);
       expect(result.warnings, contains(contains('Linked file does not exist')));
+      expect(result.warnings, contains(contains('references/MISSING.md')));
+      // The diagnostic includes the resolved absolute path. The exact
+      // shape differs by platform (POSIX `/...` vs Windows `C:\...`),
+      // so just assert the prefix and that what follows is absolute.
+      final String warning = result.warnings.firstWhere((w) => w.contains('resolved to '));
+      final int prefixIdx = warning.indexOf('resolved to ');
+      final String resolved = warning.substring(prefixIdx + 'resolved to '.length);
+      expect(p.isAbsolute(resolved), isTrue, reason: 'resolved path "$resolved" is not absolute');
+    });
+
+    test('did-you-mean: suggests near-miss sibling file when one exists', () async {
+      final Directory skillDir = await Directory('${tempDir.path}/test-skill').create();
+      await File(
+        '${skillDir.path}/SKILL.md',
+      ).writeAsString('${buildFrontmatter(name: 'test-skill')}[Link](references/DEATILS.md)\n');
+      final Directory refs = await Directory('${skillDir.path}/references').create();
+      await File('${refs.path}/DETAILS.md').writeAsString('Details');
+
+      final validator = Validator(
+        ruleOverrides: {RelativePathsRule.ruleName: AnalysisSeverity.warning},
+      );
+      final ValidationResult result = await validator.validate(skillDir);
+      expect(result.isValid, isTrue);
+      // Suggestion preserves the link's directory prefix so the user
+      // gets back a copy-pasteable replacement, not just a basename.
+      expect(result.warnings, contains(contains('Did you mean "references/DETAILS.md"?')));
+    });
+
+    test('did-you-mean: stays silent when nothing in the sibling dir is close', () async {
+      final Directory skillDir = await Directory('${tempDir.path}/test-skill').create();
+      await File(
+        '${skillDir.path}/SKILL.md',
+      ).writeAsString('${buildFrontmatter(name: 'test-skill')}[Link](references/MISSING.md)\n');
+      final Directory refs = await Directory('${skillDir.path}/references').create();
+      await File('${refs.path}/UNRELATED.txt').writeAsString('Nope');
+
+      final validator = Validator(
+        ruleOverrides: {RelativePathsRule.ruleName: AnalysisSeverity.warning},
+      );
+      final ValidationResult result = await validator.validate(skillDir);
+      expect(result.isValid, isTrue);
+      expect(result.warnings, contains(contains('Linked file does not exist')));
+      expect(result.warnings.any((w) => w.contains('Did you mean')), isFalse);
     });
 
     test('fails with absolute file path', () async {

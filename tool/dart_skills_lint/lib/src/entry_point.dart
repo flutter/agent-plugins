@@ -29,8 +29,42 @@ const _ignoreFileOption = 'ignore-file';
 const _ignoreConfigFlag = 'ignore-config';
 const _generateBaselineFlag = 'generate-baseline';
 const _fixFlag = 'fix';
+const _dryRunFlag = 'dry-run';
 const _fixApplyFlag = 'fix-apply';
 const _allowMisconfiguredKeysFlag = 'allow-misconfigured-keys';
+
+/// User-visible deprecation notice for the legacy `--fix-apply` alias.
+///
+/// Exposed (not `_`-prefixed) so integration tests can assert it appears on
+/// stderr when the alias is used.
+const fixApplyDeprecationMsg =
+    '--fix-apply is deprecated; use --fix instead. '
+    'Pass --fix --dry-run to preview changes without writing.';
+
+/// Welcoming first-run guide shown when no args are passed and no default
+/// skills directory exists. Exposed so integration tests can assert the
+/// exact greeting (drift here changes the new-user experience).
+const firstRunGuideMsg = '''
+dart_skills_lint: a linter for Agent Skills (SKILL.md).
+
+No skills were found to validate. Get started in one of three ways:
+
+  1. Lint a single skill directory:
+       dart run dart_skills_lint --skill ./path/to/my-skill
+
+  2. Lint every skill under a root directory:
+       dart run dart_skills_lint --skills-directory ./path/to/skills-root
+
+  3. Drop a skill into one of the auto-discovered default paths
+     (relative to the current directory) and re-run with no flags:
+       .claude/skills/<my-skill>/SKILL.md
+       .agents/skills/<my-skill>/SKILL.md
+
+For repo-wide config, create dart_skills_lint.yaml with a
+`dart_skills_lint.directories` entry.
+
+Spec: https://agentskills.io/specification
+Run with --help to see every flag.''';
 
 /// Main entrypoint execution logic for the CLI tool.
 ///
@@ -78,8 +112,19 @@ Future<void> runApp(List<String> args) async {
   final fastFail = results[_fastFailFlag] as bool;
   final quiet = results[_quietFlag] as bool;
   final generateBaseline = results[_generateBaselineFlag] as bool;
-  final fix = results[_fixFlag] as bool;
-  final fixApply = results[_fixApplyFlag] as bool;
+  final fixFlag = results[_fixFlag] as bool;
+  final dryRun = results[_dryRunFlag] as bool;
+  final fixApplyAlias = results[_fixApplyFlag] as bool;
+
+  if (fixApplyAlias) {
+    stderr.writeln(fixApplyDeprecationMsg);
+  }
+
+  // --fix writes fixes to disk; pair with --dry-run to preview without
+  // writing. --fix-apply is a deprecated alias for --fix that still
+  // writes (with a deprecation notice on stderr above).
+  final bool fix = fixFlag && dryRun;
+  final bool fixApply = (fixFlag && !dryRun) || fixApplyAlias;
 
   String? ignoreFileOverride;
   if (results.wasParsed(_ignoreFileOption)) {
@@ -108,8 +153,8 @@ Future<void> runApp(List<String> args) async {
     } else {
       exitCode = 1;
     }
-  } on MissingDefaultsException catch (e) {
-    _printUsage(parser, 'Missing skills directory. Checked defaults: ${e.defaults.join(', ')}');
+  } on MissingDefaultsException catch (_) {
+    stdout.writeln(firstRunGuideMsg);
     exitCode = 64;
   }
 }
@@ -164,8 +209,20 @@ ArgParser _createArgParser(String helpFlag) {
       negatable: false,
       help: 'Ignore the YAML configuration file entirely.',
     )
-    ..addFlag(_fixFlag, negatable: false, help: 'Preview fixes for failing lints (dry run).')
-    ..addFlag(_fixApplyFlag, negatable: false, help: 'Apply fixes for failing lints.')
+    ..addFlag(
+      _fixFlag,
+      negatable: false,
+      help: 'Write fixes for failing lints to disk. Combine with --dry-run to preview.',
+    )
+    ..addFlag(
+      _dryRunFlag,
+      negatable: false,
+      help: 'When passed with --fix, preview proposed changes without writing.',
+    )
+    // help: omitted — flag is hide: true so --help skips it anyway.
+    // Adopters who hit it still get the runtime deprecation notice
+    // on stderr (see fixApplyDeprecationMsg above).
+    ..addFlag(_fixApplyFlag, negatable: false, hide: true)
     ..addFlag(
       _allowMisconfiguredKeysFlag,
       negatable: false,

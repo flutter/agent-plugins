@@ -288,6 +288,37 @@ dart_skills_lint:
       await process.shouldExit(1);
     });
 
+    test('bad path: type emits parsing error and lets later entries through', () async {
+      // First entry has path: 123 (not a string). Second entry is well-formed.
+      // The bad-type entry should produce a parsingErrors line but must not
+      // prevent the second entry from being parsed.
+      await Directory('${tempDir.path}/good-skill').create();
+      await File('${tempDir.path}/good-skill/SKILL.md').writeAsString('''
+---
+name: good-skill
+description: A valid skill
+---
+Body''');
+
+      await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+dart_skills_lint:
+  directories:
+    - path: 123
+    - path: "good-skill"
+''');
+
+      final TestProcess process = await TestProcess.start('dart', [
+        p.normalize(p.absolute('bin/cli.dart')),
+      ], workingDirectory: tempDir.path);
+
+      final List<String> stderr = await process.stderr.rest.toList();
+      final String stderrStr = stderr.join('\n');
+      expect(stderrStr, contains('Configuration error: Directory entry "path" must be a string'));
+      // Without the fix, the unchecked cast would throw inside the
+      // top-level try/catch and 'good-skill' would never run.
+      await process.shouldExit(1); // exits 1 due to parsing error
+    });
+
     test('fails on invalid directory key in config by default', () async {
       await Directory('${tempDir.path}/test-skill').create();
       await File('${tempDir.path}/test-skill/SKILL.md').writeAsString('''

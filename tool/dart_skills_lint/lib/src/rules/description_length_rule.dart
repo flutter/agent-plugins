@@ -1,4 +1,5 @@
 import 'package:yaml/yaml.dart';
+import '../cutoff_excerpt.dart';
 import '../models/analysis_severity.dart';
 import '../models/skill_context.dart';
 import '../models/skill_rule.dart';
@@ -38,8 +39,12 @@ class DescriptionLengthRule extends SkillRule {
           ruleId: name,
           severity: severity,
           file: _skillFileName,
-          message:
-              'Description field is too long. Maximum $maxDescriptionLength characters (see $_descriptionFieldUrl)',
+          message: buildLengthDiagnostic(
+            fieldName: 'Description',
+            value: description,
+            maxLength: maxDescriptionLength,
+            docUrl: _descriptionFieldUrl,
+          ),
         ),
       );
     }

@@ -106,33 +106,67 @@ class ConfigParser {
   /// Parses the `directories` list from the configuration.
   /// Validates keys for each directory entry and resolves path-specific rule overrides.
   /// Appends any parsing errors to `parsingErrors`.
+  ///
+  /// Each entry is parsed defensively: a bad `path:` / `ignore_file:` /
+  /// `rules:` type emits a parsingErrors entry naming the offending field
+  /// and the entry is skipped, but later entries in the same `directories:`
+  /// list still parse normally.
   static List<DirectoryConfig> _parseDirectories(YamlMap toolConfig, List<String> parsingErrors) {
     final directoryConfigs = <DirectoryConfig>[];
     if (toolConfig.containsKey(_directoriesKey)) {
       final dirs = toolConfig[_directoriesKey];
       if (dirs is YamlList) {
         for (final dir in dirs) {
-          if (dir is YamlMap && dir.containsKey(_pathKey)) {
-            final path = dir[_pathKey] as String;
-
-            for (final key in dir.keys) {
-              if (!_allowedDirectoryKeys.contains(key.toString())) {
-                parsingErrors.add('Unrecognized key "$key" in directory entry for "$path".');
-              }
-            }
-
-            final rules = <String, AnalysisSeverity>{};
-            if (dir.containsKey(_rulesKey)) {
-              final localRules = dir[_rulesKey];
-              if (localRules is YamlMap) {
-                for (final key in localRules.keys) {
-                  rules[key.toString()] = _parseSeverity(localRules[key]?.toString() ?? '');
-                }
-              }
-            }
-            final ignoreFile = dir[_ignoreFileKey] as String?;
-            directoryConfigs.add(DirectoryConfig(path: path, rules: rules, ignoreFile: ignoreFile));
+          if (dir is! YamlMap || !dir.containsKey(_pathKey)) {
+            continue;
           }
+
+          final pathValue = dir[_pathKey];
+          if (pathValue is! String) {
+            parsingErrors.add(
+              'Directory entry "$_pathKey" must be a string; got "$pathValue" '
+              '(${pathValue.runtimeType}). Skipping entry.',
+            );
+            continue;
+          }
+          final String path = pathValue;
+
+          for (final key in dir.keys) {
+            if (!_allowedDirectoryKeys.contains(key.toString())) {
+              parsingErrors.add('Unrecognized key "$key" in directory entry for "$path".');
+            }
+          }
+
+          final rules = <String, AnalysisSeverity>{};
+          if (dir.containsKey(_rulesKey)) {
+            final localRules = dir[_rulesKey];
+            if (localRules is YamlMap) {
+              for (final key in localRules.keys) {
+                rules[key.toString()] = _parseSeverity(localRules[key]?.toString() ?? '');
+              }
+            } else {
+              parsingErrors.add(
+                'Directory entry "$_rulesKey" for "$path" must be a map; '
+                'got "$localRules" (${localRules.runtimeType}). Ignoring local rules.',
+              );
+            }
+          }
+
+          String? ignoreFile;
+          if (dir.containsKey(_ignoreFileKey)) {
+            final ignoreFileValue = dir[_ignoreFileKey];
+            if (ignoreFileValue is String) {
+              ignoreFile = ignoreFileValue;
+            } else if (ignoreFileValue != null) {
+              parsingErrors.add(
+                'Directory entry "$_ignoreFileKey" for "$path" must be a string; '
+                'got "$ignoreFileValue" (${ignoreFileValue.runtimeType}). '
+                'Falling back to the default ignore file.',
+              );
+            }
+          }
+
+          directoryConfigs.add(DirectoryConfig(path: path, rules: rules, ignoreFile: ignoreFile));
         }
       }
     }
