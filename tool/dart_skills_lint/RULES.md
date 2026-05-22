@@ -39,9 +39,7 @@ governs how changes to these rules ship.
   absolute filesystem paths (POSIX `/foo/bar` or Windows `C:\foo`).
   Absolute paths break portability across machines.
 - **Diagnostic shape:**
-  `Absolute filepath found in link: <path>. Skills must use paths
-  relative to SKILL.md so they remain portable across machines (see
-  https://agentskills.io/specification#content).`
+  `Absolute filepath found in link: <path>. Skills must use paths relative to SKILL.md so they remain portable across machines.`
 - **Auto-fix behavior:** if the absolute path resolves to a file that
   exists on disk, the fixer rewrites it to the equivalent POSIX-style
   relative path from `SKILL.md`. If the target does not exist the
@@ -57,13 +55,11 @@ governs how changes to these rules ship.
   Web URLs, anchors, `mailto:`, `javascript:`, and `data:` links are
   skipped.
 - **Diagnostic shape:**
-  `Linked file does not exist: <path> (resolved to <absolute path>).
-  Did you mean "<sibling>"? (see
-  https://agentskills.io/specification#content)`
-  The `Did you mean` clause is only included when the parent
-  directory of the resolved path contains a filename within
-  Levenshtein distance `max(1, basename.length / 3)` of the missing
-  basename.
+  `Linked file does not exist: <path> (resolved to <absolute path>). Did you mean "<sibling>"?`
+  The `Did you mean` clause is only included when a near-miss file
+  is found in the same directory; it's scored by string similarity
+  against the missing basename. The suggestion preserves the link's
+  original directory prefix, normalized to forward slashes.
 - **Auto-fix behavior:** none. The author is expected to pick the
   intended target by hand.
 - **Disable:** `--no-check-relative-paths` (also the default state).
@@ -158,8 +154,9 @@ governs how changes to these rules ship.
   - `Invalid YAML metadata: <parser error> (see
     https://agentskills.io/specification#frontmatter)`
   - `Missing required field: <field> (see ...)`
-  - `Compatibility field is too long. Maximum 500 characters (see
-    https://agentskills.io/specification#compatibility-field)`
+  - `Compatibility field is <N> characters; maximum is 500. Cutoff at character 500: ...<context>|HERE|<context>... (see https://agentskills.io/specification#compatibility-field)`
+    — same shape as `description-too-long`, produced by the shared
+    `buildLengthDiagnostic` helper.
 - **Auto-fix behavior:** none. A broken frontmatter block isn't
   safely mechanically repairable.
 - **Disable:** `--no-valid-yaml-metadata`.
