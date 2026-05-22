@@ -18,22 +18,21 @@ class RelativePathsRule extends SkillRule {
   @override
   final AnalysisSeverity severity;
 
-  static final _markdownLinkRegex = RegExp(r'\[.*?\]\((.*?)\)');
   static const _skillFileName = 'SKILL.md';
-  static const _docsUrl = 'https://agentskills.io/specification#content';
 
   @override
   Future<List<ValidationError>> validate(SkillContext context) async {
     final errors = <ValidationError>[];
 
     // Extract content after YAML frontmatter
-    final skillStartRegex = RegExp(r'^---\s*\n(.*?)\n---\s*\n', dotAll: true);
-    final RegExpMatch? match = skillStartRegex.firstMatch(context.rawContent);
+    final RegExpMatch? match = SkillContext.skillStartRegex.firstMatch(context.rawContent);
     final String markdownContent = match != null
         ? context.rawContent.substring(match.end)
         : context.rawContent;
 
-    for (final RegExpMatch linkMatch in _markdownLinkRegex.allMatches(markdownContent)) {
+    for (final RegExpMatch linkMatch in SkillContext.markdownLinkRegex.allMatches(
+      markdownContent,
+    )) {
       final String fullPath = linkMatch.group(1)!;
       // Markdown links can have a title after the URL, separated by spaces.
       // e.g. [text](url "title")
@@ -67,7 +66,7 @@ class RelativePathsRule extends SkillRule {
             file: _skillFileName,
             message:
                 'Linked file does not exist: $path (resolved to $resolvedPath).'
-                '$suggestionClause (see $_docsUrl)',
+                '$suggestionClause',
           ),
         );
       }

@@ -19,22 +19,21 @@ class AbsolutePathsRule extends SkillRule implements FixableRule {
   @override
   final AnalysisSeverity severity;
 
-  static final _markdownLinkRegex = RegExp(r'\[.*?\]\((.*?)\)');
   static const String _skillFileName = SkillContext.skillFileName;
-  static const _docsUrl = 'https://agentskills.io/specification#content';
 
   @override
   Future<List<ValidationError>> validate(SkillContext context) async {
     final errors = <ValidationError>[];
 
     // Extract content after YAML frontmatter
-    final skillStartRegex = RegExp(r'^---\s*\n(.*?)\n---\s*\n', dotAll: true);
-    final RegExpMatch? match = skillStartRegex.firstMatch(context.rawContent);
+    final RegExpMatch? match = SkillContext.skillStartRegex.firstMatch(context.rawContent);
     final String markdownContent = match != null
         ? context.rawContent.substring(match.end)
         : context.rawContent;
 
-    for (final RegExpMatch linkMatch in _markdownLinkRegex.allMatches(markdownContent)) {
+    for (final RegExpMatch linkMatch in SkillContext.markdownLinkRegex.allMatches(
+      markdownContent,
+    )) {
       final String path = linkMatch.group(1)!;
       if (isAbsolute(path) || windows.isAbsolute(path)) {
         errors.add(
@@ -45,7 +44,7 @@ class AbsolutePathsRule extends SkillRule implements FixableRule {
             message:
                 'Absolute filepath found in link: $path. '
                 'Skills must use paths relative to SKILL.md so they remain '
-                'portable across machines (see $_docsUrl).',
+                'portable across machines.',
           ),
         );
       }
@@ -60,7 +59,7 @@ class AbsolutePathsRule extends SkillRule implements FixableRule {
       return currentContent;
     }
 
-    return currentContent.replaceAllMapped(_markdownLinkRegex, (match) {
+    return currentContent.replaceAllMapped(SkillContext.markdownLinkRegex, (match) {
       final String path = match.group(1)!;
       if (isAbsolute(path) || windows.isAbsolute(path)) {
         final file = File(path);
