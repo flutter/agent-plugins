@@ -15,6 +15,7 @@ on:
       - '.github/workflows/dart_skills_lint_workflow.yaml'
   schedule:
     - cron: '0 0 * * 0' # weekly
+  workflow_dispatch:
 
 defaults:
   run:
@@ -105,3 +106,20 @@ jobs:
           name: pana-report
           path: tool/dart_skills_lint/build/pana.json
           if-no-files-found: ignore
+
+  publish_dry_run:
+    # Manual-only rehearsal of the v1.0.0 publish flow. Gated on
+    # workflow_dispatch so it never runs on routine pushes or PRs —
+    # the publish dry-run is noisy and useful only when a maintainer
+    # is actively staging a release.
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - run: dart pub get
+
+      - run: dart pub publish --dry-run
