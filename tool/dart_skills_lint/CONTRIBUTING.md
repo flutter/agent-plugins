@@ -51,17 +51,17 @@ dart test
 ```
 
 CI enforces a minimum line-coverage threshold for `lib/` (currently 73%),
-excluding generated `*.g.dart` files. To reproduce the coverage numbers
-locally:
+excluding generated `*.g.dart` files. To reproduce the same number locally:
 
 ```bash
 dart test --coverage=coverage
-dart run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --report-on=lib
+dart run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --report-on=lib --ignore-files='**/*.g.dart'
 ```
 
-The local `lcov.info` includes the generated `*.g.dart` files, which CI
-excludes via the action's `exclude` input, so your local total reads slightly
-higher than the enforced threshold.
+The `--ignore-files='**/*.g.dart'` flag drops generated files from the report so
+your local total matches the threshold CI enforces (CI applies the same
+exclusion via the `very_good_coverage` action's `exclude` input). Omit the flag
+to include generated files.
 
 CI feeds `coverage/lcov.info` to the
 [`very_good_coverage`](https://github.com/VeryGoodOpenSource/very_good_coverage)
