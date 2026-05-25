@@ -377,5 +377,84 @@ dart_skills_lint:
       );
       await process.shouldExit(0);
     });
+
+    test('obeys custom configuration file path via --config', () async {
+      final Directory skillDir = await Directory('${tempDir.path}/test-skill').create();
+      await File('${skillDir.path}/SKILL.md').writeAsString('''
+---
+name: test-skill
+description: A test skill
+---
+[broken](missing.md)''');
+
+      await File('${tempDir.path}/custom_config.yaml').writeAsString('''
+dart_skills_lint:
+  rules:
+    check-relative-paths: disabled
+''');
+
+      final TestProcess process = await TestProcess.start('dart', [
+        p.normalize(p.absolute('bin/cli.dart')),
+        '-s',
+        'test-skill',
+        '--config',
+        'custom_config.yaml',
+      ], workingDirectory: tempDir.path);
+
+      final List<String> stdout = await process.stdout.rest.toList();
+      expect(stdout.join('\n'), contains('Skill is valid.'));
+      await process.shouldExit(0);
+    });
+
+    test('exits with 1 and prints error message if --config points to non-existent file', () async {
+      await Directory('${tempDir.path}/test-skill').create();
+      await File('${tempDir.path}/test-skill/SKILL.md').writeAsString('''
+---
+name: test-skill
+description: A test skill
+---
+Body''');
+
+      final TestProcess process = await TestProcess.start('dart', [
+        p.normalize(p.absolute('bin/cli.dart')),
+        '-s',
+        'test-skill',
+        '--config',
+        'non_existent_config.yaml',
+      ], workingDirectory: tempDir.path);
+
+      final List<String> stderr = await process.stderr.rest.toList();
+      expect(stderr.join('\n'), contains('Configuration file not found'));
+      expect(stderr.join('\n'), contains('non_existent_config.yaml'));
+      await process.shouldExit(1);
+    });
+
+    test('ignores config when both --config and --ignore-config are passed', () async {
+      final Directory skillDir = await Directory('${tempDir.path}/TEST-SKILL').create();
+      await File('${skillDir.path}/SKILL.md').writeAsString('''
+---
+name: TEST-SKILL
+description: A test skill
+license: MIT
+---
+Body''');
+
+      await File('${tempDir.path}/custom_config.yaml').writeAsString('''
+dart_skills_lint:
+  rules:
+    invalid-skill-name: disabled
+''');
+
+      final TestProcess process = await TestProcess.start('dart', [
+        p.normalize(p.absolute('bin/cli.dart')),
+        '-s',
+        'TEST-SKILL',
+        '--config',
+        'custom_config.yaml',
+        '--ignore-config',
+      ], workingDirectory: tempDir.path);
+
+      await process.shouldExit(1);
+    });
   });
 }
