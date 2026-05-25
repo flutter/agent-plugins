@@ -183,8 +183,14 @@ environment:
       );
 
       expect(dartAnalyzeArgs, isNotNull);
-      expect(dartAnalyzeArgs!.any((arg) => arg.endsWith('lib/modified.dart')), isTrue);
-      expect(dartAnalyzeArgs!.any((arg) => arg.endsWith('lib/untouched.dart')), isFalse);
+      expect(
+        dartAnalyzeArgs!.any((arg) => arg.endsWith(path.join('lib', 'modified.dart'))),
+        isTrue,
+      );
+      expect(
+        dartAnalyzeArgs!.any((arg) => arg.endsWith(path.join('lib', 'untouched.dart'))),
+        isFalse,
+      );
       expect(exitCode, equals(0));
     });
   });
