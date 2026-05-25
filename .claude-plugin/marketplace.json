@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "flutter-skills",
-      "source": "./",
+      "source": "./plugins/flutter-skills",
       "description": "Task-based skills that teach coding agents happy-path Flutter workflows: widget and integration tests, widget previews, responsive layouts, declarative routing, localization, HTTP networking, JSON serialization, and layered architecture best practices.",
       "category": "development"
     }
