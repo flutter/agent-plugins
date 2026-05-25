@@ -30,6 +30,9 @@ environment:
   sdk: '>=3.0.0 <4.0.0'
 ''');
 
+      // Create dummy dart_hooks.yaml to enable the analyze hook
+      await File(path.join(packageRoot, 'dart_hooks.yaml')).writeAsString(mockAnalyzeConfig(true));
+
       // Initialize a git repo in the temp directory
       final ProcessResult initResult = await Process.run(
         'git',
@@ -83,6 +86,7 @@ environment:
       final List<String> logs = [];
 
       final hook = DartAnalyzeHook(
+        configKey: 'agent_dart_analyze.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -145,6 +149,7 @@ environment:
       List<String>? dartAnalyzeArgs;
 
       final hook = DartAnalyzeHook(
+        configKey: 'agent_dart_analyze.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {

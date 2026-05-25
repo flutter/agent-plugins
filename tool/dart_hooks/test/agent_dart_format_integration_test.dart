@@ -35,6 +35,9 @@ void main() {
         workingDirectory: repoRoot,
         runInShell: true,
       );
+
+      // Create dummy dart_hooks.yaml to enable the format hook
+      await File(path.join(repoRoot, 'dart_hooks.yaml')).writeAsString(mockFormatConfig(true));
     });
 
     tearDown(() async {
@@ -52,6 +55,7 @@ void main() {
       int? exitCode;
 
       final hook = DartFormatHook(
+        configKey: 'agent_dart_format.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -103,6 +107,7 @@ void main() {
       }
 
       final hook = DartFormatHook(
+        configKey: 'agent_dart_format.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -132,8 +137,10 @@ void main() {
       );
 
       expect(logFile.existsSync(), isTrue);
-      final List<String> linesFirstRun = await logFile.readAsLines();
-      expect(linesFirstRun.length, equals(2)); // Start + No files found
+      final String contentFirstRun = await logFile.readAsString();
+      expect(contentFirstRun, contains('Hook dart format is enabled in configuration.'));
+      expect(contentFirstRun, contains('dart format started in'));
+      expect(contentFirstRun, contains('No matching files found to process in scope:'));
 
       // Run it second time to verify append
       await hook.run(
@@ -143,8 +150,9 @@ void main() {
         triggerSource: 'MANUAL',
       );
 
-      final List<String> linesSecondRun = await logFile.readAsLines();
-      expect(linesSecondRun.length, equals(4)); // Appended 2 more lines
+      final String contentSecondRun = await logFile.readAsString();
+      final int startOccurrences = 'dart format started in'.allMatches(contentSecondRun).length;
+      expect(startOccurrences, equals(2));
     });
 
     test('Only formats modified files', () async {
@@ -172,6 +180,7 @@ void main() {
       int? exitCode;
 
       final hook = DartFormatHook(
+        configKey: 'agent_dart_format.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {

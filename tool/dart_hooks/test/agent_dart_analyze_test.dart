@@ -15,6 +15,7 @@ void main() {
       String? loggedMessage;
 
       final hook = DartAnalyzeHook(
+        configKey: 'agent_dart_analyze.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -27,6 +28,7 @@ void main() {
           return ProcessResult(0, 0, '', '');
         }),
         fileExists: (path) => true,
+        readFile: (path) => mockAnalyzeConfig(true),
         logToFile: (msg) async => loggedMessage = "${loggedMessage ?? ''}$msg\n",
         onExit: (code) {},
       );
@@ -46,6 +48,7 @@ void main() {
       int? exitCode;
 
       final hook = DartAnalyzeHook(
+        configKey: 'agent_dart_analyze.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -64,6 +67,7 @@ void main() {
           return ProcessResult(0, 0, '', '');
         }),
         fileExists: (path) => true,
+        readFile: (path) => mockAnalyzeConfig(true),
         printStdout: (msg) => stdoutMessage = msg,
         logToFile: (msg) async {},
         onExit: (code) => exitCode = code,
@@ -85,6 +89,7 @@ void main() {
       int? exitCode;
 
       final hook = DartAnalyzeHook(
+        configKey: 'agent_dart_analyze.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -103,6 +108,7 @@ void main() {
           return ProcessResult(0, 0, '', '');
         }),
         fileExists: (path) => true,
+        readFile: (path) => mockAnalyzeConfig(true),
         printStdout: (msg) => stdoutMessage = msg,
         logToFile: (msg) async {},
         onExit: (code) => exitCode = code,
@@ -124,6 +130,7 @@ void main() {
       List<String>? dartAnalyzeArgs;
 
       final hook = DartAnalyzeHook(
+        configKey: 'agent_dart_analyze.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -143,6 +150,7 @@ void main() {
           return ProcessResult(0, 0, '', '');
         }),
         fileExists: (path) => true,
+        readFile: (path) => mockAnalyzeConfig(true),
         printStdout: (msg) {},
         logToFile: (msg) async {},
         onExit: (code) => exitCode = code,
@@ -164,6 +172,7 @@ void main() {
       int? exitCode;
 
       final hook = DartAnalyzeHook(
+        configKey: 'agent_dart_analyze.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -173,6 +182,7 @@ void main() {
           throw Exception('Simulated crash');
         }),
         fileExists: (path) => true,
+        readFile: (path) => mockAnalyzeConfig(true),
         printStdout: (msg) {},
         logToFile: (msg) async {},
         onExit: (code) => exitCode = code,

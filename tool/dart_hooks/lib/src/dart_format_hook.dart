@@ -3,18 +3,20 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:io';
-import 'base_git_hook.dart';
+import 'base_hook.dart';
 import 'process_runner.dart';
 
 /// Implements the dart format hook logic.
-class DartFormatHook extends BaseGitHook {
+class DartFormatHook extends BaseHook {
   /// Creates a [DartFormatHook].
   DartFormatHook({
+    required super.configKey,
     super.processRunner = const RealProcessRunner(),
     super.fileExists = _defaultFileExists,
     super.printStdout = _defaultPrintStdout,
     required super.logToFile,
     super.onExit = exit,
+    super.readFile,
   });
 
   static bool _defaultFileExists(String path) => File(path).existsSync();

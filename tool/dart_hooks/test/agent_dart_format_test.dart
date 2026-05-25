@@ -15,6 +15,7 @@ void main() {
       String? loggedMessage;
 
       final hook = DartFormatHook(
+        configKey: 'agent_dart_format.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -30,8 +31,10 @@ void main() {
           return ProcessResult(0, 0, '', '');
         }),
         fileExists: (path) => true,
+        readFile: (path) => mockFormatConfig(true),
         printStdout: (msg) {},
-        logToFile: (msg) async => loggedMessage = msg,
+        logToFile: (msg) async => loggedMessage = "${loggedMessage ?? ''}$msg\n",
+        onExit: (code) {},
       );
 
       await hook.run(
@@ -48,6 +51,7 @@ void main() {
       String? loggedMessage;
 
       final hook = DartFormatHook(
+        configKey: 'agent_dart_format.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -60,7 +64,9 @@ void main() {
           return ProcessResult(0, 0, '', '');
         }),
         fileExists: (path) => true,
-        logToFile: (msg) async => loggedMessage = msg,
+        readFile: (path) => mockFormatConfig(true),
+        logToFile: (msg) async => loggedMessage = "${loggedMessage ?? ''}$msg\n",
+        onExit: (code) {},
       );
 
       await hook.run(
@@ -78,6 +84,7 @@ void main() {
       int? exitCode;
 
       final hook = DartFormatHook(
+        configKey: 'agent_dart_format.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -96,6 +103,7 @@ void main() {
           return ProcessResult(0, 0, '', '');
         }),
         fileExists: (path) => true,
+        readFile: (path) => mockFormatConfig(true),
         printStdout: (msg) => stdoutMessage = msg,
         logToFile: (msg) async {},
         onExit: (code) => exitCode = code,
@@ -117,6 +125,7 @@ void main() {
       List<String>? dartFormatArgs;
 
       final hook = DartFormatHook(
+        configKey: 'agent_dart_format.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -136,6 +145,7 @@ void main() {
           return ProcessResult(0, 0, '', '');
         }),
         fileExists: (path) => true,
+        readFile: (path) => mockFormatConfig(true),
         printStdout: (msg) {},
         logToFile: (msg) async {},
         onExit: (code) => exitCode = code,
@@ -157,6 +167,7 @@ void main() {
       int? exitCode;
 
       final hook = DartFormatHook(
+        configKey: 'agent_dart_format.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -166,6 +177,7 @@ void main() {
           throw Exception('Simulated crash');
         }),
         fileExists: (path) => true,
+        readFile: (path) => mockFormatConfig(true),
         printStdout: (msg) {},
         logToFile: (msg) async {},
         onExit: (code) => exitCode = code,
@@ -185,6 +197,7 @@ void main() {
       int? exitCode;
 
       final hook = DartFormatHook(
+        configKey: 'agent_dart_format.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -197,6 +210,7 @@ void main() {
           return ProcessResult(0, 0, '', '');
         }),
         fileExists: (path) => true,
+        readFile: (path) => mockFormatConfig(true),
         printStdout: (msg) {},
         logToFile: (msg) async {},
         onExit: (code) => exitCode = code,
