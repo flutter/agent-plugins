@@ -95,7 +95,7 @@ Future<List<String>> getModifiedFilesInternal({
       continue;
     }
 
-    final String fullPath = path.join(repoRoot, filePath);
+    final String fullPath = path.normalize(path.join(repoRoot, filePath));
     if (fileExists(fullPath)) {
       modifiedFiles.add(fullPath);
     }
