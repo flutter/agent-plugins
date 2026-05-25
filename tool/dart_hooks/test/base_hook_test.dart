@@ -178,7 +178,12 @@ void main() {
 
         final hook = TestHook(
           configKey: 'test_hook.dart',
-          processRunner: MockProcessRunner((cmd, args, {runInShell = false, workingDirectory}) async {
+          processRunner: MockProcessRunner((
+            cmd,
+            args, {
+            runInShell = false,
+            workingDirectory,
+          }) async {
             return ProcessResult(0, 0, '', '');
           }),
           fileExists: (path) => false, // config file does not exist
@@ -208,7 +213,12 @@ void main() {
 
         final hook = TestHook(
           configKey: 'test_hook.dart',
-          processRunner: MockProcessRunner((cmd, args, {runInShell = false, workingDirectory}) async {
+          processRunner: MockProcessRunner((
+            cmd,
+            args, {
+            runInShell = false,
+            workingDirectory,
+          }) async {
             return ProcessResult(0, 0, '', '');
           }),
           fileExists: (path) => true,
@@ -230,7 +240,10 @@ void main() {
         expect(exitCode, equals(0));
         expect(loggedMessages.length, equals(1));
         // Verify log contains the specific warning message
-        expect(loggedMessages.first, contains('is disabled (key "test_hook.dart" is missing in configuration)'));
+        expect(
+          loggedMessages.first,
+          contains('is disabled (key "test_hook.dart" is missing in configuration)'),
+        );
       });
 
       test('Disabled setting logs disabled', () async {
@@ -240,7 +253,12 @@ void main() {
 
         final hook = TestHook(
           configKey: 'test_hook.dart',
-          processRunner: MockProcessRunner((cmd, args, {runInShell = false, workingDirectory}) async {
+          processRunner: MockProcessRunner((
+            cmd,
+            args, {
+            runInShell = false,
+            workingDirectory,
+          }) async {
             return ProcessResult(0, 0, '', '');
           }),
           fileExists: (path) => true,
@@ -317,7 +335,12 @@ void main() {
 
         final hook = TestHook(
           configKey: 'test_hook.dart',
-          processRunner: MockProcessRunner((cmd, args, {runInShell = false, workingDirectory}) async {
+          processRunner: MockProcessRunner((
+            cmd,
+            args, {
+            runInShell = false,
+            workingDirectory,
+          }) async {
             return ProcessResult(0, 0, '', '');
           }),
           fileExists: (path) => true,
