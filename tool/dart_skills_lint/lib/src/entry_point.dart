@@ -32,6 +32,7 @@ const _fixFlag = 'fix';
 const _dryRunFlag = 'dry-run';
 const _fixApplyFlag = 'fix-apply';
 const _allowMisconfiguredKeysFlag = 'allow-misconfigured-keys';
+const _configOption = 'config';
 
 /// User-visible deprecation notice for the legacy `--fix-apply` alias.
 ///
@@ -228,6 +229,11 @@ ArgParser _createArgParser(String helpFlag) {
       negatable: false,
       hide: true,
       help: 'Allow misconfigured keys in dart_skills_lint.yaml.',
+    )
+    ..addOption(
+      _configOption,
+      abbr: 'c',
+      help: 'Path to a custom configuration file (defaults to dart_skills_lint.yaml).',
     );
 
   return parser;
@@ -239,7 +245,16 @@ Future<Configuration?> _loadConfig(ArgResults results) async {
   if (ignoreConfig) {
     config = Configuration();
   } else {
-    config = await ConfigParser.loadConfig();
+    try {
+      final configPath = results[_configOption] as String?;
+      config = await ConfigParser.loadConfig(path: configPath);
+    } on FileSystemException catch (e) {
+      _log.severe('Error: ${e.message} (${e.path})');
+      return null;
+    } catch (e) {
+      _log.severe('Error loading configuration: $e');
+      return null;
+    }
   }
   if (ignoreConfig && !(results[_quietFlag] as bool)) {
     _log.info('Ignoring configuration file due to $_ignoreConfigFlag flag');
