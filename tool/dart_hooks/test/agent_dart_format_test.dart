@@ -193,7 +193,7 @@ void main() {
       expect(exitCode, equals(1));
     });
 
-    test('Exits 1 when git rev-parse fails', () async {
+    test('Exits 0 and outputs decision continue when git rev-parse fails', () async {
       int? exitCode;
 
       final hook = DartFormatHook(
@@ -223,7 +223,7 @@ void main() {
         triggerSource: 'MANUAL',
       );
 
-      expect(exitCode, equals(1));
+      expect(exitCode, equals(0));
     });
   });
 }

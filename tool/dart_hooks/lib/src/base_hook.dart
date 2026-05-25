@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:meta/meta.dart';
@@ -19,8 +20,8 @@ abstract class BaseHook {
     required this.printStdout,
     required this.logToFile,
     required this.onExit,
-    String Function(String)? readFile,
-  }) : readFile = readFile ?? ((path) => File(path).readAsStringSync());
+    FutureOr<String> Function(String)? readFile,
+  }) : readFile = readFile ?? ((path) => File(path).readAsString());
 
   final String configKey;
   final ProcessRunner processRunner;
@@ -28,7 +29,7 @@ abstract class BaseHook {
   final void Function(String) printStdout;
   final Future<void> Function(String) logToFile;
   final void Function(int) onExit;
-  final String Function(String) readFile;
+  final FutureOr<String> Function(String) readFile;
 
   /// The allowed file extensions for this hook (e.g., ['.dart']).
   List<String> get allowedExtensions;
@@ -57,7 +58,7 @@ abstract class BaseHook {
     }
 
     try {
-      final String configContent = readFile(configPath);
+      final String configContent = await readFile(configPath);
       final dynamic yaml = loadYaml(configContent);
       if (yaml is Map) {
         if (!yaml.containsKey(configKey)) {
@@ -103,7 +104,7 @@ abstract class BaseHook {
       if (repoRootResult.exitCode != 0) {
         await logToFile('ERROR: Failed to get repo root.');
         printStdout(jsonEncode({'decision': 'continue', 'reason': 'Failed to get repo root.'}));
-        onExit(1);
+        onExit(0);
         return;
       }
       final String repoRootRaw = (repoRootResult.stdout as String).trim();
@@ -126,7 +127,7 @@ abstract class BaseHook {
       } catch (e) {
         await logToFile('ERROR: Failed to get modified files: $e');
         printStdout(jsonEncode({'decision': 'continue', 'reason': 'Failed to get status.'}));
-        onExit(1);
+        onExit(0);
         return;
       }
 
