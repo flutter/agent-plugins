@@ -1,0 +1,22 @@
+{
+  "name": "flutter",
+  "owner": {
+    "name": "The Flutter Authors"
+  },
+  "description": "Agent skills for Flutter app development, authored by the Flutter and Dart teams.",
+  "plugins": [
+    {
+      "name": "flutter-skills",
+      "source": "./",
+      "description": "Task-based skills that teach coding agents happy-path Flutter workflows: widget and integration tests, widget previews, responsive layouts, declarative routing, localization, HTTP networking, JSON serialization, and layered architecture best practices.",
+      "author": {
+        "name": "The Flutter Authors"
+      },
+      "homepage": "https://github.com/flutter/skills",
+      "repository": "https://github.com/flutter/skills",
+      "license": "BSD-3-Clause",
+      "keywords": ["flutter", "dart", "mobile", "testing", "ui", "skills"],
+      "category": "development"
+    }
+  ]
+}

@@ -17,6 +17,16 @@ folder that most agents use.
 npx skills add flutter/skills --skill '*' --agent universal
 ```
 
+### Install with Claude Code
+
+If you use [Claude Code](https://www.claude.com/product/claude-code), install the
+skills as a plugin from the marketplace bundled in this repo:
+
+```bash
+/plugin marketplace add flutter/skills
+/plugin install flutter-skills@flutter
+```
+
 ## Updating Skills
 
 To update, run the following command:
