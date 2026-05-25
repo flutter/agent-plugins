@@ -27,8 +27,11 @@ class DartFormatHook extends BaseHook {
   @override
   String get hookName => 'dart format';
 
+  /// The key in `dart_hooks.yaml` that enables this hook.
+  static const String configKeyName = 'DartFormatHook';
+
   @override
-  String get configKey => 'DartFormatHook';
+  String get configKey => configKeyName;
 
   @override
   Future<ProcessResult> executeCommand(List<String> files) {

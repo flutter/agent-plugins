@@ -27,8 +27,11 @@ class DartAnalyzeHook extends BaseHook {
   @override
   String get hookName => 'dart analyze';
 
+  /// The key in `dart_hooks.yaml` that enables this hook.
+  static const String configKeyName = 'DartAnalyzeHook';
+
   @override
-  String get configKey => 'DartAnalyzeHook';
+  String get configKey => configKeyName;
 
   @override
   Future<ProcessResult> executeCommand(List<String> files) {
