@@ -49,6 +49,13 @@ DartAnalyzeHook: true
 
 If `dart_hooks.yaml` is missing or does not contain the key for a specific hook, that hook will be skipped and exit silently.
 
+### Debugging Activation
+Because hooks exit silently when skipped, you can verify they are configured correctly by inspecting the generated log files (e.g. `.agents/dart_analyze.log` or `.agents/dart_format.log`):
+* If the log file **does not exist or does not update**, it means `dart_hooks.yaml` was not found. Ensure it is placed in the package root (the parent directory of the `.agents/` folder where the hook runs).
+* If the log file contains `Hook <name> is disabled (key "<key>" is missing in configuration)`, it means the configuration file was found, but the key (e.g. `DartAnalyzeHook` or `DartFormatHook`) is misspelled or missing.
+* If the log file contains `Hook <name> is enabled in configuration.`, the hook was successfully loaded and executed.
+
+
 ## Hierarchical Scoping
 To balance robustness and noise in large repositories, these hooks use a hierarchical scoping strategy:
 - A hook will only analyze or format files that are **changed** AND are located **below the directory** containing the `.agents` folder that defined the hook.
