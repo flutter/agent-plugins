@@ -5,6 +5,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:dart_hooks/src/dart_format_hook.dart';
+import 'package:path/path.dart' as path;
 
 import 'package:test/test.dart';
 import 'test_utils.dart';
@@ -158,8 +159,8 @@ void main() {
         triggerSource: 'MANUAL',
       );
 
-      expect(dartFormatArgs, contains('/repo/root/lib/my file.dart'));
-      expect(dartFormatArgs, contains('/repo/root/lib/other.dart'));
+      expect(dartFormatArgs, contains(path.normalize('/repo/root/lib/my file.dart')));
+      expect(dartFormatArgs, contains(path.normalize('/repo/root/lib/other.dart')));
       expect(exitCode, equals(0));
     });
 

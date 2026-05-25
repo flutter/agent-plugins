@@ -5,6 +5,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:dart_hooks/src/dart_analyze_hook.dart';
+import 'package:path/path.dart' as path;
 
 import 'package:test/test.dart';
 import 'test_utils.dart';
@@ -163,8 +164,8 @@ void main() {
         triggerSource: 'MANUAL',
       );
 
-      expect(dartAnalyzeArgs, contains('/package/root/lib/my file.dart'));
-      expect(dartAnalyzeArgs, contains('/package/root/lib/other.dart'));
+      expect(dartAnalyzeArgs, contains(path.normalize('/package/root/lib/my file.dart')));
+      expect(dartAnalyzeArgs, contains(path.normalize('/package/root/lib/other.dart')));
       expect(exitCode, equals(0));
     });
 

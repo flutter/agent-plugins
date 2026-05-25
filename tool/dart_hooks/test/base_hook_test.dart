@@ -5,6 +5,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:dart_hooks/src/base_hook.dart';
+import 'package:path/path.dart' as path;
 
 import 'package:test/test.dart';
 import 'test_utils.dart';
@@ -76,7 +77,7 @@ void main() {
         triggerSource: 'MANUAL',
       );
 
-      expect(executedFiles, contains('/repo/root/lib/file.dart'));
+      expect(executedFiles, contains(path.normalize('/repo/root/lib/file.dart')));
       expect(stdoutMessage, equals(jsonEncode({'decision': 'stop'})));
       expect(exitCode, equals(0));
     });

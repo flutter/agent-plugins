@@ -4,6 +4,7 @@
 
 import 'dart:io';
 import 'package:dart_hooks/src/hook_utils.dart';
+import 'package:path/path.dart' as path;
 
 import 'package:test/test.dart';
 import 'test_utils.dart';
@@ -46,8 +47,8 @@ void main() {
       );
 
       // We expect to find both files, even the one outside tool/dart_hooks.
-      expect(files, contains('/repo/tool/dart_hooks/lib/src/hook_utils.dart'));
-      expect(files, contains('/repo/lib/main.dart'));
+      expect(files, contains(path.normalize('/repo/tool/dart_hooks/lib/src/hook_utils.dart')));
+      expect(files, contains(path.normalize('/repo/lib/main.dart')));
     });
 
     test('getModifiedFilesInternal handles renames correctly', () async {
@@ -72,8 +73,8 @@ void main() {
         allowedExtensions: ['.dart'],
       );
 
-      expect(files, contains('/repo/lib/new.dart'));
-      expect(files, isNot(contains('/repo/lib/old.dart')));
+      expect(files, contains(path.normalize('/repo/lib/new.dart')));
+      expect(files, isNot(contains(path.normalize('/repo/lib/old.dart'))));
     });
 
     test('getModifiedFilesInternal handles spaces in filenames', () async {
@@ -98,7 +99,7 @@ void main() {
         allowedExtensions: ['.dart'],
       );
 
-      expect(files, contains('/repo/lib/my file.dart'));
+      expect(files, contains(path.normalize('/repo/lib/my file.dart')));
     });
   });
 }
