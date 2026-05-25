@@ -3,11 +3,11 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'dart:io';
-import 'base_git_hook.dart';
+import 'base_hook.dart';
 import 'process_runner.dart';
 
 /// Implements the dart analyze hook logic.
-class DartAnalyzeHook extends BaseGitHook {
+class DartAnalyzeHook extends BaseHook {
   /// Creates a [DartAnalyzeHook].
   DartAnalyzeHook({
     super.processRunner = const RealProcessRunner(),
@@ -15,6 +15,7 @@ class DartAnalyzeHook extends BaseGitHook {
     super.printStdout = _defaultPrintStdout,
     required super.logToFile,
     super.onExit = exit,
+    super.readFile,
   });
 
   static bool _defaultFileExists(String path) => File(path).existsSync();
@@ -25,6 +26,9 @@ class DartAnalyzeHook extends BaseGitHook {
 
   @override
   String get hookName => 'dart analyze';
+
+  @override
+  String get configKey => 'DartAnalyzeHook';
 
   @override
   Future<ProcessResult> executeCommand(List<String> files) {

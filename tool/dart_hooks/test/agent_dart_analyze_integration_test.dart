@@ -30,6 +30,9 @@ environment:
   sdk: '>=3.0.0 <4.0.0'
 ''');
 
+      // Create dummy dart_hooks.yaml to enable the analyze hook
+      await File(path.join(packageRoot, 'dart_hooks.yaml')).writeAsString(mockAnalyzeConfig(true));
+
       // Initialize a git repo in the temp directory
       final ProcessResult initResult = await Process.run(
         'git',
@@ -178,8 +181,14 @@ environment:
       );
 
       expect(dartAnalyzeArgs, isNotNull);
-      expect(dartAnalyzeArgs!.any((arg) => arg.endsWith('lib/modified.dart')), isTrue);
-      expect(dartAnalyzeArgs!.any((arg) => arg.endsWith('lib/untouched.dart')), isFalse);
+      expect(
+        dartAnalyzeArgs!.any((arg) => arg.endsWith(path.join('lib', 'modified.dart'))),
+        isTrue,
+      );
+      expect(
+        dartAnalyzeArgs!.any((arg) => arg.endsWith(path.join('lib', 'untouched.dart'))),
+        isFalse,
+      );
       expect(exitCode, equals(0));
     });
   });

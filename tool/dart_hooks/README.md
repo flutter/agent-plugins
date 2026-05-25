@@ -8,23 +8,53 @@ The package provides hooks to enforce code quality and style standards before ch
 - **Dart Format**: Runs `dart format` on modified files.
 
 ## Configuration
-Hooks are configured in a `.agents/hooks.json` file. Antigravity reads this file to determine which hooks to run.
+
+### Triggers (`hooks.json`)
+Hooks are configured in a `.agents/hooks.json` file. Antigravity reads this file to determine which hook scripts to execute.
 
 Example `hooks.json` entry:
 ```json
 {
-  "hooks": [
-    {
-      "id": "dart_analyze",
-      "script": "dart tool/dart_hooks/bin/agent_dart_analyze.dart"
-    },
-    {
-      "id": "dart_format",
-      "script": "dart tool/dart_hooks/bin/agent_dart_format.dart"
-    }
-  ]
+  "dart-format": {
+    "Stop": [
+      {
+        "type": "command",
+        "command": "../tool/dart_hooks/bin/agent_dart_format.dart --source hook --log",
+        "timeout": 30
+      }
+    ]
+  },
+  "dart-analyze": {
+    "Stop": [
+      {
+        "type": "command",
+        "command": "../tool/dart_hooks/bin/agent_dart_analyze.dart --source hook --log",
+        "timeout": 90
+      }
+    ]
+  }
 }
 ```
+
+### Activation (`dart_hooks.yaml`)
+To prevent hooks from running unnecessarily in sub-packages, hooks are **disabled by default**.
+
+To enable hooks, you must create a `dart_hooks.yaml` file in the package/project root (the parent directory of the `.agents` folder where the hook runs). In this file, specify the hook's configuration key as the key and set it to `true`.
+
+Example `dart_hooks.yaml` to enable both formatting and analysis:
+```yaml
+DartFormatHook: true
+DartAnalyzeHook: true
+```
+
+If `dart_hooks.yaml` is missing or does not contain the key for a specific hook, that hook will be skipped and exit silently.
+
+### Debugging Activation
+Because hooks exit silently when skipped, you can verify they are configured correctly by inspecting the generated log files (e.g. `.agents/dart_analyze.log` or `.agents/dart_format.log`):
+* If the log file **does not exist or does not update**, it means `dart_hooks.yaml` was not found. Ensure it is placed in the package root (the parent directory of the `.agents/` folder where the hook runs).
+* If the log file contains `Hook <name> is disabled (key "<key>" is missing in configuration)`, it means the configuration file was found, but the key (e.g. `DartAnalyzeHook` or `DartFormatHook`) is misspelled or missing.
+* If the log file contains `Hook <name> is enabled in configuration.`, the hook was successfully loaded and executed.
+
 
 ## Hierarchical Scoping
 To balance robustness and noise in large repositories, these hooks use a hierarchical scoping strategy:

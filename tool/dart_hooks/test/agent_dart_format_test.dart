@@ -5,6 +5,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:dart_hooks/src/dart_format_hook.dart';
+import 'package:path/path.dart' as path;
 
 import 'package:test/test.dart';
 import 'test_utils.dart';
@@ -30,8 +31,10 @@ void main() {
           return ProcessResult(0, 0, '', '');
         }),
         fileExists: (path) => true,
+        readFile: (path) => mockFormatConfig(true),
         printStdout: (msg) {},
-        logToFile: (msg) async => loggedMessage = msg,
+        logToFile: (msg) async => loggedMessage = "${loggedMessage ?? ''}$msg\n",
+        onExit: (code) {},
       );
 
       await hook.run(
@@ -60,7 +63,9 @@ void main() {
           return ProcessResult(0, 0, '', '');
         }),
         fileExists: (path) => true,
-        logToFile: (msg) async => loggedMessage = msg,
+        readFile: (path) => mockFormatConfig(true),
+        logToFile: (msg) async => loggedMessage = "${loggedMessage ?? ''}$msg\n",
+        onExit: (code) {},
       );
 
       await hook.run(
@@ -96,6 +101,7 @@ void main() {
           return ProcessResult(0, 0, '', '');
         }),
         fileExists: (path) => true,
+        readFile: (path) => mockFormatConfig(true),
         printStdout: (msg) => stdoutMessage = msg,
         logToFile: (msg) async {},
         onExit: (code) => exitCode = code,
@@ -136,6 +142,7 @@ void main() {
           return ProcessResult(0, 0, '', '');
         }),
         fileExists: (path) => true,
+        readFile: (path) => mockFormatConfig(true),
         printStdout: (msg) {},
         logToFile: (msg) async {},
         onExit: (code) => exitCode = code,
@@ -148,8 +155,8 @@ void main() {
         triggerSource: 'MANUAL',
       );
 
-      expect(dartFormatArgs, contains('/repo/root/lib/my file.dart'));
-      expect(dartFormatArgs, contains('/repo/root/lib/other.dart'));
+      expect(dartFormatArgs, contains(path.normalize('/repo/root/lib/my file.dart')));
+      expect(dartFormatArgs, contains(path.normalize('/repo/root/lib/other.dart')));
       expect(exitCode, equals(0));
     });
 
@@ -166,6 +173,7 @@ void main() {
           throw Exception('Simulated crash');
         }),
         fileExists: (path) => true,
+        readFile: (path) => mockFormatConfig(true),
         printStdout: (msg) {},
         logToFile: (msg) async {},
         onExit: (code) => exitCode = code,
@@ -181,7 +189,7 @@ void main() {
       expect(exitCode, equals(1));
     });
 
-    test('Exits 1 when git rev-parse fails', () async {
+    test('Exits 0 and outputs decision continue when git rev-parse fails', () async {
       int? exitCode;
 
       final hook = DartFormatHook(
@@ -197,6 +205,7 @@ void main() {
           return ProcessResult(0, 0, '', '');
         }),
         fileExists: (path) => true,
+        readFile: (path) => mockFormatConfig(true),
         printStdout: (msg) {},
         logToFile: (msg) async {},
         onExit: (code) => exitCode = code,
@@ -209,7 +218,7 @@ void main() {
         triggerSource: 'MANUAL',
       );
 
-      expect(exitCode, equals(1));
+      expect(exitCode, equals(0));
     });
   });
 }

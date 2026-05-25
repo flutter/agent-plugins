@@ -29,3 +29,9 @@ class MockProcessRunner implements ProcessRunner {
     return onRun(executable, arguments, runInShell: runInShell, workingDirectory: workingDirectory);
   }
 }
+
+/// Returns a YAML configuration string enabling or disabling the analyze hook.
+String mockAnalyzeConfig(bool enabled) => 'DartAnalyzeHook: $enabled\n';
+
+/// Returns a YAML configuration string enabling or disabling the format hook.
+String mockFormatConfig(bool enabled) => 'DartFormatHook: $enabled\n';

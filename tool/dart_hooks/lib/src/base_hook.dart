@@ -2,34 +2,41 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
+import 'package:yaml/yaml.dart';
 import 'hook_utils.dart';
 import 'process_runner.dart';
 
-/// Base class for Git hooks using the Template Method pattern.
-abstract class BaseGitHook {
-  BaseGitHook({
+/// Base class for hooks using the Template Method pattern.
+abstract class BaseHook {
+  BaseHook({
     required this.processRunner,
     required this.fileExists,
     required this.printStdout,
     required this.logToFile,
     required this.onExit,
-  });
+    FutureOr<String> Function(String)? readFile,
+  }) : readFile = readFile ?? ((path) => File(path).readAsString());
 
   final ProcessRunner processRunner;
   final bool Function(String) fileExists;
   final void Function(String) printStdout;
   final Future<void> Function(String) logToFile;
   final void Function(int) onExit;
+  final FutureOr<String> Function(String) readFile;
 
   /// The allowed file extensions for this hook (e.g., ['.dart']).
   List<String> get allowedExtensions;
 
   /// The name of the hook for logging purposes.
   String get hookName;
+
+  /// The configuration key in `dart_hooks.yaml` that determines if this hook is enabled.
+  String get configKey;
 
   /// Runs the specific command on the files (e.g., `dart analyze`).
   @protected
@@ -42,6 +49,50 @@ abstract class BaseGitHook {
     required String packageRoot,
     required String triggerSource,
   }) async {
+    // 0. Resolve configuration setting.
+    final String configPath = path.join(packageRoot, 'dart_hooks.yaml');
+    if (!fileExists(configPath)) {
+      // Do NOT log anything for a missing config file.
+      printStdout(jsonEncode({'decision': 'stop'}));
+      onExit(0);
+      return;
+    }
+
+    try {
+      final String configContent = await readFile(configPath);
+      final dynamic yaml = loadYaml(configContent);
+      if (yaml is Map) {
+        if (!yaml.containsKey(configKey)) {
+          await logToFile(
+            'Hook $hookName is disabled (key "$configKey" is missing in configuration).',
+          );
+          printStdout(jsonEncode({'decision': 'stop'}));
+          onExit(0);
+          return;
+        }
+
+        final dynamic isEnabled = yaml[configKey];
+        if (isEnabled == true) {
+          await logToFile('Hook $hookName is enabled in configuration.');
+        } else {
+          await logToFile('Hook $hookName is disabled.');
+          printStdout(jsonEncode({'decision': 'stop'}));
+          onExit(0);
+          return;
+        }
+      } else {
+        await logToFile('Hook $hookName is disabled (invalid configuration format).');
+        printStdout(jsonEncode({'decision': 'stop'}));
+        onExit(0);
+        return;
+      }
+    } catch (e) {
+      await logToFile('Hook $hookName is disabled (failed to parse configuration: $e).');
+      printStdout(jsonEncode({'decision': 'stop'}));
+      onExit(0);
+      return;
+    }
+
     await logToFile('$hookName started in $currentPath (Trigger: $triggerSource)');
 
     try {
@@ -52,8 +103,8 @@ abstract class BaseGitHook {
       ]);
 
       if (repoRootResult.exitCode != 0) {
-        await logToFile('ERROR: Failed to get git repo root.');
-        printStdout(jsonEncode({'decision': 'continue', 'reason': 'Failed to get git repo root.'}));
+        await logToFile('ERROR: Failed to get repo root.');
+        printStdout(jsonEncode({'decision': 'continue', 'reason': 'Failed to get repo root.'}));
         onExit(0);
         return;
       }
@@ -76,7 +127,7 @@ abstract class BaseGitHook {
         );
       } catch (e) {
         await logToFile('ERROR: Failed to get modified files: $e');
-        printStdout(jsonEncode({'decision': 'continue', 'reason': 'Failed to get git status.'}));
+        printStdout(jsonEncode({'decision': 'continue', 'reason': 'Failed to get status.'}));
         onExit(0);
         return;
       }
