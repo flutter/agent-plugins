@@ -428,5 +428,33 @@ Body''');
       expect(stderr.join('\n'), contains('non_existent_config.yaml'));
       await process.shouldExit(1);
     });
+
+    test('ignores config when both --config and --ignore-config are passed', () async {
+      final Directory skillDir = await Directory('${tempDir.path}/TEST-SKILL').create();
+      await File('${skillDir.path}/SKILL.md').writeAsString('''
+---
+name: TEST-SKILL
+description: A test skill
+license: MIT
+---
+Body''');
+
+      await File('${tempDir.path}/custom_config.yaml').writeAsString('''
+dart_skills_lint:
+  rules:
+    invalid-skill-name: disabled
+''');
+
+      final TestProcess process = await TestProcess.start('dart', [
+        p.normalize(p.absolute('bin/cli.dart')),
+        '-s',
+        'TEST-SKILL',
+        '--config',
+        'custom_config.yaml',
+        '--ignore-config',
+      ], workingDirectory: tempDir.path);
+
+      await process.shouldExit(1);
+    });
   });
 }
