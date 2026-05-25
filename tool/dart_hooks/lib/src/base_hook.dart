@@ -14,7 +14,6 @@ import 'process_runner.dart';
 /// Base class for hooks using the Template Method pattern.
 abstract class BaseHook {
   BaseHook({
-    required this.configKey,
     required this.processRunner,
     required this.fileExists,
     required this.printStdout,
@@ -23,7 +22,6 @@ abstract class BaseHook {
     FutureOr<String> Function(String)? readFile,
   }) : readFile = readFile ?? ((path) => File(path).readAsString());
 
-  final String configKey;
   final ProcessRunner processRunner;
   final bool Function(String) fileExists;
   final void Function(String) printStdout;
@@ -36,6 +34,9 @@ abstract class BaseHook {
 
   /// The name of the hook for logging purposes.
   String get hookName;
+
+  /// The configuration key in `dart_hooks.yaml` that determines if this hook is enabled.
+  String get configKey;
 
   /// Runs the specific command on the files (e.g., `dart analyze`).
   @protected

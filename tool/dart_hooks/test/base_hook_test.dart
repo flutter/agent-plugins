@@ -12,7 +12,6 @@ import 'test_utils.dart';
 
 class TestHook extends BaseHook {
   TestHook({
-    required super.configKey,
     required super.processRunner,
     required super.fileExists,
     required super.printStdout,
@@ -31,10 +30,13 @@ class TestHook extends BaseHook {
   String get hookName => 'test hook';
 
   @override
+  String get configKey => 'test_hook';
+
+  @override
   Future<ProcessResult> executeCommand(List<String> files) => executeCommandMock(files);
 }
 
-String _mockConfig(bool enabled) => 'test_hook.dart: $enabled\n';
+String _mockConfig(bool enabled) => 'test_hook: $enabled\n';
 
 void main() {
   group('BaseHook Tests', () {
@@ -44,7 +46,6 @@ void main() {
       List<String>? executedFiles;
 
       final hook = TestHook(
-        configKey: 'test_hook.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -87,7 +88,6 @@ void main() {
       int? exitCode;
 
       final hook = TestHook(
-        configKey: 'test_hook.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -130,7 +130,6 @@ void main() {
       final List<List<String>> executedChunks = [];
 
       final hook = TestHook(
-        configKey: 'test_hook.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -178,7 +177,6 @@ void main() {
         final loggedMessages = <String>[];
 
         final hook = TestHook(
-          configKey: 'test_hook.dart',
           processRunner: MockProcessRunner((
             cmd,
             args, {
@@ -213,7 +211,6 @@ void main() {
         final loggedMessages = <String>[];
 
         final hook = TestHook(
-          configKey: 'test_hook.dart',
           processRunner: MockProcessRunner((
             cmd,
             args, {
@@ -223,7 +220,7 @@ void main() {
             return ProcessResult(0, 0, '', '');
           }),
           fileExists: (path) => true,
-          readFile: (path) => 'other_hook.dart: true\n', // missing key: test_hook.dart
+          readFile: (path) => 'other_hook: true\n', // missing key: test_hook
           printStdout: (msg) => stdoutMessage = msg,
           logToFile: (msg) async => loggedMessages.add(msg),
           onExit: (code) => exitCode = code,
@@ -243,7 +240,7 @@ void main() {
         // Verify log contains the specific warning message
         expect(
           loggedMessages.first,
-          contains('is disabled (key "test_hook.dart" is missing in configuration)'),
+          contains('is disabled (key "test_hook" is missing in configuration)'),
         );
       });
 
@@ -253,7 +250,6 @@ void main() {
         final loggedMessages = <String>[];
 
         final hook = TestHook(
-          configKey: 'test_hook.dart',
           processRunner: MockProcessRunner((
             cmd,
             args, {
@@ -290,7 +286,6 @@ void main() {
         var commandExecuted = false;
 
         final hook = TestHook(
-          configKey: 'test_hook.dart',
           processRunner: MockProcessRunner((
             String cmd,
             List<String> args, {
@@ -335,7 +330,6 @@ void main() {
         final loggedMessages = <String>[];
 
         final hook = TestHook(
-          configKey: 'test_hook.dart',
           processRunner: MockProcessRunner((
             cmd,
             args, {

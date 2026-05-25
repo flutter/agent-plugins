@@ -16,7 +16,7 @@ Future<void> main(List<String> args) async {
     logFileName: 'dart_analyze.log',
     executeHook: (source, logToFile) async {
       final String packageRoot = Directory.current.parent.path;
-      final hook = DartAnalyzeHook(configKey: 'agent_dart_analyze.dart', logToFile: logToFile);
+      final hook = DartAnalyzeHook(logToFile: logToFile);
       await hook.run(
         args: args,
         currentPath: Directory.current.path,

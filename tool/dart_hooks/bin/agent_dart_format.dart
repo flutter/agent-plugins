@@ -12,7 +12,7 @@ Future<void> main(List<String> args) async {
     args: args,
     logFileName: 'dart_format.log',
     executeHook: (source, logToFile) async {
-      final hook = DartFormatHook(configKey: 'agent_dart_format.dart', logToFile: logToFile);
+      final hook = DartFormatHook(logToFile: logToFile);
       await hook.run(
         args: args,
         currentPath: Directory.current.path,

@@ -10,7 +10,6 @@ import 'process_runner.dart';
 class DartFormatHook extends BaseHook {
   /// Creates a [DartFormatHook].
   DartFormatHook({
-    required super.configKey,
     super.processRunner = const RealProcessRunner(),
     super.fileExists = _defaultFileExists,
     super.printStdout = _defaultPrintStdout,
@@ -27,6 +26,9 @@ class DartFormatHook extends BaseHook {
 
   @override
   String get hookName => 'dart format';
+
+  @override
+  String get configKey => 'DartFormatHook';
 
   @override
   Future<ProcessResult> executeCommand(List<String> files) {

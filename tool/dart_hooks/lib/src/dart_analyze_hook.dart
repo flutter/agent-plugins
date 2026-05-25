@@ -10,7 +10,6 @@ import 'process_runner.dart';
 class DartAnalyzeHook extends BaseHook {
   /// Creates a [DartAnalyzeHook].
   DartAnalyzeHook({
-    required super.configKey,
     super.processRunner = const RealProcessRunner(),
     super.fileExists = _defaultFileExists,
     super.printStdout = _defaultPrintStdout,
@@ -27,6 +26,9 @@ class DartAnalyzeHook extends BaseHook {
 
   @override
   String get hookName => 'dart analyze';
+
+  @override
+  String get configKey => 'DartAnalyzeHook';
 
   @override
   Future<ProcessResult> executeCommand(List<String> files) {

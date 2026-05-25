@@ -31,7 +31,7 @@ class MockProcessRunner implements ProcessRunner {
 }
 
 /// Returns a YAML configuration string enabling or disabling the analyze hook.
-String mockAnalyzeConfig(bool enabled) => 'agent_dart_analyze.dart: $enabled\n';
+String mockAnalyzeConfig(bool enabled) => 'DartAnalyzeHook: $enabled\n';
 
 /// Returns a YAML configuration string enabling or disabling the format hook.
-String mockFormatConfig(bool enabled) => 'agent_dart_format.dart: $enabled\n';
+String mockFormatConfig(bool enabled) => 'DartFormatHook: $enabled\n';

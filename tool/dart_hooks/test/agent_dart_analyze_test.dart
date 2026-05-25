@@ -16,7 +16,6 @@ void main() {
       String? loggedMessage;
 
       final hook = DartAnalyzeHook(
-        configKey: 'agent_dart_analyze.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -49,7 +48,6 @@ void main() {
       int? exitCode;
 
       final hook = DartAnalyzeHook(
-        configKey: 'agent_dart_analyze.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -90,7 +88,6 @@ void main() {
       int? exitCode;
 
       final hook = DartAnalyzeHook(
-        configKey: 'agent_dart_analyze.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -131,7 +128,6 @@ void main() {
       List<String>? dartAnalyzeArgs;
 
       final hook = DartAnalyzeHook(
-        configKey: 'agent_dart_analyze.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -173,7 +169,6 @@ void main() {
       int? exitCode;
 
       final hook = DartAnalyzeHook(
-        configKey: 'agent_dart_analyze.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {

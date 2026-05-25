@@ -86,7 +86,6 @@ environment:
       final List<String> logs = [];
 
       final hook = DartAnalyzeHook(
-        configKey: 'agent_dart_analyze.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -149,7 +148,6 @@ environment:
       List<String>? dartAnalyzeArgs;
 
       final hook = DartAnalyzeHook(
-        configKey: 'agent_dart_analyze.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {

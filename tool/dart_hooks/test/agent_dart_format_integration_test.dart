@@ -55,7 +55,6 @@ void main() {
       int? exitCode;
 
       final hook = DartFormatHook(
-        configKey: 'agent_dart_format.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -107,7 +106,6 @@ void main() {
       }
 
       final hook = DartFormatHook(
-        configKey: 'agent_dart_format.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
@@ -180,7 +178,6 @@ void main() {
       int? exitCode;
 
       final hook = DartFormatHook(
-        configKey: 'agent_dart_format.dart',
         processRunner: MockProcessRunner((
           String cmd,
           List<String> args, {
