@@ -52,3 +52,24 @@ jobs:
       - run: dart pub get
 
       - run: dart format --output=none --set-exit-if-changed .
+
+  validate:
+    runs-on: ubuntu-latest
+    # Override the workflow-level working directory so the validator runs
+    # against the repository root, not tool/marketplace_check.
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm install -g @anthropic-ai/claude-code
+
+      # The canonical schema validator (unknown fields, duplicate names, path
+      # traversal, version mismatches). Runs offline; no API key needed.
+      - run: claude plugin validate .
+
+      - run: claude plugin validate ./plugins/flutter-skills
