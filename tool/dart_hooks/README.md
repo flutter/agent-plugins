@@ -39,12 +39,12 @@ Example `hooks.json` entry:
 ### Activation (`dart_hooks.yaml`)
 To prevent hooks from running unnecessarily in sub-packages, hooks are **disabled by default**.
 
-To enable hooks, you must create a `dart_hooks.yaml` file in the package/project root (the parent directory of the `.agents` folder where the hook runs). In this file, specify the hook's script/executable filename as the key and set it to `true`.
+To enable hooks, you must create a `dart_hooks.yaml` file in the package/project root (the parent directory of the `.agents` folder where the hook runs). In this file, specify the hook's configuration key as the key and set it to `true`.
 
 Example `dart_hooks.yaml` to enable both formatting and analysis:
 ```yaml
-agent_dart_format.dart: true
-agent_dart_analyze.dart: true
+DartFormatHook: true
+DartAnalyzeHook: true
 ```
 
 If `dart_hooks.yaml` is missing or does not contain the key for a specific hook, that hook will be skipped and exit silently.
