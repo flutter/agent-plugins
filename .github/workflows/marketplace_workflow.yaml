@@ -1,0 +1,54 @@
+name: marketplace
+permissions: read-all
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/marketplace_workflow.yaml'
+      - 'tool/marketplace_check/**'
+      - '.claude-plugin/**'
+      - 'plugins/**'
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/marketplace_workflow.yaml'
+      - 'tool/marketplace_check/**'
+      - '.claude-plugin/**'
+      - 'plugins/**'
+  schedule:
+    - cron: '0 0 * * 0' # weekly
+
+defaults:
+  run:
+    working-directory: tool/marketplace_check
+
+jobs:
+  analyze_and_test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - run: dart pub get
+
+      - run: dart analyze --fatal-infos
+
+      - run: dart test
+
+  formatting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - run: dart pub get
+
+      - run: dart format --output=none --set-exit-if-changed .

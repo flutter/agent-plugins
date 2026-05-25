@@ -1,0 +1,13 @@
+name: marketplace_check
+description: >-
+  Tests that verify the Claude plugin marketplace wiring (marketplace.json,
+  the flutter-skills plugin manifest, and the skills symlink) stays correct.
+publish_to: 'none'
+
+environment:
+  sdk: ^3.10.8
+
+dev_dependencies:
+  lints: ^6.0.0
+  path: ^1.9.1
+  test: ^1.25.6
