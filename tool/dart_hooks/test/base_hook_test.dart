@@ -242,6 +242,10 @@ void main() {
           loggedMessages.first,
           contains('is disabled (key "test_hook" is missing in configuration)'),
         );
+        // Verify the warning surfaces the keys that were found so a typo'd or
+        // legacy key (e.g. a script filename) does not silently disable a hook.
+        expect(loggedMessages.first, contains('Found keys: [other_hook].'));
+        expect(loggedMessages.first, contains('"test_hook: true"'));
       });
 
       test('Disabled setting logs disabled', () async {

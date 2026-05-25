@@ -63,8 +63,10 @@ abstract class BaseHook {
       final dynamic yaml = loadYaml(configContent);
       if (yaml is Map) {
         if (!yaml.containsKey(configKey)) {
+          final String foundKeys = yaml.keys.join(', ');
           await logToFile(
-            'Hook $hookName is disabled (key "$configKey" is missing in configuration).',
+            'Hook $hookName is disabled (key "$configKey" is missing in configuration). '
+            'Found keys: [$foundKeys]. Did you mean to enable it with "$configKey: true"?',
           );
           printStdout(jsonEncode({'decision': 'stop'}));
           onExit(0);
