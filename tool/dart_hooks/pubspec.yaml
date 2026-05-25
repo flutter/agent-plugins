@@ -1,6 +1,6 @@
 name: dart_hooks
 description: A package containing hooks for Dart projects, such as format and analyze.
-version: 0.0.2
+version: 0.1.0
 publish_to: 'none'
 
 environment:

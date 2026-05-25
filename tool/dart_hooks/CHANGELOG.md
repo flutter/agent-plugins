@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.0.2
+## 0.1.0
 
 - **Breaking Change**: Hooks are now disabled by default and require a `dart_hooks.yaml` file in the package/project root to be executed.
 - Updated YAML configuration keys to use hook class names (`DartAnalyzeHook`, `DartFormatHook`) instead of script filenames.
