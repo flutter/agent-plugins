@@ -106,6 +106,7 @@ return MaterialApp(
   ],
   supportedLocales: const [
     Locale('en'), // English
+    Locale('es'), // Spanish
     Locale('zh'), // Chinese
     Locale('zh', 'CN'), // Simplified Chinese, China
   ],
