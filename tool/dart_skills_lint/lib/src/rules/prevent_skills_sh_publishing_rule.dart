@@ -1,3 +1,7 @@
+// Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
 import 'package:yaml/yaml.dart';
 import '../models/analysis_severity.dart';
 import '../models/skill_context.dart';
@@ -74,7 +78,7 @@ class PreventSkillsShPublishingRule extends SkillRule {
 
     final Object? internalVal = metadata['internal'];
 
-    if (internalVal is String && internalVal.toLowerCase() == 'true') {
+    if (internalVal is String && internalVal.trim().toLowerCase() == 'true') {
       errors.add(
         ValidationError(
           ruleId: name,

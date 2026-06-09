@@ -1,3 +1,7 @@
+// Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
 import 'dart:io';
 
 import 'package:dart_skills_lint/src/models/analysis_severity.dart';
@@ -85,6 +89,24 @@ void main() {
 
       expect(errors, isNotEmpty);
       expect(errors.first.message, contains('is set to a string "True"'));
+    });
+
+    test('flags when metadata internal is a string with whitespace', () async {
+      final rule = PreventSkillsShPublishingRule(severity: AnalysisSeverity.warning);
+      final parsed =
+          loadYaml('name: my-skill\ndescription: Test\nmetadata:\n  internal: "  True  "\n')
+              as YamlMap;
+      final context = SkillContext(
+        directory: Directory('dummy'),
+        rawContent:
+            '---\nname: my-skill\ndescription: Test\nmetadata:\n  internal: "  True  "\n---\n',
+        parsedYaml: parsed,
+      );
+
+      final List<ValidationError> errors = await rule.validate(context);
+
+      expect(errors, isNotEmpty);
+      expect(errors.first.message, contains('is set to a string "  True  "'));
     });
 
     test('passes when metadata internal is true', () async {
