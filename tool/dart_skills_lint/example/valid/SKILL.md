@@ -5,6 +5,8 @@ description: >-
   passes every default rule: hyphen-lowercase name matching the parent
   directory, a properly sized description, and no other frontmatter fields
   that would trigger the disallowed-field check.
+metadata:
+  internal: true
 ---
 
 # Valid example skill
