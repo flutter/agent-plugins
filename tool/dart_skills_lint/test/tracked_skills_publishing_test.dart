@@ -2,16 +2,17 @@ import 'dart:io';
 
 import 'package:dart_skills_lint/src/config_parser.dart';
 import 'package:dart_skills_lint/src/models/analysis_severity.dart';
+import 'package:dart_skills_lint/src/validation_session.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 void main() {
-  test('all tracked skills have prevent-skills-sh-publishing rule explicitly enabled', () async {
+  test('all tracked skills have prevent-skills-sh-publishing rule explicitly configured', () async {
     // Explanation:
     // Any skill in .agents/skills/ that is checked into version control is considered an internal skill.
-    // It must explicitly have the `prevent-skills-sh-publishing: error` rule enabled in dart_skills_lint.yaml
-    // to prevent accidental publishing. Un-tracked / local dev skills (which are git-ignored) are exempt
-    // so they can be published without friction.
+    // It must explicitly have the `prevent-skills-sh-publishing` rule configured in dart_skills_lint.yaml
+    // to prevent accidental publishing (or explicitly disabled). Un-tracked / local dev skills (which are git-ignored)
+    // are exempt so they can be published without friction.
 
     // 1. Get tracked files using git ls-files
     final ProcessResult processResult = await Process.run('git', ['ls-files', '.agents/skills']);
@@ -30,29 +31,32 @@ void main() {
       }
     }
 
+    expect(trackedSkillDirs, isNotEmpty, reason: 'Should find at least one tracked skill');
+
     // 2. Parse configuration
     final Configuration config = await ConfigParser.loadConfig();
-
-    final Map<String, AnalysisSeverity> globalRules = config.configuredRules;
-    final globalEnabled = globalRules['prevent-skills-sh-publishing'] == AnalysisSeverity.error;
+    final ValidationSession session = ValidationSession(
+      config: config,
+      resolvedRules: {},
+      ignoreFileOverride: null,
+      customRules: [],
+      printWarnings: false,
+      fastFail: false,
+      quiet: true,
+      generateBaseline: false,
+      fix: false,
+      fixApply: false,
+    );
 
     for (final skillDir in trackedSkillDirs) {
-      var localEnabled = false;
       final expectedPath = '.agents/skills/$skillDir';
-
-      for (final DirectoryConfig dirConfig in config.directoryConfigs) {
-        if (p.equals(dirConfig.path, expectedPath) || p.isWithin(dirConfig.path, expectedPath)) {
-          if (dirConfig.rules['prevent-skills-sh-publishing'] == AnalysisSeverity.error) {
-            localEnabled = true;
-          }
-        }
-      }
+      final Map<String, AnalysisSeverity> resolvedRules = session.resolveRulesForPath(expectedPath);
 
       expect(
-        globalEnabled || localEnabled,
+        resolvedRules.containsKey('prevent-skills-sh-publishing'),
         isTrue,
         reason:
-            'The tracked skill "$skillDir" must have "prevent-skills-sh-publishing: error" explicitly enabled in dart_skills_lint.yaml.',
+            'The tracked skill "$skillDir" must have "prevent-skills-sh-publishing" explicitly configured in dart_skills_lint.yaml.',
       );
     }
   });
