@@ -1,74 +1,106 @@
 {
   "version": 1,
   "skills": {
+    "dart-add-unit-test": {
+      "source": "dart-lang/skills",
+      "sourceType": "github",
+      "skillPath": "skills/dart-add-unit-test/SKILL.md",
+      "computedHash": "326a2b6cb57bcb4f40203e063a1060e9549a8cea0ece1a5c9a0d39a2f2b85bc8"
+    },
     "dart-best-practices": {
       "source": "kevmoo/dash_skills",
       "sourceType": "github",
-      "skillPath": ".agent/skills/dart-best-practices/SKILL.md",
-      "computedHash": "1f529bd357368f67621de2c25531f69e16f726ecbe0071aabbf47b6d7b2a16c4"
+      "skillPath": "skills/dart-best-practices/SKILL.md",
+      "computedHash": "0fb4c2d73af154719350a44fa1a0eb2d19835738bed1472f8a3277fa3ed02699"
+    },
+    "dart-build-cli-app": {
+      "source": "dart-lang/skills",
+      "sourceType": "github",
+      "skillPath": "skills/dart-build-cli-app/SKILL.md",
+      "computedHash": "2c693ba718e23155fd9acd8d2e14f5c311258ed900131b2ad12fda46ae5eebfa"
     },
     "dart-checks-migration": {
       "source": "kevmoo/dash_skills",
       "sourceType": "github",
-      "skillPath": ".agent/skills/dart-checks-migration/SKILL.md",
-      "computedHash": "15592bf08008e2a37da5d1f4dc6b99dae01ce0db1ec7127f97cdfac3d6bcfb5d"
+      "skillPath": "skills/dart-checks-migration/SKILL.md",
+      "computedHash": "af16617754607df535feea03eb1a2512f0b166e750bc0deb58eeafe2846de0e0"
     },
     "dart-cli-app-best-practices": {
       "source": "kevmoo/dash_skills",
       "sourceType": "github",
-      "skillPath": ".agent/skills/dart-cli-app-best-practices/SKILL.md",
-      "computedHash": "83487d2341e4b692d180fe6c9fc402706a5707aba227424db016182006cfdf30"
+      "skillPath": "skills/dart-cli-app-best-practices/SKILL.md",
+      "computedHash": "bac8c51f2ada86949f9d6bcd2a05aa40675d312a4853ff63efae2c5541daff9f"
+    },
+    "dart-collect-coverage": {
+      "source": "dart-lang/skills",
+      "sourceType": "github",
+      "skillPath": "skills/dart-collect-coverage/SKILL.md",
+      "computedHash": "36d77c4ebc2edc7ade399ae8461776dd33a461899afda4b2b9d8e7f599d2ef6c"
     },
     "dart-doc-validation": {
       "source": "kevmoo/dash_skills",
       "sourceType": "github",
-      "skillPath": ".agent/skills/dart-doc-validation/SKILL.md",
+      "skillPath": "skills/dart-doc-validation/SKILL.md",
       "computedHash": "acc150afe3406de17059f9215fa009ffeb1b7c0815f903c2af303380e90055c4"
     },
     "dart-long-lines": {
       "source": "kevmoo/dash_skills",
       "sourceType": "github",
-      "skillPath": ".agent/skills/dart-long-lines/SKILL.md",
+      "skillPath": "skills/dart-long-lines/SKILL.md",
       "computedHash": "db6543389e683823446c7ee27fb162f219cc47f209809b9fd79b012bdb944991"
     },
     "dart-matcher-best-practices": {
       "source": "kevmoo/dash_skills",
       "sourceType": "github",
-      "skillPath": ".agent/skills/dart-matcher-best-practices/SKILL.md",
-      "computedHash": "99a200dca8676e865b97a81abe40e8f9e2b9afdbd0f82845c1e3c8dd7eae007b"
+      "skillPath": "skills/dart-matcher-best-practices/SKILL.md",
+      "computedHash": "1e408718281e630be0963d3890995cdee00a1a0955432f6ec10f5fac8ff73b3a"
+    },
+    "dart-migrate-to-checks-package": {
+      "source": "dart-lang/skills",
+      "sourceType": "github",
+      "skillPath": "skills/dart-migrate-to-checks-package/SKILL.md",
+      "computedHash": "c63c214e28d2cfd2a3f7812da1d54c3abddba90a04d9d2dfaf91e8e8fe53a243"
     },
     "dart-modern-features": {
       "source": "kevmoo/dash_skills",
       "sourceType": "github",
-      "skillPath": ".agent/skills/dart-modern-features/SKILL.md",
-      "computedHash": "3148ee2c96c296593d3cd704d4bd99af25c84237a40c07acad5696328555907a"
+      "skillPath": "skills/dart-modern-features/SKILL.md",
+      "computedHash": "386c4a86bbd015ad4679d228d1fc00f1aee97739d2b3ae363ef4fcfab21a1712"
     },
     "dart-package-maintenance": {
       "source": "kevmoo/dash_skills",
       "sourceType": "github",
-      "skillPath": ".agent/skills/dart-package-maintenance/SKILL.md",
+      "skillPath": "skills/dart-package-maintenance/SKILL.md",
       "computedHash": "92efdb1b873eec4e0bcb61ade541b954eee347c3ddd70c27ba22c982c318d7e6"
     },
     "dart-test-coverage": {
       "source": "kevmoo/dash_skills",
       "sourceType": "github",
-      "skillPath": ".agent/skills/dart-test-coverage/SKILL.md",
-      "computedHash": "b52e0f0203181a5b6eeb5ea202f7509ab8380c53448411b84e1f84696436dfdb"
+      "skillPath": "skills/dart-test-coverage/SKILL.md",
+      "computedHash": "063e506d7b4bae28b13ae1f6d7df3eac92cf30a1a3898c12bf225d55a1dd897b"
     },
     "dart-test-fundamentals": {
       "source": "kevmoo/dash_skills",
       "sourceType": "github",
-      "skillPath": ".agent/skills/dart-test-fundamentals/SKILL.md",
-      "computedHash": "0d6e877c3575136909afa4f9daa82ed48c713a3052f8e211b2476043b0438bf7"
+      "skillPath": "skills/dart-test-fundamentals/SKILL.md",
+      "computedHash": "d3b14f42e4560744d6f975acd73b9f9b8a7e6decb660421dd8bda92900208636"
+    },
+    "dart-use-pattern-matching": {
+      "source": "dart-lang/skills",
+      "sourceType": "github",
+      "skillPath": "skills/dart-use-pattern-matching/SKILL.md",
+      "computedHash": "86ea49e8f82ebcdbfd00579c0bcaca16d3f33839c96f9d3875bee95c553daa4b"
     },
     "grill-me": {
       "source": "mattpocock/skills",
       "sourceType": "github",
+      "skillPath": "skills/productivity/grill-me/SKILL.md",
       "computedHash": "784f0dbb7403b0f00324bce9a112f715342777a0daee7bbb7385f9c6f0a170ea"
     },
     "test-driven-development": {
       "source": "obra/superpowers",
       "sourceType": "github",
+      "skillPath": "skills/test-driven-development/SKILL.md",
       "computedHash": "126f1ebf6ccd414f42544f6e83d8cc5adb089e1108eaffb7c400701e37eecd9f"
     }
   }

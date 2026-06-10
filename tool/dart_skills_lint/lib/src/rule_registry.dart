@@ -9,6 +9,7 @@ import 'rules/absolute_paths_rule.dart';
 import 'rules/description_length_rule.dart';
 import 'rules/disallowed_field_rule.dart';
 import 'rules/name_format_rule.dart';
+import 'rules/prevent_skills_sh_publishing_rule.dart';
 import 'rules/relative_paths_rule.dart';
 import 'rules/trailing_whitespace_rule.dart';
 import 'rules/valid_yaml_metadata_rule.dart';
@@ -32,6 +33,11 @@ class RuleRegistry {
       name: DisallowedFieldRule.ruleName,
       defaultSeverity: DisallowedFieldRule.defaultSeverity,
       help: 'Check for disallowed fields in YAML metadata.',
+    ),
+    const CheckType(
+      name: PreventSkillsShPublishingRule.ruleName,
+      defaultSeverity: PreventSkillsShPublishingRule.defaultSeverity,
+      help: 'Check if skill has metadata: internal: true to prevent publishing.',
     ),
     const CheckType(
       name: NameFormatRule.ruleName,
@@ -64,6 +70,8 @@ class RuleRegistry {
         return DescriptionLengthRule(severity: severity);
       case DisallowedFieldRule.ruleName:
         return DisallowedFieldRule(severity: severity);
+      case PreventSkillsShPublishingRule.ruleName:
+        return PreventSkillsShPublishingRule(severity: severity);
       case NameFormatRule.ruleName:
         return NameFormatRule(severity: severity);
       case RelativePathsRule.ruleName:

@@ -6,6 +6,8 @@ description: >
   update dart_skills_lint, configure skills validation tests, fix skills linter
   dependency drifts, verify repository state before editing, optimize
   lint rules execution, or draft pull request submission commands.
+metadata:
+  internal: true
 ---
 
 # Integrating and Configuring dart_skills_lint

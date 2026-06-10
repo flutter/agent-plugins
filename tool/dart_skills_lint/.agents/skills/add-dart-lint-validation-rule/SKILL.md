@@ -1,6 +1,11 @@
 ---
 name: add-dart-lint-validation-rule
-description: Instructions for adding a new validation rule and CLI flag to dart_skills_lint.
+description: >
+  Instructions for adding a new validation rule and CLI flag to dart_skills_lint.
+  Use this skill when asked to create a new rule that validates aspects of skills
+  (like frontmatter metadata).
+metadata:
+  internal: true
 ---
 
 # Add a New Validation Rule and Flag
@@ -179,7 +184,9 @@ When a new rule is introduced, verify that you synchronize sibling markdown file
 
 1.  **`README.md`:**
     *   Add your flag under the **Usage** and **Flags** sections so users know it exists.
-2.  **`documentation/knowledge/SPECIFICATION.md`:**
+2.  **`RULES.md`:**
+    *   Add a new entry for your rule documenting its default severity, fixability, what it checks, diagnostic shape, auto-fix behavior, and how to disable it. This is strictly required by the `rules_md_consistency_test.dart` test.
+3.  **`documentation/knowledge/SPECIFICATION.md`:**
     *   Document the formal constraint in the specification if it defines a standard for skill files.
 
 ---
@@ -190,6 +197,7 @@ When a new rule is introduced, verify that you synchronize sibling markdown file
 - [ ] Rule registered in `lib/src/rule_registry.dart`.
 - [ ] Unit tests added in `test/` using in-memory `SkillContext`.
 - [ ] Usage listed in `README.md`.
+- [ ] Rule documented in `RULES.md`.
 - [ ] Schema documented in `documentation/knowledge/SPECIFICATION.md` (if applicable).
 - [ ] Run `dart format .` to format code.
 - [ ] Run `dart analyze --fatal-infos` to ensure no issues.

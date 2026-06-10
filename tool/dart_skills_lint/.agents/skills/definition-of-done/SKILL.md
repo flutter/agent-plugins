@@ -1,6 +1,8 @@
 ---
 name: definition-of-done
 description: Mandatory checks to run before completing any task that touches md files or dart code in this repository.
+metadata:
+  internal: true
 ---
 
 # Definition of Done

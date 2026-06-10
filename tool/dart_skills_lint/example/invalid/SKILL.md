@@ -2,6 +2,8 @@
 name: NotInvalid
 description: A deliberately broken fixture used by example/README.md to show what each rule's error output looks like.
 secret_field: not allowed by the spec
+metadata:
+  internal: true
 ---
 
 # Invalid example skill

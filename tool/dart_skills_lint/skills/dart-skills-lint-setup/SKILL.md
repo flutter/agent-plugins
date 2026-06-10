@@ -3,6 +3,8 @@ name: dart-skills-lint-setup
 description: |-
   Use this skill when you need to set up validation for AI agent skills in a Dart project for the first time.
   Adds the linter as a dev_dependency, creates a configuration file, and generates a baseline for legacy repos.
+metadata:
+  internal: true
 ---
 
 # Setting up Skill Validation with dart_skills_lint

@@ -1,0 +1,13 @@
+# Ignore everything by default
+*
+
+# Un-ignore specific checked-in skills
+!add-dart-lint-validation-rule/
+!dart-skills-lint-integration/
+!definition-of-done/
+
+# Keep essential configuration and docs
+!.gitignore
+!README.md
+!ignore.json
+!flutter_skills_ignore.json
