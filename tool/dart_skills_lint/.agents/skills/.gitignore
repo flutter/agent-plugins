@@ -1,12 +1,10 @@
-dart-best-practices/
-dart-doc-validation/
-dart-long-lines/
-dart-matcher-best-practices/
-dart-package-maintenance/
-dart-migrate-to-checks-package/
-dart-build-cli-app/
-dart-collect-coverage/
-dart-add-unit-test/
-dart-use-pattern-matching/
-grill-me/
-test-driven-development/
+# Ignore everything by default
+*
+# But descend into all directories so we can selectively un-ignore them with nested .gitignore files
+!*/
+
+# Keep essential configuration and docs
+!.gitignore
+!README.md
+!ignore.json
+!flutter_skills_ignore.json
