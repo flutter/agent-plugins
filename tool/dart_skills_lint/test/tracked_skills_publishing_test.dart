@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:dart_skills_lint/src/config_parser.dart';
 import 'package:dart_skills_lint/src/models/analysis_severity.dart';
 import 'package:dart_skills_lint/src/validation_session.dart';
-import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 void main() {
@@ -35,7 +34,7 @@ void main() {
 
     // 2. Parse configuration
     final Configuration config = await ConfigParser.loadConfig();
-    final ValidationSession session = ValidationSession(
+    final session = ValidationSession(
       config: config,
       resolvedRules: {},
       ignoreFileOverride: null,
