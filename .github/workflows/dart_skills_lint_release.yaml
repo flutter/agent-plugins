@@ -1,0 +1,155 @@
+name: dart_skills_lint release
+permissions: read-all
+
+on:
+  push:
+    tags:
+      - 'dart_skills_lint-v*'
+
+jobs:
+  build_binaries:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            target: macos-arm64
+          - os: macos-13
+            target: macos-x64
+          - os: ubuntu-22.04
+            target: linux-x64
+          - os: ubuntu-22.04-arm
+            target: linux-arm64
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: tool/dart_skills_lint
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Resolve dependencies
+        run: dart pub get
+
+      - name: Compile native binary
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          dart compile exe bin/cli.dart -o "dist/dart_skills_lint-${TARGET}"
+          chmod +x "dist/dart_skills_lint-${TARGET}"
+        env:
+          TARGET: ${{ matrix.target }}
+
+      - name: Smoke-test binary
+        run: ./dist/dart_skills_lint-${{ matrix.target }} --help
+
+      - name: Package and hash
+        run: |
+          set -euo pipefail
+          cd dist
+          tar -czf "dart_skills_lint-${TARGET}.tar.gz" "dart_skills_lint-${TARGET}"
+          if command -v sha256sum >/dev/null 2>&1; then
+            sha256sum "dart_skills_lint-${TARGET}.tar.gz" > "dart_skills_lint-${TARGET}.tar.gz.sha256"
+          else
+            shasum -a 256 "dart_skills_lint-${TARGET}.tar.gz" > "dart_skills_lint-${TARGET}.tar.gz.sha256"
+          fi
+        env:
+          TARGET: ${{ matrix.target }}
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dart_skills_lint-${{ matrix.target }}
+          path: |
+            tool/dart_skills_lint/dist/dart_skills_lint-${{ matrix.target }}.tar.gz
+            tool/dart_skills_lint/dist/dart_skills_lint-${{ matrix.target }}.tar.gz.sha256
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    needs: build_binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download all binary artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Build SHA256SUMS aggregate file
+        working-directory: dist
+        run: |
+          set -euo pipefail
+          : > SHA256SUMS
+          for f in *.tar.gz.sha256; do
+            cat "$f" >> SHA256SUMS
+          done
+          rm -f *.tar.gz.sha256
+          echo "--- SHA256SUMS ---"
+          cat SHA256SUMS
+
+      - name: Extract release metadata
+        id: meta
+        run: |
+          set -euo pipefail
+          # Tag pattern: dart_skills_lint-v<VERSION>. Strip prefix to get the version.
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#dart_skills_lint-v}"
+          if [ "$VERSION" = "$TAG" ]; then
+            echo "ERROR: tag '$TAG' does not match expected pattern 'dart_skills_lint-v<VERSION>'" >&2
+            exit 1
+          fi
+          # Verify pubspec matches.
+          PUBSPEC_VERSION=$(awk -F': *' '/^version:/ {print $2; exit}' tool/dart_skills_lint/pubspec.yaml)
+          if [ "$VERSION" != "$PUBSPEC_VERSION" ]; then
+            echo "ERROR: tag version '$VERSION' does not match pubspec.yaml version '$PUBSPEC_VERSION'" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          # Pre-release detection for the GitHub Release flag.
+          case "$VERSION" in
+            *-dev.*|*-alpha.*|*-beta.*|*-rc.*|*-preview.*) echo "prerelease=true" >> "$GITHUB_OUTPUT" ;;
+            *) echo "prerelease=false" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - name: Extract release notes from CHANGELOG
+        run: |
+          set -euo pipefail
+          awk -v ver="## ${VERSION}" '
+            $0 == ver { found = 1; next }
+            /^## / && found { exit }
+            found { print }
+          ' tool/dart_skills_lint/CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "ERROR: no CHANGELOG entry found for version '${VERSION}'" >&2
+            echo "Expected a heading line: ## ${VERSION}" >&2
+            exit 1
+          fi
+          echo "--- release notes ---"
+          cat release-notes.md
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: dart_skills_lint v${{ steps.meta.outputs.version }}
+          body_path: release-notes.md
+          prerelease: ${{ steps.meta.outputs.prerelease }}
+          files: |
+            dist/*.tar.gz
+            dist/SHA256SUMS
+            tool/dart_skills_lint/scripts/install.sh
+          fail_on_unmatched_files: true

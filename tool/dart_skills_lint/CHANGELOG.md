@@ -1,3 +1,37 @@
+## 0.4.0-dev.1
+
+**Pre-release.** Pub.dev consumers with caret ranges (`^0.3.0` or `^0.4.0`)
+will not auto-pick this up; pin explicitly (`dart_skills_lint: 0.4.0-dev.1`)
+to try the preview.
+
+### Distribution
+
+- Native binaries are now published to GitHub Releases for macOS arm64,
+  macOS x64, Linux x64, and Linux arm64. Users without the Dart SDK on
+  PATH can install the linter via `install.sh` or a direct `curl -L` of
+  the release tarball — no `dart pub global activate` required.
+- New `tool/dart_skills_lint/scripts/install.sh`: detects OS/arch,
+  downloads the matching tarball from the latest release, verifies its
+  SHA256 against the release's `SHA256SUMS`, and installs the binary to
+  `INSTALL_DIR` (default `/usr/local/bin`, with a sudo fallback).
+  `REPO`, `VERSION`, and `INSTALL_DIR` are env-configurable.
+- New `.github/workflows/dart_skills_lint_release.yaml`: tag-triggered
+  workflow that builds the four-target matrix with `dart compile exe`,
+  packages each as `dart_skills_lint-<target>.tar.gz`, generates a
+  `SHA256SUMS` aggregate, and cuts a GitHub Release whose body is
+  extracted from this CHANGELOG entry.
+- The pub.dev install paths (`dart pub global activate dart_skills_lint`
+  and `dev_dependencies:`) are unchanged. Native binaries are a parallel
+  channel, not a replacement.
+- macOS binaries in this preview are **not yet code-signed**. Users will
+  see a Gatekeeper warning on first launch. Workaround:
+  `xattr -d com.apple.quarantine $(which dart_skills_lint)`. Signing
+  lands once the org Developer ID Application cert is approved.
+- Homebrew formula is **deferred**: `dart_skills_lint` is being moved to
+  a dedicated repo (location TBD), and a `brew tap` would force every
+  early adopter through a re-tap on migration. The formula ships from
+  the new repo once it exists.
+
 ## 0.3.1
 
 - `--fix` now writes fixes to disk; pair with `--dry-run`
