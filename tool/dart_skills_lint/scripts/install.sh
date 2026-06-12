@@ -77,7 +77,12 @@ curl -fsSL --retry 3 -o "${tmpdir}/SHA256SUMS" "$sums_url" \
   || err "could not download ${sums_url}"
 
 # --- Verify SHA256 ----------------------------------------------------------
-expected_sha="$(awk -v fname="$archive" '$2 == fname { print $1; exit }' "${tmpdir}/SHA256SUMS")"
+# Strip the optional leading '*' that `sha256sum -b` (binary mode) puts before
+# the filename, so SHA256SUMS files from either text or binary mode work.
+expected_sha="$(awk -v fname="$archive" '
+  { sub(/^\*/, "", $2) }
+  $2 == fname { print $1; exit }
+' "${tmpdir}/SHA256SUMS")"
 [ -n "$expected_sha" ] || err "no SHA256 entry for '${archive}' in SHA256SUMS."
 
 actual_sha="$(shasum_cmd "${tmpdir}/${archive}" | awk '{print $1}')"
@@ -113,14 +118,9 @@ else
   err "${INSTALL_DIR} is not writable and 'sudo' is not available. Set INSTALL_DIR to a writable path and re-run."
 fi
 
-# --- Verify the installed binary launches -----------------------------------
-"$install_path" --help >/dev/null 2>&1 \
-  || err "installed binary at ${install_path} failed to launch."
-
-info "installed ${BIN_NAME} → ${install_path}"
-info "run '${BIN_NAME} --help' to get started"
-
 # --- macOS Gatekeeper note (preview binaries are unsigned) ------------------
+# Print BEFORE the launch check so users see the workaround even if Gatekeeper
+# blocks the --help invocation below.
 if [ "$os" = "macos" ]; then
   cat <<EOF
 install.sh: note: this preview binary is not yet code-signed. If you see a
@@ -129,4 +129,19 @@ verified"), run:
     xattr -d com.apple.quarantine "${install_path}"
 This removes the quarantine flag macOS sets on downloaded binaries.
 EOF
+fi
+
+# --- Verify the installed binary launches -----------------------------------
+# On macOS the launch check is best-effort because Gatekeeper can block
+# unsigned downloaded binaries on first launch; treat the failure as
+# informational so the install isn't marked as failed when the only thing
+# wrong is the quarantine flag.
+if "$install_path" --help >/dev/null 2>&1; then
+  info "installed ${BIN_NAME} → ${install_path}"
+  info "run '${BIN_NAME} --help' to get started"
+elif [ "$os" = "macos" ]; then
+  info "installed ${BIN_NAME} → ${install_path}"
+  info "launch check failed — likely Gatekeeper. See the note above to clear quarantine, then run '${BIN_NAME} --help'."
+else
+  err "installed binary at ${install_path} failed to launch."
 fi
