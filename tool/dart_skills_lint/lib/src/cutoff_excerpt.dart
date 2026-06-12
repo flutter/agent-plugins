@@ -1,3 +1,7 @@
+// Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
+// for details. All rights reserved. Use of this source code is governed by a
+// BSD-style license that can be found in the LICENSE file.
+
 // Shared helper for "field is N characters; max is M" diagnostics that
 // also show a |HERE| cutoff excerpt so the author can see exactly
 // where the value went over.
