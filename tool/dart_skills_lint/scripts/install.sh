@@ -24,22 +24,28 @@ err()  { echo "install.sh: error: $*" >&2; exit 1; }
 info() { echo "install.sh: $*"; }
 
 # --- Detect platform ---------------------------------------------------------
+# Single source of truth: every "Supported: ..." message and the final
+# platform check derive from this list, so adding a build target only
+# requires touching one constant.
+SUPPORTED_TARGETS="macos-arm64 macos-x64 linux-x64 linux-arm64"
+err_unsupported() { err "$1. Supported platforms: ${SUPPORTED_TARGETS// /, }."; }
+
 case "$(uname -s)" in
   Darwin) os="macos" ;;
   Linux)  os="linux" ;;
-  *)      err "unsupported OS '$(uname -s)'. Supported: macOS, Linux." ;;
+  *)      err_unsupported "unsupported OS '$(uname -s)'" ;;
 esac
 
 case "$(uname -m)" in
   arm64|aarch64) arch="arm64" ;;
   x86_64|amd64)  arch="x64" ;;
-  *)             err "unsupported architecture '$(uname -m)'. Supported: arm64, aarch64, x86_64, amd64." ;;
+  *)             err_unsupported "unsupported architecture '$(uname -m)'" ;;
 esac
 
 target="${os}-${arch}"
-case "$target" in
-  macos-arm64|macos-x64|linux-x64|linux-arm64) ;;
-  *) err "no published binary for platform '${target}'. Available: macos-arm64, macos-x64, linux-x64, linux-arm64." ;;
+case " $SUPPORTED_TARGETS " in
+  *" $target "*) ;;
+  *) err_unsupported "no published binary for platform '${target}'" ;;
 esac
 
 # --- Required tools ---------------------------------------------------------
