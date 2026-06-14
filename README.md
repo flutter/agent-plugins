@@ -39,6 +39,7 @@ npx skills update
 | [flutter-setup-declarative-routing](skills/flutter-setup-declarative-routing/SKILL.md) | Configure `MaterialApp.router` using a package like `go_router` for advanced URL-based navigation. Use when developing web applications or mobile apps that require specific deep linking and browser history support. | Set up GoRouter with paths for home, details, and settings |
 | [flutter-setup-localization](skills/flutter-setup-localization/SKILL.md) | Add `flutter_localizations` and `intl` dependencies, enable "generate true" in `pubspec.yaml`, and create an `l10n.yaml` configuration file. Use when initializing localization support for a new Flutter project. | Setup localization and add English and Spanish translations |
 | [flutter-use-http-package](skills/flutter-use-http-package/SKILL.md) | Use the `http` package to execute GET, POST, PUT, or DELETE requests. Use when you need to fetch from or send data to a REST API. | Use the http package to fetch the list of products from the API |
+| [flutter-bloc-cubit-feature](skills/flutter-bloc-cubit-feature/SKILL.md) | Scaffold or update Flutter features using flutter_bloc and cubit/bloc state management with a feature-first layered structure. Use when creating a new feature, deciding between Cubit and Bloc, adding Freezed states, wiring repositories, or adding tests for Bloc/Cubit logic. | Create a new feature with flutter_bloc cubit and a layered folder structure |
 ## Contributing
 
 We aren't accepting pull requests at this time, but we would love to hear your feedback! 
