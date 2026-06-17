@@ -444,7 +444,7 @@ void main() {
 
 String _getPackageRoot() {
   final String currentPath = Directory.current.path;
-  Directory dir = Directory(currentPath);
+  var dir = Directory(currentPath);
   while (dir.path != '/' && dir.path.isNotEmpty) {
     final pubspec = File(p.join(dir.path, 'pubspec.yaml'));
     if (pubspec.existsSync() && pubspec.readAsStringSync().contains('name: dart_skills_lint')) {
