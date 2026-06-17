@@ -341,9 +341,14 @@ Future<bool> validateSkillsInternal({
   Configuration? config,
   List<SkillRule> customRules = const [],
 }) async {
+  final List<String> effectiveIndividualSkillPaths = [
+    ...individualSkillPaths,
+    if (config != null) ...config.individualSkillConfigs.map((e) => e.path),
+  ];
+
   final List<String> effectiveSkillDirPaths = _getEffectiveSkillDirPaths(
     skillDirPaths: skillDirPaths,
-    individualSkillPaths: individualSkillPaths,
+    individualSkillPaths: effectiveIndividualSkillPaths,
     config: config,
   );
 
@@ -360,7 +365,7 @@ Future<bool> validateSkillsInternal({
     fixApply: fixApply,
   );
 
-  for (final skillPath in individualSkillPaths) {
+  for (final skillPath in effectiveIndividualSkillPaths) {
     final bool keepGoing = await session.processIndividualSkill(skillPath);
     if (!keepGoing) {
       break;
@@ -398,7 +403,8 @@ List<String> _getEffectiveSkillDirPaths({
   final effectiveSkillDirPaths = List<String>.from(skillDirPaths);
 
   if (effectiveSkillDirPaths.isEmpty && individualSkillPaths.isEmpty) {
-    if (config != null && config.directoryConfigs.isNotEmpty) {
+    if (config != null &&
+        (config.directoryConfigs.isNotEmpty || config.individualSkillConfigs.isNotEmpty)) {
       return config.directoryConfigs.map((e) => e.path).toList();
     } else {
       final defaults = ['.claude/skills', '.agents/skills'];

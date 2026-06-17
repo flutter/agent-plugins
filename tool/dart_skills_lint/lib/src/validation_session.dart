@@ -62,7 +62,7 @@ class ValidationSession {
     required this.fix,
     required this.fixApply,
   }) : _normalizedDirectoryConfigs = [
-         for (final dc in config.directoryConfigs)
+         for (final dc in [...config.directoryConfigs, ...config.individualSkillConfigs])
            (normalizedPath: p.absolute(p.normalize(expandPath(dc.path))), config: dc),
        ];
 
@@ -82,7 +82,7 @@ class ValidationSession {
   /// `config` is static for the lifetime of a session, so we pay the
   /// `p.normalize` cost up front instead of once per skill in
   /// [_resolveRulesForPath] and [_resolveIgnoreFile].
-  final List<({String normalizedPath, DirectoryConfig config})> _normalizedDirectoryConfigs;
+  final List<({String normalizedPath, LintTargetConfig config})> _normalizedDirectoryConfigs;
 
   bool _anyFailed = false;
   bool _anySkillsValidated = false;
@@ -291,7 +291,7 @@ class ValidationSession {
     localRules.addAll(config.configuredRules);
 
     // 2. Path-Specific Config (from YAML)
-    for (final ({String normalizedPath, DirectoryConfig config}) entry
+    for (final ({String normalizedPath, LintTargetConfig config}) entry
         in _normalizedDirectoryConfigs) {
       final String configPath = entry.normalizedPath;
       if (p.equals(configPath, normalizedPath) || p.isWithin(configPath, normalizedPath)) {
@@ -312,7 +312,7 @@ class ValidationSession {
       return ignoreFileOverride;
     }
     String? resolvedIgnoreFile;
-    for (final ({String normalizedPath, DirectoryConfig config}) entry
+    for (final ({String normalizedPath, LintTargetConfig config}) entry
         in _normalizedDirectoryConfigs) {
       final String configPath = entry.normalizedPath;
       if (p.equals(configPath, normalizedPath) || p.isWithin(configPath, normalizedPath)) {

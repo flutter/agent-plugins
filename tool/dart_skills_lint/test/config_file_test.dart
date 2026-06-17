@@ -133,6 +133,63 @@ dart_skills_lint:
       await process.shouldExit(0);
     });
 
+    test('obeys individual_skills block in config', () async {
+      final Directory skillDir = await Directory('${tempDir.path}/test-skill').create();
+      await File('${skillDir.path}/SKILL.md').writeAsString('''
+---
+name: test-skill
+description: A test skill
+---
+Line with 1 space 
+'''); // Trailing space
+
+      await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+dart_skills_lint:
+  individual_skills:
+    - path: "test-skill"
+      rules:
+        check-trailing-whitespace: error
+''');
+
+      final TestProcess process = await TestProcess.start('dart', [
+        p.normalize(p.absolute('bin/cli.dart')),
+        '-s',
+        'test-skill',
+      ], workingDirectory: tempDir.path);
+
+      final List<String> stderr = await process.stderr.rest.toList();
+      expect(stderr.join('\n'), contains('has 1 trailing space(s)'));
+      await process.shouldExit(1);
+    });
+
+    test('fails on individual_skills path overlapping directories path', () async {
+      await Directory('${tempDir.path}/test-skill').create();
+      await File('${tempDir.path}/test-skill/SKILL.md').writeAsString('''
+---
+name: test-skill
+description: A test skill
+---
+Body''');
+
+      await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+dart_skills_lint:
+  directories:
+    - path: "."
+  individual_skills:
+    - path: "test-skill"
+''');
+
+      final TestProcess process = await TestProcess.start('dart', [
+        p.normalize(p.absolute('bin/cli.dart')),
+        '-s',
+        'test-skill',
+      ], workingDirectory: tempDir.path);
+
+      final List<String> stderr = await process.stderr.rest.toList();
+      expect(stderr.join('\n'), contains('Configuration conflict: individual skill path'));
+      await process.shouldExit(1);
+    });
+
     test('CLI flags override config', () async {
       final Directory skillDir = await Directory('${tempDir.path}/test-skill').create();
       await File('${skillDir.path}/SKILL.md').writeAsString('''

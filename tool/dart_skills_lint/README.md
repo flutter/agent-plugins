@@ -166,6 +166,11 @@ dart_skills_lint:
   directories:
     - path: "~/.agents/skills"
       ignore_file: "~/.agents/skills/ignore.json"
+  individual_skills:
+    - path: "my_custom_standalone_skill"
+      rules:
+        missing_install_script: warning
+      ignore_file: "my_ignores.json"
 ```
 
 Then you can simply run:
@@ -178,7 +183,7 @@ dart run dart_skills_lint
 When resolving which severity to apply for a rule, `dart_skills_lint` evaluates settings in the following order of precedence (highest to lowest):
 
 1. **CLI Flags / API Overrides**: Explicit flags passed to the CLI (e.g., `--check-trailing-whitespace`) or rules passed to the `validateSkills` API via `resolvedRules`.
-2. **Path-Specific Config**: Rules defined under `directories:` in `dart_skills_lint.yaml` for a matching path.
+2. **Path-Specific Config**: Rules defined under `directories:` or `individual_skills:` in `dart_skills_lint.yaml` for a matching path.
 3. **Global Config**: Rules defined under the top-level `rules:` in `dart_skills_lint.yaml`.
 4. **Defaults**: The hardcoded default severity for each rule.
 
