@@ -15,7 +15,7 @@ const _corruptedHash = '00000000000000000000000000000000000000000000000000000000
 /// Simulates downloading a release artifact by copying the source file from
 /// `MOCK_RELEASE_DIR` to the target output path specified by `-o`.
 ///
-/// It ignores other standard `curl` flags. 
+/// It ignores other standard `curl` flags.
 const _mockCurlScript = r'''
 #!/bin/bash
 set -eu
@@ -102,7 +102,6 @@ void main() {
     Future<void> createMockRelease({
       required String os,
       required String arch,
-      required String version,
       required String binaryContent,
       bool shouldCorruptHash = false,
     }) async {
@@ -173,7 +172,7 @@ void main() {
           ? '#!/usr/bin/env bash\nexit 1\n'
           : '#!/usr/bin/env bash\necho "mock-cli-help"\n';
 
-      await createMockRelease(os: os, arch: arch, version: version, binaryContent: binaryContent);
+      await createMockRelease(os: os, arch: arch, binaryContent: binaryContent);
 
       // TODO(reidbaker): Use Windows path separator (;) when running on Windows hosts. https://github.com/flutter/skills/issues/164
       final newPath = '${mockBinDir.path}:${Platform.environment['PATH']}';
@@ -268,7 +267,6 @@ void main() {
       await createMockRelease(
         os: 'macos',
         arch: 'arm64',
-        version: version,
         binaryContent: 'dummy',
         shouldCorruptHash: true,
       );
@@ -445,7 +443,8 @@ void main() {
 }
 
 String _getPackageRoot() {
-  Directory dir = Directory.current;
+  final String currentPath = Directory.current.path;
+  Directory dir = Directory(currentPath);
   while (dir.path != '/' && dir.path.isNotEmpty) {
     final pubspec = File(p.join(dir.path, 'pubspec.yaml'));
     if (pubspec.existsSync() && pubspec.readAsStringSync().contains('name: dart_skills_lint')) {
@@ -454,9 +453,9 @@ String _getPackageRoot() {
     dir = dir.parent;
   }
   // Fallback to searching subdirectories
-  final subdir = Directory(p.join(Directory.current.path, 'tool', 'dart_skills_lint'));
+  final subdir = Directory(p.join(currentPath, 'tool', 'dart_skills_lint'));
   if (subdir.existsSync()) {
     return subdir.path;
   }
-  return Directory.current.path;
+  return currentPath;
 }
