@@ -348,7 +348,7 @@ Future<bool> validateSkillsInternal({
 
   final List<String> effectiveSkillDirPaths = _getEffectiveSkillDirPaths(
     skillDirPaths: skillDirPaths,
-    individualSkillPaths: effectiveIndividualSkillPaths,
+    individualSkillPaths: individualSkillPaths,
     config: config,
   );
 

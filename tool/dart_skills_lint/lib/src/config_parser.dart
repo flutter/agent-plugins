@@ -154,6 +154,12 @@ class ConfigParser {
     String configKey,
     List<String> parsingErrors,
   ) {
+    final String entryLabelCap = configKey == _directoriesKey
+        ? 'Directory entry'
+        : 'Individual skill entry';
+    final String entryLabelLower = configKey == _directoriesKey
+        ? 'directory entry'
+        : 'individual skill entry';
     final configs = <LintTargetConfig>[];
     if (toolConfig.containsKey(configKey)) {
       final items = toolConfig[configKey];
@@ -166,7 +172,7 @@ class ConfigParser {
           final pathValue = dir[_pathKey];
           if (pathValue is! String) {
             parsingErrors.add(
-              'Directory entry "$_pathKey" must be a string; got "$pathValue" '
+              '$entryLabelCap "$_pathKey" must be a string; got "$pathValue" '
               '(${pathValue.runtimeType}). Skipping entry.',
             );
             continue;
@@ -175,7 +181,7 @@ class ConfigParser {
 
           for (final key in dir.keys) {
             if (!_allowedDirectoryKeys.contains(key.toString())) {
-              parsingErrors.add('Unrecognized key "$key" in directory entry for "$path".');
+              parsingErrors.add('Unrecognized key "$key" in $entryLabelLower for "$path".');
             }
           }
 
@@ -188,7 +194,7 @@ class ConfigParser {
               }
             } else {
               parsingErrors.add(
-                'Directory entry "$_rulesKey" for "$path" must be a map; '
+                '$entryLabelCap "$_rulesKey" for "$path" must be a map; '
                 'got "$localRules" (${localRules.runtimeType}). Ignoring local rules.',
               );
             }
@@ -201,7 +207,7 @@ class ConfigParser {
               ignoreFile = ignoreFileValue;
             } else if (ignoreFileValue != null) {
               parsingErrors.add(
-                'Directory entry "$_ignoreFileKey" for "$path" must be a string; '
+                '$entryLabelCap "$_ignoreFileKey" for "$path" must be a string; '
                 'got "$ignoreFileValue" (${ignoreFileValue.runtimeType}). '
                 'Falling back to the default ignore file.',
               );
