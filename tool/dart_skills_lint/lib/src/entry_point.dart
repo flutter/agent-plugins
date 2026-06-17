@@ -403,6 +403,8 @@ List<String> _getEffectiveSkillDirPaths({
   final effectiveSkillDirPaths = List<String>.from(skillDirPaths);
 
   if (effectiveSkillDirPaths.isEmpty && individualSkillPaths.isEmpty) {
+    // If the config specifies any targets (even if it's only individual_skills
+    // and directories is empty), we avoid the default directory fallback.
     if (config != null &&
         (config.directoryConfigs.isNotEmpty || config.individualSkillConfigs.isNotEmpty)) {
       return config.directoryConfigs.map((e) => e.path).toList();
