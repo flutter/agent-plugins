@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 #
+# Copyright (c) 2026, the Dart project authors.  Please see the AUTHORS file
+# for details. All rights reserved. Use of this source code is governed by a
+# BSD-style license that can be found in the LICENSE file.
+#
 # install.sh — Install the dart_skills_lint native binary.
 #
 # Usage (default repo + latest version):
@@ -52,13 +56,14 @@ esac
 require() { command -v "$1" >/dev/null 2>&1 || err "required tool '$1' not found on PATH."; }
 require curl
 require tar
+require awk
 
 if command -v sha256sum >/dev/null 2>&1; then
   shasum_cmd() { sha256sum "$@"; }
 elif command -v shasum >/dev/null 2>&1; then
   shasum_cmd() { shasum -a 256 "$@"; }
 else
-  err "neither 'sha256sum' nor 'shasum' is available. Install one to verify the binary."
+  err "required tools 'sha256sum' or 'shasum' not found on PATH. Install one to verify the binary."
 fi
 
 # --- Resolve URLs ----------------------------------------------------------
@@ -74,7 +79,8 @@ sums_url="${base_url}/SHA256SUMS"
 
 # --- Download into a tempdir, cleaned up on exit -----------------------------
 tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/dart-skills-lint-install.XXXXXX")"
-trap 'rm -rf "$tmpdir"' EXIT INT TERM
+# Guard trap to prevent running rm -rf on empty/unbound tmpdir if trap triggers prematurely.
+trap '[ -n "${tmpdir:-}" ] && rm -rf "$tmpdir"' EXIT INT TERM
 
 info "downloading ${archive} from ${REPO} (${VERSION})"
 curl -fsSL --retry 3 -o "${tmpdir}/${archive}" "$archive_url" \
