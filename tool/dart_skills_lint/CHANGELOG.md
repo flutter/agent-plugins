@@ -12,6 +12,7 @@
   first launch.
 - The `dart pub global activate dart_skills_lint` and
   `dev_dependencies:` install paths are unchanged.
+- Added support for configuring individual skills via the `individual_skills:` key in `dart_skills_lint.yaml`, enabling path-specific rule severity mapping without relying on root directory scanning.
 
 ## 0.3.1
 
