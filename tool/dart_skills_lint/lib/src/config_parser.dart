@@ -154,10 +154,10 @@ class ConfigParser {
     String configKey,
     List<String> parsingErrors,
   ) {
-    final String entryLabelCap = configKey == _directoriesKey
+    final entryLabelCap = configKey == _directoriesKey
         ? 'Directory entry'
         : 'Individual skill entry';
-    final String entryLabelLower = configKey == _directoriesKey
+    final entryLabelLower = configKey == _directoriesKey
         ? 'directory entry'
         : 'individual skill entry';
     final configs = <LintTargetConfig>[];
