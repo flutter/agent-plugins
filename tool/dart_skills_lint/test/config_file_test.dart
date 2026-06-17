@@ -513,5 +513,81 @@ dart_skills_lint:
 
       await process.shouldExit(1);
     });
+
+    test('fails on invalid individual_skills key in config by default', () async {
+      await Directory('${tempDir.path}/test-skill').create();
+      await File('${tempDir.path}/test-skill/SKILL.md').writeAsString('''
+---
+name: test-skill
+description: A test skill
+---
+Body''');
+
+      await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+dart_skills_lint:
+  individual_skills:
+    - path: "test-skill"
+      invalid-ind-key: value
+''');
+
+      final TestProcess process = await TestProcess.start('dart', [
+        p.normalize(p.absolute('bin/cli.dart')),
+        '-s',
+        'test-skill',
+      ], workingDirectory: tempDir.path);
+
+      final List<String> stderr = await process.stderr.rest.toList();
+      expect(
+        stderr.join('\n'),
+        contains(
+          'Configuration error: Unrecognized key "invalid-ind-key" in individual skill entry for "test-skill".',
+        ),
+      );
+      await process.shouldExit(1);
+    });
+
+    test(
+      'processes both configured directories and individual skills when no arguments are passed',
+      () async {
+        // 1. Create a directory target with a nested skill
+        await Directory('${tempDir.path}/dir-target/dir-skill').create(recursive: true);
+        await File('${tempDir.path}/dir-target/dir-skill/SKILL.md').writeAsString('''
+---
+name: dir-skill
+description: A directory skill
+---
+Body''');
+
+        // 2. Create an individual skill target
+        await Directory('${tempDir.path}/ind-skill').create();
+        await File('${tempDir.path}/ind-skill/SKILL.md').writeAsString('''
+---
+name: ind-skill
+description: An individual skill
+---
+Body''');
+
+        await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+dart_skills_lint:
+  directories:
+    - path: "dir-target"
+  individual_skills:
+    - path: "ind-skill"
+''');
+
+        // Run with NO arguments (no -s or -d)
+        final TestProcess process = await TestProcess.start('dart', [
+          p.normalize(p.absolute('bin/cli.dart')),
+        ], workingDirectory: tempDir.path);
+
+        final List<String> stdout = await process.stdout.rest.toList();
+        final String output = stdout.join('\n');
+
+        // Should validate both
+        expect(output, contains('Validating skill: dir-skill'));
+        expect(output, contains('Validating skill: ind-skill'));
+        await process.shouldExit(0);
+      },
+    );
   });
 }
