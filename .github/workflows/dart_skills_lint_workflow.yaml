@@ -61,7 +61,7 @@ jobs:
       # Action steps do not inherit defaults.run.working-directory, so this
       # path is relative to the repository root.
       - name: Enforce coverage threshold
-        uses: VeryGoodOpenSource/very_good_coverage@v3
+        uses: VeryGoodOpenSource/very_good_coverage@c953fca3e24a915e111cc6f55f03f756dcb3964c
         with:
           path: tool/dart_skills_lint/coverage/lcov.info
           min_coverage: 73
