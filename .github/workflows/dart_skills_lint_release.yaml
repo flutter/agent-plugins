@@ -142,7 +142,7 @@ jobs:
           VERSION: ${{ steps.meta.outputs.version }}
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda
         with:
           tag_name: ${{ github.ref_name }}
           name: dart_skills_lint v${{ steps.meta.outputs.version }}
