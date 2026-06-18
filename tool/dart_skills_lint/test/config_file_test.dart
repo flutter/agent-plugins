@@ -650,5 +650,40 @@ dart_skills_lint:
 
       await process.shouldExit(0);
     });
+
+    test('later config entries override earlier ones for overlapping paths', () async {
+      await Directory('${tempDir.path}/dir1').create();
+      await Directory('${tempDir.path}/dir1/test-skill').create();
+      // Add trailing whitespace to trigger a lint rule
+      await File('${tempDir.path}/dir1/test-skill/SKILL.md').writeAsString(
+        '---\nname: test-skill\ndescription: A test skill\n---\nBody \n',
+      );
+
+      await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+dart_skills_lint:
+  directories:
+    - path: "dir1"
+      rules:
+        check-trailing-whitespace: error
+  individual_skills:
+    - path: "dir1/test-skill"
+      rules:
+        check-trailing-whitespace: warning
+''');
+
+      final TestProcess process = await TestProcess.start('dart', [
+        p.normalize(p.absolute('bin/cli.dart')),
+        '-d',
+        'dir1',
+      ], workingDirectory: tempDir.path);
+
+      final List<String> stdout = await process.stdout.rest.toList();
+      final String output = stdout.join('\n');
+      
+      // Should show a warning, not an error. Exit code 0 for warnings.
+      expect(output, contains('Warnings:'));
+      expect(output, contains('Line 5 has 1 trailing space(s)'));
+      await process.shouldExit(0);
+    });
   });
 }
