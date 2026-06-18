@@ -94,7 +94,7 @@ Line with space
       // Create a Configuration with rules enabled specifically for 'skills'
       final config = Configuration(
         directoryConfigs: [
-          DirectoryConfig(
+          LintTargetConfig(
             path: configDir.path,
             rules: {'check-trailing-whitespace': AnalysisSeverity.error},
           ),
@@ -139,14 +139,14 @@ dart_skills_lint:
       // child path: 'skills/nested' (enables description-length: error, check-trailing-whitespace: disabled)
       final config = Configuration(
         directoryConfigs: [
-          DirectoryConfig(
+          LintTargetConfig(
             path: p.join(tempDir.path, 'skills'),
             rules: {
               'check-trailing-whitespace': AnalysisSeverity.error,
               'description-length': AnalysisSeverity.warning,
             },
           ),
-          DirectoryConfig(
+          LintTargetConfig(
             path: p.join(tempDir.path, 'skills/nested'),
             rules: {
               'description-length': AnalysisSeverity.error,
@@ -194,12 +194,15 @@ dart_skills_lint:
       // child path: 'skills/nested' (does not define ignoreFile, should inherit)
       final config = Configuration(
         directoryConfigs: [
-          DirectoryConfig(
+          LintTargetConfig(
             path: p.join(tempDir.path, 'skills'),
             ignoreFile: 'parent_ignores.json',
-            rules: {},
+            rules: <String, AnalysisSeverity>{},
           ),
-          DirectoryConfig(path: p.join(tempDir.path, 'skills/nested'), rules: {}),
+          LintTargetConfig(
+            path: p.join(tempDir.path, 'skills/nested'),
+            rules: <String, AnalysisSeverity>{},
+          ),
         ],
       );
 
@@ -234,7 +237,7 @@ dart_skills_lint:
     // Config defines path as relative 'skills'
     final config = Configuration(
       directoryConfigs: [
-        DirectoryConfig(
+        LintTargetConfig(
           path: 'skills',
           rules: {'check-trailing-whitespace': AnalysisSeverity.error},
         ),

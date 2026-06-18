@@ -21,7 +21,7 @@ All rules are enabled / disabled / escalated the same three ways:
 - CLI: `--<rule-name>` (escalates to `error`),
   `--no-<rule-name>` (disables).
 - YAML config: `dart_skills_lint.rules.<rule-name>: error|warning|disabled`.
-- Per-directory YAML: `dart_skills_lint.directories[].rules.<rule-name>: ...`.
+- Per-target YAML: `dart_skills_lint.directories[].rules.<rule-name>: ...` or `dart_skills_lint.individual_skills[].rules.<rule-name>: ...`.
 
 The "Disable" line under each rule below names the negated CLI flag for
 quick reference.

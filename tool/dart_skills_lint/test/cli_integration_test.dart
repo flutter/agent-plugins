@@ -46,7 +46,7 @@ void main() {
       ]);
       await process.shouldExit(0);
 
-      final ignoreFile = File('${skillDir.parent.path}/$defaultIgnoreFileName');
+      final ignoreFile = File('${skillDir.path}/$defaultIgnoreFileName');
       expect(ignoreFile.existsSync(), isTrue);
 
       final String content = await ignoreFile.readAsString();
@@ -72,7 +72,7 @@ void main() {
       ]);
       await genProcess.shouldExit(0);
 
-      final ignoreFile = File('${tempDir.path}/$defaultIgnoreFileName');
+      final ignoreFile = File('${skillDir.path}/$defaultIgnoreFileName');
       expect(ignoreFile.existsSync(), isTrue);
 
       final TestProcess runProcess = await TestProcess.start('dart', [
@@ -653,7 +653,7 @@ dart_skills_lint:
         '${skillDir.path}/SKILL.md',
       ).writeAsString('${buildFrontmatter(name: 'test-skill')}Line with 1 space \n');
 
-      final ignoreFile = File('${tempDir.path}/$defaultIgnoreFileName');
+      final ignoreFile = File('${skillDir.path}/$defaultIgnoreFileName');
       await ignoreFile.writeAsString(
         jsonEncode({
           SkillsIgnores.skillsKey: {
@@ -690,7 +690,7 @@ description: A test skill
 ---
 Body''');
 
-      final ignoreFile = File('${tempDir.path}/$defaultIgnoreFileName');
+      final ignoreFile = File('${skillDir.path}/$defaultIgnoreFileName');
       await ignoreFile.writeAsString(
         jsonEncode({
           SkillsIgnores.skillsKey: {

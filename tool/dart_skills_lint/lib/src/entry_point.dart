@@ -341,6 +341,12 @@ Future<bool> validateSkillsInternal({
   Configuration? config,
   List<SkillRule> customRules = const [],
 }) async {
+  final bool hasCliTargets = skillDirPaths.isNotEmpty || individualSkillPaths.isNotEmpty;
+  final List<String> effectiveIndividualSkillPaths = [
+    ...individualSkillPaths,
+    if (config != null && !hasCliTargets) ...config.individualSkillConfigs.map((e) => e.path),
+  ];
+
   final List<String> effectiveSkillDirPaths = _getEffectiveSkillDirPaths(
     skillDirPaths: skillDirPaths,
     individualSkillPaths: individualSkillPaths,
@@ -360,7 +366,7 @@ Future<bool> validateSkillsInternal({
     fixApply: fixApply,
   );
 
-  for (final skillPath in individualSkillPaths) {
+  for (final skillPath in effectiveIndividualSkillPaths) {
     final bool keepGoing = await session.processIndividualSkill(skillPath);
     if (!keepGoing) {
       break;
@@ -398,7 +404,10 @@ List<String> _getEffectiveSkillDirPaths({
   final effectiveSkillDirPaths = List<String>.from(skillDirPaths);
 
   if (effectiveSkillDirPaths.isEmpty && individualSkillPaths.isEmpty) {
-    if (config != null && config.directoryConfigs.isNotEmpty) {
+    // If the config specifies any targets (even if it's only individual_skills
+    // and directories is empty), we avoid the default directory fallback.
+    if (config != null &&
+        (config.directoryConfigs.isNotEmpty || config.individualSkillConfigs.isNotEmpty)) {
       return config.directoryConfigs.map((e) => e.path).toList();
     } else {
       final defaults = ['.claude/skills', '.agents/skills'];
