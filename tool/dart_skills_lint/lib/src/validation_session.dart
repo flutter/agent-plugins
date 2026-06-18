@@ -115,7 +115,7 @@ class ValidationSession {
 
     final ({SkillsIgnores ignores, String ignorePath}) loaded = await _loadIgnores(
       localIgnoreFile,
-      skillDir.parent,
+      skillDir,
     );
     final SkillsIgnores ignores = loaded.ignores;
     final String skillName = p.basename(skillDir.path);
