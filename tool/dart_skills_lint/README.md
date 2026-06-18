@@ -44,13 +44,7 @@ still work and are unchanged.
 Add to your `pubspec.yaml`:
 ```yaml
 dev_dependencies:
-  dart_skills_lint: ^0.3.0
-```
-
-To opt into the preview track, pin to the exact version:
-```yaml
-dev_dependencies:
-  dart_skills_lint: 0.4.0-dev.1
+  dart_skills_lint: ^0.4.0
 ```
 
 Then:
@@ -78,12 +72,12 @@ curl -fsSL https://github.com/flutter/skills/releases/latest/download/install.sh
 
 Optional env vars (set before the `bash` part):
 - `INSTALL_DIR` — install destination (default `/usr/local/bin`).
-- `VERSION` — pin a specific release like `0.4.0-dev.1` (default `latest`).
+- `VERSION` — pin a specific release like `0.4.0` (default `latest`).
 - `REPO` — alternate source repo (default `flutter/skills`).
 
 #### macOS first-launch note
 
-Preview binaries are not yet code-signed. The first time you run the
+macOS binaries are not yet code-signed. The first time you run the
 binary, macOS Gatekeeper will block it ("cannot be opened because the
 developer cannot be verified"). Remove the quarantine flag once:
 
@@ -102,7 +96,7 @@ and verify its SHA256 against the release's `SHA256SUMS` asset.
 
 ```bash
 TARGET="linux-x64"     # or: macos-arm64, macos-x64, linux-arm64
-VERSION="0.4.0-dev.1"
+VERSION="0.4.0"
 BASE="https://github.com/flutter/skills/releases/download/dart_skills_lint-v${VERSION}"
 curl -fsSLO "${BASE}/dart_skills_lint-${TARGET}.tar.gz"
 curl -fsSLO "${BASE}/SHA256SUMS"
