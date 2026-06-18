@@ -1,6 +1,6 @@
 ## 0.4.0
 
-- Fixed issue #166.
+- Fixed issue #166 by adding support for configuring individual skills via the `individual_skills:` key in `dart_skills_lint.yaml`, enabling path-specific rule severity mapping without relying on root directory scanning.
 - Native binaries for macOS arm64, macOS x64, Linux x64, and Linux
   arm64 are now published to GitHub Releases. Install without the
   Dart SDK via `curl -fsSL .../install.sh | bash`, or download the
@@ -11,7 +11,6 @@
   first launch.
 - The `dart pub global activate dart_skills_lint` and
   `dev_dependencies:` install paths are unchanged.
-- Added support for configuring individual skills via the `individual_skills:` key in `dart_skills_lint.yaml`, enabling path-specific rule severity mapping without relying on root directory scanning.
 
 ## 0.3.1
 
