@@ -143,6 +143,17 @@ description: A test skill
 Line with 1 space 
 '''); // Trailing space
 
+      // Create a second skill not listed in the config to act as a negative test.
+      // This ensures the rule is applied strictly to `test-skill` and hasn't accidentally bled globally.
+      final Directory otherSkillDir = await Directory('${tempDir.path}/other-skill').create();
+      await File('${otherSkillDir.path}/SKILL.md').writeAsString('''
+---
+name: other-skill
+description: Another test skill
+---
+Line with 1 space 
+'''); // Trailing space
+
       await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
 dart_skills_lint:
   individual_skills:
@@ -155,18 +166,32 @@ dart_skills_lint:
         p.normalize(p.absolute('bin/cli.dart')),
         '-s',
         'test-skill',
+        '-s',
+        'other-skill',
       ], workingDirectory: tempDir.path);
 
       final List<String> stderr = await process.stderr.rest.toList();
-      expect(stderr.join('\n'), contains('has 1 trailing space(s)'));
+      final String output = stderr.join('\n');
+      expect(output, contains('has 1 trailing space(s)'));
+      expect(output, isNot(contains('other-skill')));
       await process.shouldExit(1);
     });
 
-    test('fails on individual_skills path overlapping directories path', () async {
-      await Directory('${tempDir.path}/test-skill').create();
-      await File('${tempDir.path}/test-skill/SKILL.md').writeAsString('''
+
+
+    test('succeeds on non-overlapping individual_skills and directories paths', () async {
+      await Directory('${tempDir.path}/dir1').create();
+      await File('${tempDir.path}/dir1/SKILL.md').writeAsString('''
 ---
-name: test-skill
+name: dir1
+description: A test skill
+---
+Body''');
+
+      await Directory('${tempDir.path}/dir2').create();
+      await File('${tempDir.path}/dir2/SKILL.md').writeAsString('''
+---
+name: dir2
 description: A test skill
 ---
 Body''');
@@ -174,20 +199,16 @@ Body''');
       await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
 dart_skills_lint:
   directories:
-    - path: "."
+    - path: "dir1"
   individual_skills:
-    - path: "test-skill"
+    - path: "dir2"
 ''');
 
       final TestProcess process = await TestProcess.start('dart', [
         p.normalize(p.absolute('bin/cli.dart')),
-        '-s',
-        'test-skill',
       ], workingDirectory: tempDir.path);
 
-      final List<String> stderr = await process.stderr.rest.toList();
-      expect(stderr.join('\n'), contains('Configuration conflict: individual skill path'));
-      await process.shouldExit(1);
+      await process.shouldExit(0);
     });
 
     test('CLI flags override config', () async {
@@ -583,11 +604,51 @@ dart_skills_lint:
         final List<String> stdout = await process.stdout.rest.toList();
         final String output = stdout.join('\n');
 
-        // Should validate both
-        expect(output, contains('Validating skill: dir-skill'));
-        expect(output, contains('Validating skill: ind-skill'));
+        // Should validate both exactly once
+        expect('Validating skill: dir-skill'.allMatches(output).length, 1);
+        expect('Validating skill: ind-skill'.allMatches(output).length, 1);
         await process.shouldExit(0);
       },
     );
+
+    test('CLI targets override configured individual_skills', () async {
+      final Directory cliSkillDir = await Directory('${tempDir.path}/cli-skill').create();
+      await File('${cliSkillDir.path}/SKILL.md').writeAsString('''
+---
+name: cli-skill
+description: A test skill passed via CLI
+---
+Body''');
+
+      final Directory configSkillDir = await Directory('${tempDir.path}/config-skill').create();
+      await File('${configSkillDir.path}/SKILL.md').writeAsString('''
+---
+name: config-skill
+description: A test skill in config
+---
+Body''');
+
+      await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+dart_skills_lint:
+  individual_skills:
+    - path: "config-skill"
+''');
+
+      final TestProcess process = await TestProcess.start('dart', [
+        p.normalize(p.absolute('bin/cli.dart')),
+        '-s',
+        'cli-skill',
+      ], workingDirectory: tempDir.path);
+
+      final List<String> stdout = await process.stdout.rest.toList();
+      final String output = stdout.join('\n');
+
+      // The CLI target should be validated
+      expect(output, contains('Validating skill: cli-skill'));
+      // The config target should NOT be validated because the CLI target overrides it
+      expect(output, isNot(contains('Validating skill: config-skill')));
+
+      await process.shouldExit(0);
+    });
   });
 }

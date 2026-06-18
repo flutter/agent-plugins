@@ -77,8 +77,6 @@ class ConfigParser {
             parsingErrors,
           );
 
-          _validateNoOverlaps(directoryConfigs, individualSkillConfigs, parsingErrors);
-
           return Configuration(
             directoryConfigs: directoryConfigs,
             individualSkillConfigs: individualSkillConfigs,
@@ -118,27 +116,6 @@ class ConfigParser {
       }
     }
     return configuredRules;
-  }
-
-  /// Validates that no path in [individualSkillConfigs] overlaps with a path
-  /// in [directoryConfigs], appending an error to [parsingErrors] if found.
-  static void _validateNoOverlaps(
-    List<LintTargetConfig> directoryConfigs,
-    List<LintTargetConfig> individualSkillConfigs,
-    List<String> parsingErrors,
-  ) {
-    for (final skillConfig in individualSkillConfigs) {
-      final skillPath = p.absolute(p.normalize(expandPath(skillConfig.path)));
-      for (final dirConfig in directoryConfigs) {
-        final dirPath = p.absolute(p.normalize(expandPath(dirConfig.path)));
-        if (p.equals(skillPath, dirPath) || p.isWithin(dirPath, skillPath)) {
-          parsingErrors.add(
-            'Configuration conflict: individual skill path "${skillConfig.path}" '
-            'is contained within configured directory "${dirConfig.path}".',
-          );
-        }
-      }
-    }
   }
 
   /// Parses a list of targets (directories or individual skills) from the configuration.

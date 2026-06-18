@@ -183,7 +183,7 @@ dart run dart_skills_lint
 When resolving which severity to apply for a rule, `dart_skills_lint` evaluates settings in the following order of precedence (highest to lowest):
 
 1. **CLI Flags / API Overrides**: Explicit flags passed to the CLI (e.g., `--check-trailing-whitespace`) or rules passed to the `validateSkills` API via `resolvedRules`.
-2. **Path-Specific Config**: Rules defined under `directories:` or `individual_skills:` in `dart_skills_lint.yaml` for a matching path.
+2. **Path-Specific Config**: Rules defined under `directories:` or `individual_skills:` in `dart_skills_lint.yaml` for a matching path. If a skill matches multiple configured paths (e.g., an `individual_skills` path that overlaps with a `directories` path, or nested `directories`), the rules are applied additively in the order they appear in the configuration file. Later entries override earlier entries. This allows you to set broad rules for a root directory and then selectively override them for specific nested skills.
 3. **Global Config**: Rules defined under the top-level `rules:` in `dart_skills_lint.yaml`.
 4. **Defaults**: The hardcoded default severity for each rule.
 

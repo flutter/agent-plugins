@@ -341,9 +341,10 @@ Future<bool> validateSkillsInternal({
   Configuration? config,
   List<SkillRule> customRules = const [],
 }) async {
+  final bool hasCliTargets = skillDirPaths.isNotEmpty || individualSkillPaths.isNotEmpty;
   final List<String> effectiveIndividualSkillPaths = [
     ...individualSkillPaths,
-    if (config != null) ...config.individualSkillConfigs.map((e) => e.path),
+    if (config != null && !hasCliTargets) ...config.individualSkillConfigs.map((e) => e.path),
   ];
 
   final List<String> effectiveSkillDirPaths = _getEffectiveSkillDirPaths(
