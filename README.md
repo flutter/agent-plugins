@@ -1,23 +1,24 @@
-# Flutter Agent Skills
+# Flutter Agent Plugins
 
-Agent skills for Flutter, maintained by the Flutter team.
-A collection of skills providing tailored instructions for happy path Flutter app development workflows. By giving the agent actual domain expertise and repeatable workflows, you drastically reduce mistakes and ensure agents reliably complete the task following best practices.
+Agent plugins for Flutter, maintained by the Flutter team.
 
-Skills are essentially simple folders of files that can be seen as complementary to MCP, where MCP gives an agent access to specialized tools and a Skill teaches the agent “how” to use tools for a specific task.
+A collection of plugins designed to extend AI agent capabilities for Flutter development. These plugins bundle together skills, subagents, rules, and configurations to provide tailored workflows and instructions for happy path Flutter development. By giving the agent domain expertise and repeatable workflows, you drastically reduce mistakes and ensure agents reliably complete tasks following best practices.
 
-You can also install the [Agent Skills for Dart](https://github.com/dart-lang/skills) for Dart tasks.
+Plugins can package various customizations together. A key component of these plugins is **Agent Skills**, which are simple folders of files that can be seen as complementary to MCP: where MCP gives an agent access to specialized tools, a Skill teaches the agent “how” to use tools for a specific task.
+
+You can also install the [Agent Plugins for Dart](https://github.com/dart-lang/skills) for Dart tasks.
 
 ## Installation
 
-To install all skills into your project, run the following command. 
-The `--agent universal` flag puts it in the standard `.agents/skills` 
+To install the plugins into your project, run the following command. 
+The `--agent universal` flag puts them in the standard `.agents/skills` 
 folder that most agents use.
 
 ```bash
-npx skills add flutter/skills --skill '*' --agent universal --yes
+npx skills add flutter/agent-plugins --skill '*' --agent universal --yes
 ```
 
-## Updating Skills
+## Updating Plugins
 
 To update, run the following command:
 
