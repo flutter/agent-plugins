@@ -6,7 +6,7 @@ A collection of plugins designed to extend AI agent capabilities for Flutter dev
 
 Plugins can package various customizations together. A key component of these plugins is **Agent Skills**, which are simple folders of files that can be seen as complementary to MCP: where MCP gives an agent access to specialized tools, a Skill teaches the agent “how” to use tools for a specific task.
 
-You can also install the [Agent Plugins for Dart](https://github.com/dart-lang/skills) for Dart tasks.
+You can also install the [Dart skills](https://github.com/dart-lang/skills) for Dart tasks.
 
 ## Installation
 
