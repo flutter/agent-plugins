@@ -17,7 +17,7 @@ analyzer:
     strict-raw-types: true
   # dart_code_linter is intentionally NOT registered as an analyzer
   # `plugin` here. When it was, `dart analyze` had racy false positives. 
-  # See https://github.com/flutter/skills/issues/144
+  # See https://github.com/flutter/agent-plugins/issues/144
   errors:
     # allow deprecated members (we do this because otherwise we have to annotate
     # every member in every test, assert, etc, when we or the Dart SDK deprecates

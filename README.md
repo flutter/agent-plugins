@@ -1,8 +1,22 @@
 # Flutter Agent Plugins
 
-The plugin provides a collection of Flutter skills and an MCP server for AI coding agents. These resources/tools help agents understand and work more effectively with Flutter and Dart.
+Agent plugins for Flutter, maintained by the Flutter team.
+
+A collection of plugins designed to extend AI agent capabilities for Flutter development. These plugins bundle together skills, MCP server configuration, and rules to provide tailored workflows and instructions for happy path Flutter development. By giving the agent domain expertise and repeatable workflows, you drastically reduce mistakes and ensure agents reliably complete tasks following best practices.
+
+Plugins can package various customizations together. A key component of these plugins is **Agent Skills**, which are simple folders of files that can be seen as complementary to MCP: where MCP gives an agent access to specialized tools, a Skill teaches the agent “how” to use tools for a specific task.
+
+You can also install the [Dart skills](https://github.com/dart-lang/skills) for Dart tasks.
 
 ## Installation
+
+To install the plugins into your project, run the following command. 
+The `--agent universal` flag puts them in the standard `.agents/skills` 
+folder that most agents use.
+
+```bash
+npx skills add flutter/agent-plugins --skill '*' --agent universal --yes
+```
 
 ### Claude Code Plugin
 
@@ -24,26 +38,7 @@ claude plugin install dart-flutter@dart-flutter
 claude plugin marketplace list
 ```
 
-# Flutter Agent Skills
-
-Agent skills for Flutter, maintained by the Flutter team.
-A collection of skills providing tailored instructions for happy path Flutter app development workflows. By giving the agent actual domain expertise and repeatable workflows, you drastically reduce mistakes and ensure agents reliably complete the task following best practices.
-
-Skills are essentially simple folders of files that can be seen as complementary to MCP, where MCP gives an agent access to specialized tools and a Skill teaches the agent “how” to use tools for a specific task.
-
-You can also install the [Agent Skills for Dart](https://github.com/dart-lang/skills) for Dart tasks.
-
-## Installation
-
-To install all skills into your project, run the following command. 
-The `--agent universal` flag puts it in the standard `.agents/skills` 
-folder that most agents use.
-
-```bash
-npx skills add flutter/skills --skill '*' --agent universal --yes
-```
-
-## Updating Skills
+## Updating Plugins
 
 To update, run the following command:
 

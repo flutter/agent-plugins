@@ -131,7 +131,7 @@ void main() {
 
       // Get SHA256 sum
       var hash = '';
-      // TODO(reidbaker): Re-add CertUtil checksum verification for Windows hosts. https://github.com/flutter/skills/issues/164
+      // TODO(reidbaker): Re-add CertUtil checksum verification for Windows hosts. https://github.com/flutter/agent-plugins/issues/164
       final ProcessResult shaProcess = await Process.run('shasum', [
         '-a',
         '256',
@@ -174,7 +174,7 @@ void main() {
 
       await createMockRelease(os: os, arch: arch, binaryContent: binaryContent);
 
-      // TODO(reidbaker): Use Windows path separator (;) when running on Windows hosts. https://github.com/flutter/skills/issues/164
+      // TODO(reidbaker): Use Windows path separator (;) when running on Windows hosts. https://github.com/flutter/agent-plugins/issues/164
       final newPath = '${mockBinDir.path}:${Platform.environment['PATH']}';
       final String packageRoot = _getPackageRoot();
       final String scriptPath = p.join(packageRoot, 'scripts', 'install.sh');
@@ -271,7 +271,7 @@ void main() {
         shouldCorruptHash: true,
       );
 
-      // TODO(reidbaker): Use Windows path separator (;) when running on Windows hosts. https://github.com/flutter/skills/issues/164
+      // TODO(reidbaker): Use Windows path separator (;) when running on Windows hosts. https://github.com/flutter/agent-plugins/issues/164
       final newPath = '${mockBinDir.path}:${Platform.environment['PATH']}';
       final String packageRoot = _getPackageRoot();
       final String scriptPath = p.join(packageRoot, 'scripts', 'install.sh');
@@ -418,7 +418,7 @@ void main() {
     });
 
     test('fails on unsupported architecture', () async {
-      // TODO(reidbaker): Use Windows path separator (;) when running on Windows hosts. https://github.com/flutter/skills/issues/164
+      // TODO(reidbaker): Use Windows path separator (;) when running on Windows hosts. https://github.com/flutter/agent-plugins/issues/164
       final newPath = '${mockBinDir.path}:${Platform.environment['PATH']}';
       final String packageRoot = _getPackageRoot();
       final String scriptPath = p.join(packageRoot, 'scripts', 'install.sh');
@@ -438,7 +438,7 @@ void main() {
       expect(stderr.any((line) => line.contains('unsupported architecture')), isTrue);
       await process.shouldExit(1);
     });
-    // TODO(reidbaker): Support running install.sh tests on Windows hosts. https://github.com/flutter/skills/issues/164
+    // TODO(reidbaker): Support running install.sh tests on Windows hosts. https://github.com/flutter/agent-plugins/issues/164
   }, skip: Platform.isWindows ? 'install.sh is not supported on Windows' : null);
 }
 

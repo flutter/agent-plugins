@@ -25,7 +25,7 @@ see the [`Recipes` section of the README](../../README.md#recipes).
    dev_dependencies:
      dart_skills_lint:
        git:
-         url: https://github.com/flutter/skills.git
+         url: https://github.com/flutter/agent-plugins.git
          path: tool/dart_skills_lint
    ```
 
