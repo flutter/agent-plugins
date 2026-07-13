@@ -9,7 +9,7 @@ The plugin provides a collection of Flutter skills and an MCP server for AI codi
 1. Add the marketplace for Claude Code plugins:
 
 ```bash
-claude plugin marketplace add flutter/skills
+claude plugin marketplace add flutter/agent-plugins
 ```
 
 2. Install the Claude plugin for Dart and Flutter:

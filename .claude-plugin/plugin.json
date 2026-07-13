@@ -7,8 +7,8 @@
     "name": "Dart and Flutter",
     "url": "https://flutter.dev"
   },
-  "homepage": "https://github.com/flutter/skills",
-  "repository": "https://github.com/flutter/skills",
+  "homepage": "https://github.com/flutter/agent-plugins",
+  "repository": "https://github.com/flutter/agent-plugins",
   "license": "BSD-3-Clause",
   "keywords": [
     "flutter",
