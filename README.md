@@ -1,3 +1,29 @@
+# Flutter Agent Plugins
+
+The plugin provides a collection of Flutter skills and an MCP server for AI coding agents. These resources/tools help agents understand and work more effectively with Flutter and Dart.
+
+## Installation
+
+### Claude Code Plugin
+
+1. Add the marketplace for Claude Code plugins:
+
+```bash
+claude plugin marketplace add flutter/skills
+```
+
+2. Install the Claude plugin for Dart and Flutter:
+
+```bash
+claude plugin install dart-flutter@dart-flutter
+```
+
+3. Verify the installation:
+
+```bash
+claude plugin marketplace list
+```
+
 # Flutter Agent Skills
 
 Agent skills for Flutter, maintained by the Flutter team.
