@@ -1,0 +1,73 @@
+name: Sync Skills Directory via Git Hash (Dart)
+
+on:
+  schedule:
+    # Runs every Monday at 06:00 UTC (Monday morning)
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    # Allows you to manually trigger the sync anytime from the Actions tab
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Flutter Skills (Destination)
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.SYNC_PAT }}
+          path: dest_repo
+
+      - name: Checkout Dart Skills (Source)
+        uses: actions/checkout@v4
+        with:
+          repository: dart-lang/skills
+          fetch-depth: 50
+          path: src_repo
+
+      - name: Setup Dart Environment
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Execute Dart Sync Engine
+        id: sync_engine
+        # Continue on error so we can check if it exited early via code 10
+        continue-on-error: true
+        run: |
+          cd dest_repo
+          # Run our compiled-on-the-fly Dart script
+          dart run tool/sync_skills.dart ../src_repo skills
+          EXIT_CODE=$?
+          
+          if [ $EXIT_CODE -eq 0 ]; then
+            echo "changes_detected=true" >> $GITHUB_OUTPUT
+          elif [ $EXIT_CODE -eq 10 ]; then
+            echo "changes_detected=false" >> $GITHUB_OUTPUT
+            echo "✅ Dart script signaled NO changes were found. Stopping workflow."
+          else
+            echo "❌ Dart script failed with error code $EXIT_CODE"
+            exit $EXIT_CODE
+          fi
+
+      - name: Create Pull Request
+        if: steps.sync_engine.outputs.changes_detected == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.SYNC_PAT }}
+          path: dest_repo
+          branch: automation/sync-dart-skills
+          title: "🤖 chore: sync skills directory from dart-lang/skills"
+          commit-message: "chore: auto-sync skills directory from dart-lang/skills"
+          body: |
+            ### 🤖 Automated Skills Sync & Version Bump (Dart Powered)
+            This is an automated pull request to sync the contents of the `skills/` directory from [dart-lang/skills](https://github.com/dart-lang/skills).
+            
+            This run used a state-tracked Git hash (`.dart_skills_githash`) computed directly by our custom **Dart synchronization utility** (`tool/sync_skills.dart`).
+            
+            ### 🛠️ Changes Performed:
+            * **Preserved:** All native `flutter/*` skills in the repository remain unchanged.
+            * **Synced:** All new, modified, or deleted files inside `dart-lang/skills` have been carried over.
+            * **Bumped:** Automatically incremented the plugin version field in `.claude-plugin/plugin.json` to keep integrations updated.
+          labels: |
+            automated-pr
+            sync

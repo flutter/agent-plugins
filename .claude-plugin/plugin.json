@@ -1,0 +1,18 @@
+{
+  "name": "dart-flutter",
+  "displayName": "Dart and Flutter",
+  "version": "1.0.0",
+  "description": "Official Claude plugin for Dart and Flutter that installs Flutter/Dart Skills and Dart MCP server for building natively compiled, visually stunning applications for mobile, web, desktop, and embedded devices from a single codebase",
+  "author": {
+    "name": "Dart and Flutter",
+    "url": "https://flutter.dev"
+  },
+  "homepage": "https://github.com/flutter/skills",
+  "repository": "https://github.com/flutter/skills",
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "flutter",
+    "dart",
+    "mobile"
+  ]
+}
