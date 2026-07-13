@@ -7,19 +7,19 @@
 # install.sh — Install the dart_skills_lint native binary.
 #
 # Usage (default repo + latest version):
-#   curl -fsSL https://github.com/flutter/skills/releases/latest/download/install.sh | bash
+#   curl -fsSL https://github.com/flutter/agent-plugins/releases/latest/download/install.sh | bash
 #
 # Pin a specific version or alternate repo:
 #   curl -fsSL .../install.sh | REPO=other-org/other-repo VERSION=0.4.0-dev.1 bash
 #
 # Env vars:
-#   REPO         GitHub owner/repo (default: flutter/skills).
+#   REPO         GitHub owner/repo (default: flutter/agent-plugins).
 #   VERSION      "latest" or a specific version like 0.4.0-dev.1 (default: latest).
 #   INSTALL_DIR  Install destination (default: /usr/local/bin).
 
 set -euo pipefail
 
-REPO="${REPO:-flutter/skills}"
+REPO="${REPO:-flutter/agent-plugins}"
 VERSION="${VERSION:-latest}"
 INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
 BIN_NAME="dart_skills_lint"
