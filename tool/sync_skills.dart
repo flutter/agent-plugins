@@ -20,6 +20,12 @@ void main(List<String> args) async {
       'tool/.dart_skills_githash';
   const pluginFile = '.claude-plugin/plugin.json';
 
+  // Verify source directory exists
+  if (!await Directory(srcDir).exists()) {
+    print('❌ Error: Source directory "$srcDir" does not exist.');
+    exit(1);
+  }
+
   // 1. Get the latest commit hash from the source repository
   final currentHashResult = await Process.run('git', [
     'rev-parse',
@@ -74,11 +80,17 @@ void main(List<String> args) async {
       final diffResult = await Process.run('git', [
         'diff',
         '--name-status',
+        '--no-renames',
         prevHash,
         currentHash,
         '--',
         'skills/',
       ], workingDirectory: srcDir);
+
+      if (diffResult.exitCode != 0) {
+        print('❌ Error running git diff inside source: ${diffResult.stderr}');
+        exit(1);
+      }
 
       final lines = (diffResult.stdout as String).trim().split('\n');
       for (final line in lines) {
@@ -122,13 +134,23 @@ void main(List<String> args) async {
       print(
         '⚠️ Previous hash was not found in history. Performing fallback full sync.',
       );
-      changesDetected = await _fullSync(srcDir, destDir);
+      final success = await _fullSync(srcDir, destDir);
+      if (!success) {
+        print('❌ Error: Fallback full sync failed.');
+        exit(1);
+      }
+      changesDetected = true;
     }
   } else {
     print(
       '🆕 No previous hash tracked. Performing a clean sync of current Dart skills.',
     );
-    changesDetected = await _fullSync(srcDir, destDir);
+    final success = await _fullSync(srcDir, destDir);
+    if (!success) {
+      print('❌ Error: Clean sync failed.');
+      exit(1);
+    }
+    changesDetected = true;
   }
 
   // 4. Update `.claude-plugin/plugin.json` version if changes were detected
