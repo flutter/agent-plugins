@@ -19,6 +19,7 @@ dart_skills_lint:
     - path: "example/valid"
       rules:
         prevent-skills-sh-publishing: error
+  individual_skills:
     - path: ".agents/skills/add-dart-lint-validation-rule"
       rules:
         prevent-skills-sh-publishing: error
