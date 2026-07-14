@@ -163,11 +163,12 @@ void main(List<String> args) async {
         final Map<String, dynamic> data = jsonDecode(content);
 
         final versionStr = data['version'] as String? ?? '1.0.0';
-        final versionParts = versionStr.split('.');
-        if (versionParts.length == 3) {
-          final patch = int.parse(versionParts[2]) + 1;
-          versionParts[2] = patch.toString();
-          data['version'] = versionParts.join('.');
+        final match = RegExp(r'^(\d+)\.(\d+)\.(\d+)').firstMatch(versionStr);
+        if (match != null) {
+          final major = match.group(1)!;
+          final minor = match.group(2)!;
+          final patch = int.parse(match.group(3)!) + 1;
+          data['version'] = '$major.$minor.$patch';
 
           // Re-write back to json format with clean indentation and trailing newline
           final encoder = const JsonEncoder.withIndent('  ');

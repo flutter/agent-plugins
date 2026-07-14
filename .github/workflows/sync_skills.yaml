@@ -34,13 +34,11 @@ jobs:
 
       - name: Execute Dart Sync Engine
         id: sync_engine
-        # Continue on error so we can check if it exited early via code 10
-        continue-on-error: true
         run: |
           cd dest_repo
           # Run our compiled-on-the-fly Dart script
-          dart run tool/sync_skills.dart ../src_repo skills
-          EXIT_CODE=$?
+          EXIT_CODE=0
+          dart run tool/sync_skills.dart ../src_repo skills || EXIT_CODE=$?
           
           if [ $EXIT_CODE -eq 0 ]; then
             echo "changes_detected=true" >> $GITHUB_OUTPUT
