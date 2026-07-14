@@ -25,7 +25,7 @@ class RuleRegistry {
       name: PathDoesNotExistRule.ruleName,
       defaultSeverity: AnalysisSeverity.error,
       help: 'Check if SKILL.md and directory structure are correct.',
-      allowedOptions: {'exclude': String},
+      optionsSchema: {'exclude': String},
     ),
     const CheckType(
       name: AbsolutePathsRule.ruleName,

@@ -182,8 +182,8 @@ ArgParser _createArgParser(String helpFlag) {
     );
 
     // Register namespaced delegated options
-    for (final String optionName in check.allowedOptions.keys) {
-      final Type expectedType = check.allowedOptions[optionName]!;
+    for (final String optionName in check.optionsSchema.keys) {
+      final Type expectedType = check.optionsSchema[optionName]!;
       if (expectedType == List || expectedType == List<String>) {
         parser.addMultiOption(
           '${check.name}-$optionName',
@@ -485,7 +485,7 @@ Map<String, AnalysisSeverity> resolveRuleSeverities(ArgResults results) {
 /// flags matches in the format `--[rule-name]-[option-name]` (e.g. `--path-does-not-exist-exclude`),
 /// and returns a structured map mapping rule names to their custom key-value parameter overrides.
 ///
-/// Applies type coercion based on the expected type defined in [CheckType.allowedOptions]:
+/// Applies type coercion based on the expected type defined in [CheckType.optionsSchema]:
 /// * [int]: Coerced using [int.tryParse].
 /// * [bool]: Coerced to `true` if matching "true" case-insensitively, `false` otherwise.
 /// * Other: Parsed as-is (e.g. [String] or [List] types).
@@ -496,10 +496,10 @@ Map<String, CustomRuleOptions> resolveRuleOptionsOverrides(ArgResults results) {
 
   for (final CheckType check in RuleRegistry.allChecks) {
     final Map<String, dynamic> checkOverrides = {};
-    for (final String optionName in check.allowedOptions.keys) {
+    for (final String optionName in check.optionsSchema.keys) {
       final optionFlag = '${check.name}-$optionName';
       if (results.wasParsed(optionFlag)) {
-        final Type expectedType = check.allowedOptions[optionName]!;
+        final Type expectedType = check.optionsSchema[optionName]!;
         final Object? rawValue = results[optionFlag];
 
         if (rawValue == '') {

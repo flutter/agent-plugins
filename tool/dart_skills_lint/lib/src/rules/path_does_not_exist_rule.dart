@@ -19,11 +19,9 @@ import '../models/validation_error.dart';
 class PathDoesNotExistRule extends ConfigurableSkillRule {
   PathDoesNotExistRule({required this.severity, CustomRuleOptions? customRuleOptions})
     : super(customRuleOptions) {
-    if (customRuleOptions != null) {
-      final Object? excludeVal = customRuleOptions[excludeOption];
-      if (excludeVal is String && excludeVal.isNotEmpty) {
-        _excludeRegExp = RegExp(excludeVal);
-      }
+    final String? excludeVal = customRuleOptions?.getString(excludeOption);
+    if (excludeVal != null && excludeVal.isNotEmpty) {
+      _excludeRegExp = RegExp(excludeVal);
     }
   }
 

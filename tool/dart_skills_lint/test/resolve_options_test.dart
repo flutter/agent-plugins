@@ -20,7 +20,7 @@ void main() {
         name: mockCheckName,
         defaultSeverity: AnalysisSeverity.disabled,
         help: 'Mock rule for testing.',
-        allowedOptions: {'exclude': String, 'max': int, 'strict': bool, 'items': List},
+        optionsSchema: {'exclude': String, 'max': int, 'strict': bool, 'items': List},
       );
       RuleRegistry.allChecks.add(mockCheck);
     });
@@ -33,8 +33,8 @@ void main() {
       final parser = ArgParser();
       for (final CheckType check in RuleRegistry.allChecks) {
         parser.addFlag(check.name, defaultsTo: check.defaultSeverity != AnalysisSeverity.disabled);
-        for (final String optionName in check.allowedOptions.keys) {
-          final Type type = check.allowedOptions[optionName]!;
+        for (final String optionName in check.optionsSchema.keys) {
+          final Type type = check.optionsSchema[optionName]!;
           if (type == List || type == List<String>) {
             parser.addMultiOption('${check.name}-$optionName');
           } else {

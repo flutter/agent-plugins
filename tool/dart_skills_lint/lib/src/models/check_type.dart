@@ -11,7 +11,7 @@ class CheckType {
     required this.name,
     required this.defaultSeverity,
     required this.help,
-    this.allowedOptions = const {},
+    this.optionsSchema = const {},
   });
   final String name;
 
@@ -22,19 +22,19 @@ class CheckType {
   final String help;
 
   /// Custom configuration options supported by this check.
-  final Map<String, Type> allowedOptions;
+  final Map<String, Type> optionsSchema;
 
-  /// Validates the given [options] against this check's [allowedOptions] schema.
+  /// Validates the given [options] against this check's [optionsSchema] schema.
   ///
   /// Returns a list of error messages for any unrecognized options or type mismatches.
   List<String> validateOptions(CustomRuleOptions options) {
     final List<String> errors = [];
     for (final String key in options.keys) {
-      if (!allowedOptions.containsKey(key)) {
+      if (!optionsSchema.containsKey(key)) {
         errors.add('Unrecognized option "$key" for rule "$name".');
         continue;
       }
-      final Type expectedType = allowedOptions[key]!;
+      final Type expectedType = optionsSchema[key]!;
       final Object? actualValue = options[key];
       if (actualValue != null && !_isTypeValid(actualValue, expectedType)) {
         errors.add(
