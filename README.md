@@ -18,6 +18,26 @@ folder that most agents use.
 npx skills add flutter/agent-plugins --skill '*' --agent universal --yes
 ```
 
+### Claude Code Plugin
+
+1. Add the marketplace for Claude Code plugins:
+
+```bash
+claude plugin marketplace add flutter/agent-plugins
+```
+
+2. Install the Claude plugin for Dart and Flutter:
+
+```bash
+claude plugin install dart-flutter@dart-flutter
+```
+
+3. Verify the installation:
+
+```bash
+claude plugin marketplace list
+```
+
 ## Updating Plugins
 
 To update, run the following command:
