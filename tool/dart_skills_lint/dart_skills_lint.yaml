@@ -6,6 +6,9 @@ dart_skills_lint:
     - path: ".agents/skills"
       rules:
         check-trailing-whitespace: error
+        path-does-not-exist:
+          severity: error
+          exclude: ".*-workspace"
       ignore_file: ".agents/skills/ignore.json"
     - path: "../../skills"
       ignore_file: ".agents/skills/flutter_skills_ignore.json"
