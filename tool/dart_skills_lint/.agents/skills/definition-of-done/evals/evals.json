@@ -1,0 +1,16 @@
+{
+  "skill_name": "definition-of-done",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Modify tool/dart_skills_lint/lib/src/levenshtein.dart to add a comment explaining how the algorithm calculates distance (e.g. tracking deletion, insertion, substitution cost), and make sure you finish the task completely.",
+      "expected_output": "The file tool/dart_skills_lint/lib/src/levenshtein.dart has a new explanatory comment, code is formatted, analyzed cleanly, and contains no forbidden temporal terms.",
+      "expectations": [
+        "The levenshtein.dart file contains a new comment explaining how edit distance is calculated.",
+        "The new comment does not contain any relative temporal words such as 'now', 'currently', 'new', 'old', or 'existing'.",
+        "The levenshtein.dart file is formatted cleanly according to dart format.",
+        "The project has no dart analyze errors or warnings."
+      ]
+    }
+  ]
+}
