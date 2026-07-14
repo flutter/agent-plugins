@@ -1,4 +1,21 @@
+## 0.5.0
+
+- Added support for rule-specific custom options in `dart_skills_lint.yaml`, allowing rules to be configured with parameter maps (e.g. passing exclusions, thresholds, length limits, etc.).
+- Refactored `path-does-not-exist` from an inline structure check into a class-based `SkillRule`, enabling it to be disabled or overridden.
+- Exposed namespaced CLI flags for custom options (e.g. `--path-does-not-exist-exclude`) with support for empty string overrides to clear options.
+- Implemented option type-coercion for `int`, `bool`, and `List` types parsed from the command line.
+
+### Breaking Changes
+
+- Refactored `ValidationResult` out of `src/validator.dart` and into `src/models/validation_result.dart`. Packages that imported the internal implementation file `package:dart_skills_lint/src/validator.dart` and referenced `ValidationResult` will need to explicitly import `package:dart_skills_lint/src/models/validation_result.dart` or migrate to importing the public entrypoint `package:dart_skills_lint/dart_skills_lint.dart`.
+- Renamed rule severity configuration concepts across model structures and APIs to use consistent `ruleSeverities` / `customRuleSeverities` naming:
+  - Renamed `Validator` constructor parameter `ruleOverrides` to `customRuleSeverities`.
+  - Renamed `Configuration.configuredRules` and `LintTargetConfig.rules` to `ruleSeverities`.
+  - Renamed `ValidationSession` constructor parameter `resolvedRules` to `resolvedRuleSeverities`.
+  - Renamed `ValidationSession` method `resolveRulesForPath` to `resolveRuleSeveritiesForPath`.
+
 ## 0.4.0
+
 
 - Fixed issue #166 by adding support for configuring individual skills via the `individual_skills:` key in `dart_skills_lint.yaml`, enabling path-specific rule severity mapping without relying on root directory scanning.
 - Native binaries for macOS arm64, macOS x64, Linux x64, and Linux

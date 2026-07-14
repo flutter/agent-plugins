@@ -12,7 +12,7 @@ import 'package:dart_skills_lint/src/rules/valid_yaml_metadata_rule.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('resolveRules', () {
+  group('resolveRuleSeverities', () {
     ArgParser createParser() {
       final parser = ArgParser();
       for (final CheckType check in RuleRegistry.allChecks) {
@@ -24,19 +24,20 @@ void main() {
     test('returns empty map when no CLI overrides are provided', () {
       final ArgResults results = createParser().parse([]);
 
-      final Map<String, AnalysisSeverity> resolved = resolveRules(results);
+      final Map<String, AnalysisSeverity> resolved = resolveRuleSeverities(results);
 
       expect(
         resolved,
         isEmpty,
-        reason: 'resolveRules should return an empty map when no CLI override flags are provided.',
+        reason:
+            'resolveRuleSeverities should return an empty map when no CLI override flags are provided.',
       );
     });
 
     test('CLI flags override defaults', () {
       final ArgResults results = createParser().parse(['--${RelativePathsRule.ruleName}']);
 
-      final Map<String, AnalysisSeverity> resolved = resolveRules(results);
+      final Map<String, AnalysisSeverity> resolved = resolveRuleSeverities(results);
 
       expect(resolved[RelativePathsRule.ruleName], AnalysisSeverity.error);
     });
@@ -44,7 +45,7 @@ void main() {
     test('CLI flag disabled overrides defaults', () {
       final ArgResults results = createParser().parse(['--no-${ValidYamlMetadataRule.ruleName}']);
 
-      final Map<String, AnalysisSeverity> resolved = resolveRules(results);
+      final Map<String, AnalysisSeverity> resolved = resolveRuleSeverities(results);
 
       expect(resolved[ValidYamlMetadataRule.ruleName], AnalysisSeverity.disabled);
     });

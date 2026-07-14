@@ -18,7 +18,7 @@ Before stating that a task is complete, you MUST execute and pass the following 
 3.  **Metrics/Linter**: Run `dart run dart_code_linter:metrics analyze lib` and ensure there are zero issues. This checks for cyclomatic complexity and custom rules like file naming and redundant async.
 4.  **Tests**: Run `dart test` and ensure all tests pass successfully.
 5.  **Skill Validation**: If any skill files were modified, run `dart run dart_skills_lint -d .agents/skills` to ensure they are valid.
-6.  **Changelog**: Ensure `CHANGELOG.md` is updated if the task includes user-facing features, bug fixes, or behavioral changes.
+6.  **Changelog**: Ensure `CHANGELOG.md` is updated if the task includes user-facing features, bug fixes, or behavioral changes. Audit all entries against the *previously released version* (do not document changes to intermediate PR development code or new unreleased APIs as breaking changes).
 7.  **Temporal Words**: Ensure that code and code comments contain no relative temporal terms (e.g., 'now', 'currently', 'new', 'old', 'existing behavior').
 
 ## 🚦 Completion Checklist
@@ -28,6 +28,6 @@ Before stating that a task is complete, you MUST execute and pass the following 
 - [ ] Metrics/Linter are clean (`dart run dart_code_linter:metrics analyze lib`).
 - [ ] Tests are passing (`dart test`).
 - [ ] Skills validated if modified (`dart run dart_skills_lint -d .agents/skills`).
-- [ ] `CHANGELOG.md` updated for user-facing features, bug fixes, or behavioral changes.
+- [ ] `CHANGELOG.md` updated and audited against the previously released version (no intermediate or unreleased breaking changes listed).
 - [ ] Verified that code and code comments contain no relative temporal terms (e.g., 'now', 'currently', 'new', 'old', 'existing behavior').
 - [ ] Documentation is updated.

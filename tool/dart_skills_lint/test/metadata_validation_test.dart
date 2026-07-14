@@ -5,6 +5,7 @@
 import 'dart:io';
 
 import 'package:dart_skills_lint/src/models/validation_error.dart';
+import 'package:dart_skills_lint/src/models/validation_result.dart';
 import 'package:dart_skills_lint/src/rules/disallowed_field_rule.dart';
 import 'package:dart_skills_lint/src/validator.dart';
 import 'package:test/test.dart';

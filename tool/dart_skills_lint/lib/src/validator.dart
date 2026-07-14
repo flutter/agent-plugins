@@ -13,17 +13,25 @@ import 'models/check_type.dart';
 import 'models/skill_context.dart';
 import 'models/skill_rule.dart';
 import 'models/validation_error.dart';
+import 'models/validation_result.dart';
 import 'rule_registry.dart';
-
-const _dirStructureUrl = 'https://agentskills.io/specification#directory-structure';
+import 'rules/path_does_not_exist_rule.dart';
 
 final _log = Logger('dart_skills_lint');
 
 /// Validates agent skill directories against the Agent Skills specification.
 class Validator {
-  Validator({Map<String, AnalysisSeverity>? ruleOverrides, List<SkillRule>? customRules})
-    : _customSeverities = ruleOverrides ?? {},
-      _rules = _buildRules(ruleOverrides ?? {}, customRules ?? []);
+  /// Creates a validator with optional rule severities, custom rules, and rule options.
+  ///
+  /// * [customRuleSeverities] overrides default severities of rules (e.g. mapping a rule to [AnalysisSeverity.disabled] or [AnalysisSeverity.warning]).
+  /// * [customRules] specifies custom rules to be included in the validation.
+  /// * [ruleOptions] maps rule names to their rule-specific custom options maps (e.g. passing regex patterns, thresholds, lists).
+  Validator({
+    Map<String, AnalysisSeverity>? customRuleSeverities,
+    List<SkillRule>? customRules,
+    Map<String, Map<String, dynamic>>? ruleOptions,
+  }) : _customRuleSeverities = customRuleSeverities ?? {},
+       _rules = _buildRules(customRuleSeverities ?? {}, customRules ?? [], ruleOptions ?? {});
   static const String _skillFileName = SkillContext.skillFileName;
 
   /// The name of the special check for missing files or directories.
@@ -35,14 +43,14 @@ class Validator {
   /// The name of the special check for unexpected errors.
   static const String unexpectedError = 'unexpected-error';
 
-  final Map<String, AnalysisSeverity> _customSeverities;
+  final Map<String, AnalysisSeverity> _customRuleSeverities;
   final List<SkillRule> _rules;
 
   /// Returns the rules used by this validator.
   List<SkillRule> get rules => _rules;
 
   AnalysisSeverity _getSeverity(String name, AnalysisSeverity defaultSeverity) {
-    return _customSeverities[name] ?? defaultSeverity;
+    return _customRuleSeverities[name] ?? defaultSeverity;
   }
 
   /// Validates a single skill directory.
@@ -51,55 +59,54 @@ class Validator {
   /// constraints like name format and field lengths using registered rules.
   Future<ValidationResult> validate(Directory dir) async {
     final validationErrors = <ValidationError>[];
-
-    final bool isValidDir = await _checkDirectoryStructure(dir, validationErrors);
-    if (!isValidDir) {
-      return ValidationResult(validationErrors: validationErrors);
-    }
-
     final skillMdFile = File(p.join(dir.path, _skillFileName));
-    String content;
-    try {
-      content = await skillMdFile.readAsString();
-    } on FileSystemException catch (e) {
-      validationErrors.add(
-        ValidationError(
-          ruleId: skillFileInaccessible,
-          file: skillMdFile.path,
-          message: 'Failed to read $_skillFileName: $e',
-          severity: _getSeverity(skillFileInaccessible, AnalysisSeverity.error),
-        ),
-      );
-      return ValidationResult(validationErrors: validationErrors);
-    } catch (e) {
-      validationErrors.add(
-        ValidationError(
-          ruleId: unexpectedError,
-          file: skillMdFile.path,
-          message: 'Unexpected error reading $_skillFileName: $e',
-          severity: _getSeverity(unexpectedError, AnalysisSeverity.error),
-        ),
-      );
-      return ValidationResult(validationErrors: validationErrors);
-    }
+    final bool skillMdExists = dir.existsSync() && skillMdFile.existsSync();
 
+    var content = '';
     YamlMap? parsedYaml;
     String? yamlParsingError;
-    try {
-      final RegExpMatch? match = SkillContext.skillStartRegex.firstMatch(content);
-      if (match != null) {
-        final String yamlStr = match.group(1)!;
-        final Object? doc = loadYaml(yamlStr);
-        if (doc is YamlMap) {
-          parsedYaml = doc;
-        } else {
-          yamlParsingError = 'YAML frontmatter is not a map';
-        }
-      } else {
-        yamlParsingError = 'Missing YAML metadata in $_skillFileName';
+
+    if (skillMdExists) {
+      try {
+        content = await skillMdFile.readAsString();
+      } on FileSystemException catch (e) {
+        validationErrors.add(
+          ValidationError(
+            ruleId: skillFileInaccessible,
+            file: skillMdFile.path,
+            message: 'Failed to read $_skillFileName: $e',
+            severity: _getSeverity(skillFileInaccessible, AnalysisSeverity.error),
+          ),
+        );
+        return ValidationResult(validationErrors: validationErrors);
+      } catch (e) {
+        validationErrors.add(
+          ValidationError(
+            ruleId: unexpectedError,
+            file: skillMdFile.path,
+            message: 'Unexpected error reading $_skillFileName: $e',
+            severity: _getSeverity(unexpectedError, AnalysisSeverity.error),
+          ),
+        );
+        return ValidationResult(validationErrors: validationErrors);
       }
-    } catch (e) {
-      yamlParsingError = 'Failed to parse YAML: $e';
+
+      try {
+        final RegExpMatch? match = SkillContext.skillStartRegex.firstMatch(content);
+        if (match != null) {
+          final String yamlStr = match.group(1)!;
+          final Object? doc = loadYaml(yamlStr);
+          if (doc is YamlMap) {
+            parsedYaml = doc;
+          } else {
+            yamlParsingError = 'YAML frontmatter is not a map';
+          }
+        } else {
+          yamlParsingError = 'Missing YAML metadata in $_skillFileName';
+        }
+      } catch (e) {
+        yamlParsingError = 'Failed to parse YAML: $e';
+      }
     }
 
     final context = SkillContext(
@@ -110,6 +117,9 @@ class Validator {
     );
 
     for (final SkillRule rule in _rules) {
+      if (!skillMdExists && rule.name != PathDoesNotExistRule.ruleName) {
+        continue;
+      }
       final List<ValidationError> errors = await rule.validate(context);
       for (final error in errors) {
         if (error.severity != rule.severity) {
@@ -124,9 +134,18 @@ class Validator {
     return ValidationResult(validationErrors: validationErrors, context: context);
   }
 
+  /// Compiles the final list of active rules for the validator.
+  ///
+  /// * [customRuleSeverities] overrides default severities of rules (e.g. mapping a rule to [AnalysisSeverity.disabled] or [AnalysisSeverity.warning]).
+  /// * [customRules] specifies custom rules to be included in the validation.
+  /// * [ruleOptions] maps rule names to their rule-specific custom options maps (e.g. passing regex patterns, thresholds, lists).
+  ///
+  /// Rules configured with [AnalysisSeverity.disabled] are excluded.
+  /// Throws an [ArgumentError] if a duplicate rule name is encountered.
   static List<SkillRule> _buildRules(
-    Map<String, AnalysisSeverity> customSeverities,
+    Map<String, AnalysisSeverity> customRuleSeverities,
     List<SkillRule> customRules,
+    Map<String, Map<String, dynamic>> ruleOptions,
   ) {
     final rules = <SkillRule>[];
     final seenNames = <String>{};
@@ -142,8 +161,9 @@ class Validator {
     }
 
     for (final CheckType check in RuleRegistry.allChecks) {
-      final AnalysisSeverity severity = customSeverities[check.name] ?? check.defaultSeverity;
-      final SkillRule? rule = RuleRegistry.createRule(check.name, severity);
+      final AnalysisSeverity severity = customRuleSeverities[check.name] ?? check.defaultSeverity;
+      final Map<String, dynamic>? options = ruleOptions[check.name];
+      final SkillRule? rule = RuleRegistry.createRule(check.name, severity, options);
       if (rule != null) {
         addRule(rule);
       }
@@ -153,86 +173,4 @@ class Validator {
 
     return rules;
   }
-
-  Future<bool> _checkDirectoryStructure(
-    Directory dir,
-    List<ValidationError> validationErrors,
-  ) async {
-    final AnalysisSeverity pathDoesNotExistSeverity = _getSeverity(
-      pathDoesNotExist,
-      AnalysisSeverity.error,
-    );
-
-    if (!dir.existsSync()) {
-      if (File(dir.path).existsSync()) {
-        validationErrors.add(
-          ValidationError(
-            ruleId: pathDoesNotExist,
-            file: dir.path,
-            message: 'Path is not a directory: ${dir.path} (see $_dirStructureUrl)',
-            severity: pathDoesNotExistSeverity,
-          ),
-        );
-      } else {
-        validationErrors.add(
-          ValidationError(
-            ruleId: pathDoesNotExist,
-            file: dir.path,
-            message: 'Directory does not exist: ${dir.path} (see $_dirStructureUrl)',
-            severity: pathDoesNotExistSeverity,
-          ),
-        );
-      }
-      return false;
-    }
-
-    final skillMdFile = File(p.join(dir.path, _skillFileName));
-    if (!skillMdFile.existsSync()) {
-      validationErrors.add(
-        ValidationError(
-          ruleId: pathDoesNotExist,
-          file: dir.path,
-          message: '$_skillFileName is missing in directory: ${dir.path} (see $_dirStructureUrl)',
-          severity: pathDoesNotExistSeverity,
-        ),
-      );
-      return false;
-    }
-    return true;
-  }
-}
-
-/// The result of a skill directory validation attempt.
-class ValidationResult {
-  ValidationResult({
-    this.validationErrors = const [],
-    List<String> warnings = const [],
-    this.context,
-  }) : _manualWarnings = warnings;
-
-  /// The context used during validation.
-  final SkillContext? context;
-
-  /// Whether the skill directory is valid according to the specification.
-  bool get isValid =>
-      !validationErrors.any((e) => e.severity == AnalysisSeverity.error && !e.isIgnored);
-
-  /// A list of structured validation errors found.
-  final List<ValidationError> validationErrors;
-
-  final List<String> _manualWarnings;
-
-  /// A list of error messages for failing checks (excluding ignored ones).
-  List<String> get errors => validationErrors
-      .where((e) => e.severity == AnalysisSeverity.error && !e.isIgnored)
-      .map((e) => e.message)
-      .toList();
-
-  /// A list of warning messages for suboptimal setups or recommendations.
-  List<String> get warnings => [
-    ..._manualWarnings,
-    ...validationErrors
-        .where((e) => e.severity == AnalysisSeverity.warning && !e.isIgnored)
-        .map((e) => e.message),
-  ];
 }

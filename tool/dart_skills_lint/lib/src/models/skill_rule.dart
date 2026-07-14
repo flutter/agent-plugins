@@ -26,6 +26,9 @@ abstract class SkillRule {
 
   AnalysisSeverity get severity;
 
+  /// Custom configuration options supported by this rule (mapping option name to expected Type).
+  Map<String, Type> get allowedOptions => const {};
+
   /// Validates the skill provided in [context].
   Future<List<ValidationError>> validate(SkillContext context);
 }

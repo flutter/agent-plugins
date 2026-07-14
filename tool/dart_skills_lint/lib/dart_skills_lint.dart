@@ -8,4 +8,5 @@ export 'src/models/analysis_severity.dart';
 export 'src/models/skill_context.dart';
 export 'src/models/skill_rule.dart';
 export 'src/models/validation_error.dart';
+export 'src/models/validation_result.dart';
 export 'src/validator.dart';

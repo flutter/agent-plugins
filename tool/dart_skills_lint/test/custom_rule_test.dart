@@ -122,5 +122,22 @@ Body''');
 
       expect(() => Validator(customRules: [rule1, rule2]), throwsArgumentError);
     });
+
+    test('Validator skips other rules if SKILL.md is missing', () async {
+      final Directory skillDir = await Directory('${tempDir.path}/missing-skill').create();
+
+      final validator = Validator(customRules: [AlwaysFailsRule()]);
+      final ValidationResult result = await validator.validate(skillDir);
+
+      // Verify path-does-not-exist error is reported
+      expect(result.isValid, isFalse);
+      expect(result.errors, contains(contains('SKILL.md is missing')));
+
+      // Verify always-fails-rule was NOT executed (its error is not present)
+      final bool hasAlwaysFails = result.validationErrors.any(
+        (e) => e.ruleId == 'always-fails-rule',
+      );
+      expect(hasAlwaysFails, isFalse);
+    });
   });
 }

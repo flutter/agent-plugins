@@ -10,7 +10,9 @@ import 'package:logging/logging.dart';
 import 'package:yaml/yaml.dart';
 
 import 'models/analysis_severity.dart';
+import 'models/check_type.dart';
 import 'path_utils.dart';
+import 'rule_registry.dart';
 
 final _log = Logger('dart_skills_lint');
 
@@ -68,7 +70,7 @@ class ConfigParser {
           final parsingErrors = <String>[];
 
           _validateTopLevelKeys(toolConfig, parsingErrors);
-          final configuredRules = _parseRules(toolConfig);
+          final rulesResult = _parseGlobalRules(toolConfig, parsingErrors);
           final directoryConfigs = _parseConfigList(toolConfig, _directoriesKey, parsingErrors);
           final individualSkillConfigs = _parseConfigList(
             toolConfig,
@@ -79,7 +81,8 @@ class ConfigParser {
           return Configuration(
             directoryConfigs: directoryConfigs,
             individualSkillConfigs: individualSkillConfigs,
-            configuredRules: configuredRules,
+            ruleSeverities: rulesResult.rules,
+            globalRuleOptions: rulesResult.ruleOptions.isEmpty ? null : rulesResult.ruleOptions,
             parsingErrors: parsingErrors,
           );
         }

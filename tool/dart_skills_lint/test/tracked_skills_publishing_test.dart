@@ -40,7 +40,7 @@ void main() {
     final Configuration config = await ConfigParser.loadConfig();
     final session = ValidationSession(
       config: config,
-      resolvedRules: {},
+      resolvedRuleSeverities: {},
       ignoreFileOverride: null,
       customRules: [],
       printWarnings: false,
@@ -53,10 +53,11 @@ void main() {
 
     for (final skillDir in trackedSkillDirs) {
       final expectedPath = '.agents/skills/$skillDir';
-      final Map<String, AnalysisSeverity> resolvedRules = session.resolveRulesForPath(expectedPath);
+      final Map<String, AnalysisSeverity> resolvedRuleSeverities = session
+          .resolveRuleSeveritiesForPath(expectedPath);
 
       expect(
-        resolvedRules.containsKey('prevent-skills-sh-publishing'),
+        resolvedRuleSeverities.containsKey('prevent-skills-sh-publishing'),
         isTrue,
         reason:
             'The tracked skill "$skillDir" must have "prevent-skills-sh-publishing" explicitly configured in dart_skills_lint.yaml.',

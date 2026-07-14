@@ -17,6 +17,7 @@ import 'models/skill_context.dart';
 import 'models/skill_rule.dart';
 import 'models/skills_ignores.dart';
 import 'models/validation_error.dart';
+import 'models/validation_result.dart';
 import 'path_utils.dart';
 import 'skills_ignores_storage.dart';
 import 'validator.dart';
@@ -45,14 +46,31 @@ const directoryErrorMsg = 'Directory error:';
 /// Per-invocation state and orchestration for skill validation.
 ///
 /// One session is constructed per CLI invocation (or embedded call). The
-/// caller invokes [processIndividualSkill] for each `--skill` path and
+/// session aggregates configuration options, custom rules, ignores, and CLI overrides,
+/// then orchestrates the validation of multiple target skill directories.
+///
+/// Callers invoke [processIndividualSkill] for each `--skill` path and
 /// [processSkillRoot] for each `--skills-directory` path, then optionally
 /// [reportNoSkillsValidated] to emit the "no skills found" diagnostics.
-/// Failure state is exposed via [anyFailed] and [anySkillsValidated].
+/// The failure state of the session is exposed via [anyFailed] and [anySkillsValidated].
 class ValidationSession {
+  /// Creates a validation session with the specified configuration, overrides, and rules.
+  ///
+  /// * [config] is the parsed YAML configuration file settings.
+  /// * [resolvedRuleSeverities] maps rule names to custom severities override mapping.
+  /// * [resolvedRuleOptions] maps rule names to rule-specific custom options overrides (e.g., CLI-passed options).
+  /// * [ignoreFileOverride] specifies a custom file path containing lint ignores to load.
+  /// * [customRules] contains programmatically injected custom skill rule checks.
+  /// * [printWarnings] controls whether warnings are printed to stdout.
+  /// * [fastFail] controls whether validation stops immediately on the first error.
+  /// * [quiet] controls whether success messages and other info logs are silenced.
+  /// * [generateBaseline] controls whether the validation should output/update baseline ignores.
+  /// * [fix] controls whether to apply fixable rule modifications directly to files.
+  /// * [fixApply] is the deprecated flag indicating if fixes should be automatically applied.
   ValidationSession({
     required this.config,
-    required this.resolvedRules,
+    this.resolvedRuleSeverities = const {},
+    this.resolvedRuleOptions = const {},
     required this.ignoreFileOverride,
     required this.customRules,
     required this.printWarnings,
@@ -67,7 +85,8 @@ class ValidationSession {
        ];
 
   final Configuration config;
-  final Map<String, AnalysisSeverity> resolvedRules;
+  final Map<String, AnalysisSeverity> resolvedRuleSeverities;
+  final Map<String, Map<String, dynamic>> resolvedRuleOptions;
   final String? ignoreFileOverride;
   final List<SkillRule> customRules;
   final bool printWarnings;
@@ -109,9 +128,18 @@ class ValidationSession {
       return true;
     }
 
-    final Map<String, AnalysisSeverity> localRules = resolveRulesForPath(normalizedSkillPath);
+    final Map<String, AnalysisSeverity> localRuleSeverities = resolveRuleSeveritiesForPath(
+      normalizedSkillPath,
+    );
+    final Map<String, Map<String, dynamic>> localRuleOptions = resolveRuleOptionsForPath(
+      normalizedSkillPath,
+    );
     final String? localIgnoreFile = resolveIgnoreFile(normalizedSkillPath);
-    final validator = Validator(ruleOverrides: localRules, customRules: customRules);
+    final validator = Validator(
+      customRuleSeverities: localRuleSeverities,
+      customRules: customRules,
+      ruleOptions: localRuleOptions,
+    );
 
     final ({SkillsIgnores ignores, String ignorePath}) loaded = await _loadIgnores(
       localIgnoreFile,
@@ -196,9 +224,18 @@ class ValidationSession {
       }
 
       final String normalizedSkillPath = p.normalize(entity.path);
-      final Map<String, AnalysisSeverity> localRules = resolveRulesForPath(normalizedSkillPath);
+      final Map<String, AnalysisSeverity> localRuleSeverities = resolveRuleSeveritiesForPath(
+        normalizedSkillPath,
+      );
+      final Map<String, Map<String, dynamic>> localRuleOptions = resolveRuleOptionsForPath(
+        normalizedSkillPath,
+      );
       final String? localIgnoreFile = resolveIgnoreFile(normalizedSkillPath);
-      final validator = Validator(ruleOverrides: localRules, customRules: customRules);
+      final validator = Validator(
+        customRuleSeverities: localRuleSeverities,
+        customRules: customRules,
+        ruleOptions: localRuleOptions,
+      );
 
       final String ignorePath = localIgnoreFile != null
           ? p.normalize(expandPath(localIgnoreFile))
@@ -283,26 +320,94 @@ class ValidationSession {
   }
 
   @visibleForTesting
-  Map<String, AnalysisSeverity> resolveRulesForPath(String path) {
+  Map<String, AnalysisSeverity> resolveRuleSeveritiesForPath(String path) {
     final String normalizedPath = p.absolute(path);
     final localRules = <String, AnalysisSeverity>{};
 
     // 1. Global Config (from YAML)
-    localRules.addAll(config.configuredRules);
+    localRules.addAll(config.ruleSeverities);
 
     // 2. Path-Specific Config (from YAML)
     for (final ({String normalizedPath, LintTargetConfig config}) entry
         in _normalizedDirectoryConfigs) {
       final String configPath = entry.normalizedPath;
       if (p.equals(configPath, normalizedPath) || p.isWithin(configPath, normalizedPath)) {
-        localRules.addAll(entry.config.rules);
+        localRules.addAll(entry.config.ruleSeverities);
       }
     }
 
     // 3. Overrides (CLI flags or API caller) take highest precedence
-    localRules.addAll(resolvedRules);
+    localRules.addAll(resolvedRuleSeverities);
 
     return localRules;
+  }
+
+  /// Resolves the final rule options configuration for a specific file or directory path.
+  ///
+  /// Merges options in order of precedence (highest to lowest):
+  /// 1. Command-line overrides (`resolvedRuleOptions`), where a `null` value indicates
+  ///    the option is cleared.
+  /// 2. Target-specific configurations in `dart_skills_lint.yaml` that match [path].
+  /// 3. Global configurations defined in `dart_skills_lint.yaml`.
+  ///
+  /// Returns a map where:
+  /// * The outer key is the rule name (e.g., `'path-does-not-exist'`).
+  /// * The inner map contains the resolved key-value options for that rule (e.g., `{'exclude': '.*-workspace'}`).
+  @visibleForTesting
+  Map<String, Map<String, dynamic>> resolveRuleOptionsForPath(String path) {
+    final String targetPath = p.absolute(path);
+    final resolved = <String, Map<String, dynamic>>{};
+
+    // Step 1: Initialize with global rule options from configuration file.
+    final Map<String, Map<String, dynamic>>? globalOptions = config.globalRuleOptions;
+    if (globalOptions != null) {
+      for (final MapEntry<String, Map<String, dynamic>> entry in globalOptions.entries) {
+        resolved[entry.key] = Map<String, dynamic>.from(entry.value);
+      }
+    }
+
+    // Step 2: Merge in path-specific rule options for matching targets.
+    for (final ({String normalizedPath, LintTargetConfig config}) entry
+        in _normalizedDirectoryConfigs) {
+      final String configPath = entry.normalizedPath;
+      final bool isMatch = p.equals(configPath, targetPath) || p.isWithin(configPath, targetPath);
+
+      if (isMatch && entry.config.ruleOptions != null) {
+        for (final MapEntry<String, Map<String, dynamic>> ruleEntry
+            in entry.config.ruleOptions!.entries) {
+          resolved[ruleEntry.key] = Map<String, dynamic>.from(ruleEntry.value);
+        }
+      }
+    }
+
+    // Step 3: Apply CLI overrides (command-line options take highest precedence).
+    // An override value of `null` explicitly removes/clears the option.
+    for (final MapEntry<String, Map<String, dynamic>> ruleOverrideEntry
+        in resolvedRuleOptions.entries) {
+      final String ruleName = ruleOverrideEntry.key;
+      final Map<String, dynamic> overrides = ruleOverrideEntry.value;
+
+      final Map<String, dynamic> currentOptions = resolved[ruleName] ?? <String, dynamic>{};
+
+      for (final MapEntry<String, dynamic> optionEntry in overrides.entries) {
+        final String optionName = optionEntry.key;
+        final Object? value = optionEntry.value;
+
+        if (value == null) {
+          currentOptions.remove(optionName);
+        } else {
+          currentOptions[optionName] = value;
+        }
+      }
+
+      if (currentOptions.isNotEmpty) {
+        resolved[ruleName] = currentOptions;
+      } else {
+        resolved.remove(ruleName);
+      }
+    }
+
+    return resolved;
   }
 
   @visibleForTesting

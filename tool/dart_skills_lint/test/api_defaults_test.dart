@@ -35,7 +35,7 @@ void main() {
 
       // Create validator with the rule disabled.
       final validator = Validator(
-        ruleOverrides: {'valid-yaml-metadata': AnalysisSeverity.disabled},
+        customRuleSeverities: {'valid-yaml-metadata': AnalysisSeverity.disabled},
       );
       final ValidationResult result = await validator.validate(skillDir);
 
@@ -66,7 +66,7 @@ dart_skills_lint:
       final Configuration config = await ConfigParser.loadConfig(
         path: '~/dart_skills_lint_temp_test.yaml',
       );
-      expect(config.configuredRules, contains('check-relative-paths'));
+      expect(config.ruleSeverities, contains('check-relative-paths'));
     } finally {
       if (tempFile.existsSync()) {
         await tempFile.delete();
@@ -96,7 +96,7 @@ Line with space
         directoryConfigs: [
           LintTargetConfig(
             path: configDir.path,
-            rules: {'check-trailing-whitespace': AnalysisSeverity.error},
+            ruleSeverities: {'check-trailing-whitespace': AnalysisSeverity.error},
           ),
         ],
       );
@@ -141,14 +141,14 @@ dart_skills_lint:
         directoryConfigs: [
           LintTargetConfig(
             path: p.join(tempDir.path, 'skills'),
-            rules: {
+            ruleSeverities: {
               'check-trailing-whitespace': AnalysisSeverity.error,
               'description-length': AnalysisSeverity.warning,
             },
           ),
           LintTargetConfig(
             path: p.join(tempDir.path, 'skills/nested'),
-            rules: {
+            ruleSeverities: {
               'description-length': AnalysisSeverity.error,
               'check-trailing-whitespace': AnalysisSeverity.disabled,
             },
@@ -158,7 +158,7 @@ dart_skills_lint:
 
       final session = ValidationSession(
         config: config,
-        resolvedRules: {},
+        resolvedRuleSeverities: {},
         ignoreFileOverride: null,
         customRules: [],
         printWarnings: true,
@@ -170,14 +170,14 @@ dart_skills_lint:
       );
 
       // Parent path should have parent rules applied
-      final Map<String, AnalysisSeverity> parentRules = session.resolveRulesForPath(
+      final Map<String, AnalysisSeverity> parentRules = session.resolveRuleSeveritiesForPath(
         p.join(tempDir.path, 'skills/some-skill'),
       );
       expect(parentRules['check-trailing-whitespace'], equals(AnalysisSeverity.error));
       expect(parentRules['description-length'], equals(AnalysisSeverity.warning));
 
       // Child path should merge and override parent rules
-      final Map<String, AnalysisSeverity> childRules = session.resolveRulesForPath(
+      final Map<String, AnalysisSeverity> childRules = session.resolveRuleSeveritiesForPath(
         p.join(tempDir.path, 'skills/nested/nested-skill'),
       );
       expect(
@@ -197,18 +197,18 @@ dart_skills_lint:
           LintTargetConfig(
             path: p.join(tempDir.path, 'skills'),
             ignoreFile: 'parent_ignores.json',
-            rules: <String, AnalysisSeverity>{},
+            ruleSeverities: <String, AnalysisSeverity>{},
           ),
           LintTargetConfig(
             path: p.join(tempDir.path, 'skills/nested'),
-            rules: <String, AnalysisSeverity>{},
+            ruleSeverities: <String, AnalysisSeverity>{},
           ),
         ],
       );
 
       final session = ValidationSession(
         config: config,
-        resolvedRules: {},
+        resolvedRuleSeverities: {},
         ignoreFileOverride: null,
         customRules: [],
         printWarnings: true,
@@ -239,14 +239,14 @@ dart_skills_lint:
       directoryConfigs: [
         LintTargetConfig(
           path: 'skills',
-          rules: {'check-trailing-whitespace': AnalysisSeverity.error},
+          ruleSeverities: {'check-trailing-whitespace': AnalysisSeverity.error},
         ),
       ],
     );
 
     final session = ValidationSession(
       config: config,
-      resolvedRules: {},
+      resolvedRuleSeverities: {},
       ignoreFileOverride: null,
       customRules: [],
       printWarnings: true,
@@ -258,14 +258,16 @@ dart_skills_lint:
     );
 
     // 1. Evaluate relative input: 'skills/my-skill'
-    final Map<String, AnalysisSeverity> relativeRules = session.resolveRulesForPath(
+    final Map<String, AnalysisSeverity> relativeRules = session.resolveRuleSeveritiesForPath(
       'skills/my-skill',
     );
     expect(relativeRules['check-trailing-whitespace'], equals(AnalysisSeverity.error));
 
     // 2. Evaluate absolute input
     final String absoluteInput = p.absolute('skills/my-skill');
-    final Map<String, AnalysisSeverity> absoluteRules = session.resolveRulesForPath(absoluteInput);
+    final Map<String, AnalysisSeverity> absoluteRules = session.resolveRuleSeveritiesForPath(
+      absoluteInput,
+    );
     expect(absoluteRules['check-trailing-whitespace'], equals(AnalysisSeverity.error));
   });
 }
