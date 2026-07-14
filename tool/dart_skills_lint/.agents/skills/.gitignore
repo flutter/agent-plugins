@@ -6,10 +6,6 @@
 !dart-skills-lint-integration/
 !definition-of-done/
 
-# Keep evals inside un-ignored skill folders
-!**/evals/
-!**/evals/**
-
 # Keep essential configuration and docs
 !.gitignore
 !README.md
