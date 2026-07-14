@@ -22,3 +22,9 @@ build/
 
 # Logs
 .agents/*.log
+
+# Dynamic evaluation workspace directories (convention derived from the skill-creator skill: https://github.com/anthropics/skills/blob/main/skills/skill-creator/SKILL.md)
+# (e.g. definition-of-done-workspace/ containing outputs, transcripts, timing, and grading JSONs)
+.agents/skills/*-workspace/
+skills/*-workspace/
+

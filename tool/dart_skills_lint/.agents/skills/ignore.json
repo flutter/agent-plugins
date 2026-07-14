@@ -1,3 +1,10 @@
 {
-  "skills": {}
+  "skills": {
+    "definition-of-done-workspace": [
+      {
+        "rule_id": "path-does-not-exist",
+        "file_name": ".agents/skills/definition-of-done-workspace"
+      }
+    ]
+  }
 }
