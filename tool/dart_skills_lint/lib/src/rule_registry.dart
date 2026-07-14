@@ -4,6 +4,7 @@
 
 import 'models/analysis_severity.dart';
 import 'models/check_type.dart';
+import 'models/custom_rule_options.dart';
 import 'models/skill_rule.dart';
 import 'rules/absolute_paths_rule.dart';
 import 'rules/description_length_rule.dart';
@@ -76,7 +77,10 @@ class RuleRegistry {
   ]) {
     switch (name) {
       case PathDoesNotExistRule.ruleName:
-        return PathDoesNotExistRule(severity: severity, options: options);
+        return PathDoesNotExistRule(
+          severity: severity,
+          customRuleOptions: options != null ? CustomRuleOptions(options) : null,
+        );
       case AbsolutePathsRule.ruleName:
         return AbsolutePathsRule(severity: severity);
       case DescriptionLengthRule.ruleName:
