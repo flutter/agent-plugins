@@ -810,5 +810,42 @@ dart_skills_lint:
       // Exits with 0 because definition-of-done-workspace is still excluded (inherited global options)
       await process.shouldExit(0);
     });
+
+    test(
+      'clears inherited rule options when target overrides key with tilde (~) null value',
+      () async {
+        await Directory('${tempDir.path}/skills-root').create();
+        await Directory('${tempDir.path}/skills-root/definition-of-done-workspace').create();
+        final Directory validSkill = await Directory(
+          '${tempDir.path}/skills-root/valid-skill',
+        ).create();
+        await File(
+          '${validSkill.path}/SKILL.md',
+        ).writeAsString('---\nname: valid-skill\ndescription: Valid\n---\nBody');
+
+        await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+dart_skills_lint:
+  rules:
+    path-does-not-exist:
+      severity: error
+      exclude: ".*-workspace"
+  directories:
+    - path: "skills-root"
+      rules:
+        path-does-not-exist:
+          exclude: ~
+''');
+
+        final TestProcess process = await TestProcess.start('dart', [
+          p.normalize(p.absolute('bin/cli.dart')),
+          '-d',
+          'skills-root',
+        ], workingDirectory: tempDir.path);
+
+        // Exits with 1 because exclude was nullified by ~, so definition-of-done-workspace is evaluated
+        // and fails due to missing SKILL.md.
+        await process.shouldExit(1);
+      },
+    );
   });
 }

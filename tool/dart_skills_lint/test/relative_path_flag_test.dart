@@ -5,6 +5,7 @@
 import 'dart:io';
 
 import 'package:dart_skills_lint/src/models/analysis_severity.dart';
+import 'package:dart_skills_lint/src/models/rule_config.dart';
 import 'package:dart_skills_lint/src/models/validation_result.dart';
 import 'package:dart_skills_lint/src/rules/absolute_paths_rule.dart';
 import 'package:dart_skills_lint/src/rules/relative_paths_rule.dart';
@@ -35,9 +36,9 @@ void main() {
       );
 
       final validator = Validator(
-        customRuleSeverities: {
-          RelativePathsRule.ruleName: AnalysisSeverity.warning,
-          AbsolutePathsRule.ruleName: AnalysisSeverity.error,
+        ruleConfigs: {
+          RelativePathsRule.ruleName: const RuleConfig(severity: AnalysisSeverity.warning),
+          AbsolutePathsRule.ruleName: const RuleConfig(severity: AnalysisSeverity.error),
         },
       );
       final ValidationResult result = await validator.validate(skillDir);
@@ -59,7 +60,9 @@ void main() {
       await File('${skillDir.path}/valid.md').writeAsString('Valid file content');
 
       final validator = Validator(
-        customRuleSeverities: {RelativePathsRule.ruleName: AnalysisSeverity.warning},
+        ruleConfigs: {
+          RelativePathsRule.ruleName: const RuleConfig(severity: AnalysisSeverity.warning),
+        },
       );
       final ValidationResult result = await validator.validate(skillDir);
 

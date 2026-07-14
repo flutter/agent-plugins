@@ -10,7 +10,7 @@ import 'package:yaml/yaml.dart';
 
 import 'models/analysis_severity.dart';
 import 'models/check_type.dart';
-import 'models/custom_rule_options.dart';
+import 'models/rule_config.dart';
 import 'models/skill_context.dart';
 import 'models/skill_rule.dart';
 import 'models/validation_error.dart';
@@ -22,17 +22,13 @@ final _log = Logger('dart_skills_lint');
 
 /// Validates agent skill directories against the Agent Skills specification.
 class Validator {
-  /// Creates a validator with optional rule severities, custom rules, and rule options.
+  /// Creates a validator with optional rule configurations and custom rules.
   ///
-  /// * [customRuleSeverities] overrides default severities of rules (e.g. mapping a rule to [AnalysisSeverity.disabled] or [AnalysisSeverity.warning]).
+  /// * [ruleConfigs] defines resolved severity and options for the validation rules.
   /// * [customRules] specifies custom rules to be included in the validation.
-  /// * [ruleOptions] maps rule names to their rule-specific custom options maps (e.g. passing regex patterns, thresholds, lists).
-  Validator({
-    Map<String, AnalysisSeverity>? customRuleSeverities,
-    List<SkillRule>? customRules,
-    Map<String, CustomRuleOptions>? ruleOptions,
-  }) : _customRuleSeverities = customRuleSeverities ?? {},
-       _rules = _buildRules(customRuleSeverities ?? {}, customRules ?? [], ruleOptions ?? {});
+  Validator({Map<String, RuleConfig>? ruleConfigs, List<SkillRule>? customRules})
+    : _ruleConfigs = ruleConfigs ?? {},
+      _rules = _buildRules(ruleConfigs ?? {}, customRules ?? []);
   static const String _skillFileName = SkillContext.skillFileName;
 
   /// The name of the special check for missing files or directories.
@@ -44,14 +40,14 @@ class Validator {
   /// The name of the special check for unexpected errors.
   static const String unexpectedError = 'unexpected-error';
 
-  final Map<String, AnalysisSeverity> _customRuleSeverities;
+  final Map<String, RuleConfig> _ruleConfigs;
   final List<SkillRule> _rules;
 
   /// Returns the rules used by this validator.
   List<SkillRule> get rules => _rules;
 
   AnalysisSeverity _getSeverity(String name, AnalysisSeverity defaultSeverity) {
-    return _customRuleSeverities[name] ?? defaultSeverity;
+    return _ruleConfigs[name]?.severity ?? defaultSeverity;
   }
 
   /// Validates a single skill directory.
@@ -137,16 +133,14 @@ class Validator {
 
   /// Compiles the final list of active rules for the validator.
   ///
-  /// * [customRuleSeverities] overrides default severities of rules (e.g. mapping a rule to [AnalysisSeverity.disabled] or [AnalysisSeverity.warning]).
+  /// * [ruleConfigs] resolved rules configurations mapping.
   /// * [customRules] specifies custom rules to be included in the validation.
-  /// * [ruleOptions] maps rule names to their rule-specific custom options maps (e.g. passing regex patterns, thresholds, lists).
   ///
   /// Rules configured with [AnalysisSeverity.disabled] are excluded.
   /// Throws an [ArgumentError] if a duplicate rule name is encountered.
   static List<SkillRule> _buildRules(
-    Map<String, AnalysisSeverity> customRuleSeverities,
+    Map<String, RuleConfig> ruleConfigs,
     List<SkillRule> customRules,
-    Map<String, CustomRuleOptions> ruleOptions,
   ) {
     final rules = <SkillRule>[];
     final seenNames = <String>{};
@@ -162,11 +156,17 @@ class Validator {
     }
 
     for (final CheckType check in RuleRegistry.allChecks) {
-      final AnalysisSeverity severity = customRuleSeverities[check.name] ?? check.defaultSeverity;
-      final CustomRuleOptions? options = ruleOptions[check.name];
-      final SkillRule? rule = RuleRegistry.createRule(check.name, severity, options);
-      if (rule != null) {
-        addRule(rule);
+      final RuleConfig config =
+          ruleConfigs[check.name] ?? RuleConfig(severity: check.defaultSeverity);
+      if (config.severity != AnalysisSeverity.disabled) {
+        final SkillRule? rule = RuleRegistry.createRule(
+          check.name,
+          config.severity,
+          config.options,
+        );
+        if (rule != null) {
+          addRule(rule);
+        }
       }
     }
 

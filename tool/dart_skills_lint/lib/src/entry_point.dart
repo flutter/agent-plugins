@@ -13,6 +13,7 @@ import 'missing_defaults_exception.dart';
 import 'models/analysis_severity.dart';
 import 'models/check_type.dart';
 import 'models/custom_rule_options.dart';
+import 'models/rule_config.dart';
 import 'models/skill_rule.dart';
 import 'rule_registry.dart';
 import 'validation_session.dart';
@@ -87,8 +88,7 @@ Future<void> runApp(List<String> args) async {
   final ArgParser parser = _createArgParser(helpFlag);
 
   final ArgResults results;
-  final Map<String, AnalysisSeverity> resolvedRuleSeverities;
-  final Map<String, CustomRuleOptions> resolvedRuleOptions;
+  final Map<String, RuleConfigPatch> resolvedRuleConfigs;
 
   try {
     results = parser.parse(args);
@@ -96,8 +96,7 @@ Future<void> runApp(List<String> args) async {
       _printUsage(parser);
       return;
     }
-    resolvedRuleSeverities = resolveRuleSeverities(results);
-    resolvedRuleOptions = resolveRuleOptionsOverrides(results);
+    resolvedRuleConfigs = resolveRuleConfigsFromCli(results);
   } catch (e) {
     _printUsage(parser, e.toString());
     exitCode = 64; // Bad usage
@@ -143,8 +142,7 @@ Future<void> runApp(List<String> args) async {
     success = await validateSkillsInternal(
       skillDirPaths: skillDirPaths,
       individualSkillPaths: individualSkillPaths,
-      resolvedRuleSeverities: resolvedRuleSeverities,
-      resolvedRuleOptions: resolvedRuleOptions,
+      resolvedRuleConfigs: resolvedRuleConfigs,
       printWarnings: printWarnings,
       fastFail: fastFail,
       quiet: quiet,
@@ -319,8 +317,9 @@ Future<Configuration?> _loadConfig(ArgResults results) async {
 Future<bool> validateSkills({
   List<String> skillDirPaths = const [],
   List<String> individualSkillPaths = const [],
+  @Deprecated('Use resolvedRuleConfigs instead')
   Map<String, AnalysisSeverity> resolvedRuleSeverities = const {},
-  Map<String, CustomRuleOptions> resolvedRuleOptions = const {},
+  Map<String, RuleConfigPatch> resolvedRuleConfigs = const {},
   bool printWarnings = true,
   bool fastFail = false,
   bool quiet = false,
@@ -329,11 +328,24 @@ Future<bool> validateSkills({
   Configuration? config,
   List<SkillRule> customRules = const [],
 }) {
+  if (resolvedRuleSeverities.isNotEmpty && resolvedRuleConfigs.isNotEmpty) {
+    throw ArgumentError(
+      'Cannot specify both deprecated resolvedRuleSeverities and new resolvedRuleConfigs. '
+      'Please migrate all overrides to resolvedRuleConfigs.',
+    );
+  }
+
+  final Map<String, RuleConfigPatch> mergedConfigs = Map.from(resolvedRuleConfigs);
+  if (resolvedRuleSeverities.isNotEmpty) {
+    for (final String ruleName in resolvedRuleSeverities.keys) {
+      mergedConfigs[ruleName] = RuleConfigPatch(severity: resolvedRuleSeverities[ruleName]);
+    }
+  }
+
   return validateSkillsInternal(
     skillDirPaths: skillDirPaths,
     individualSkillPaths: individualSkillPaths,
-    resolvedRuleSeverities: resolvedRuleSeverities,
-    resolvedRuleOptions: resolvedRuleOptions,
+    resolvedRuleConfigs: mergedConfigs,
     printWarnings: printWarnings,
     fastFail: fastFail,
     quiet: quiet,
@@ -353,8 +365,7 @@ Future<bool> validateSkills({
 Future<bool> validateSkillsInternal({
   List<String> skillDirPaths = const [],
   List<String> individualSkillPaths = const [],
-  Map<String, AnalysisSeverity> resolvedRuleSeverities = const {},
-  Map<String, CustomRuleOptions> resolvedRuleOptions = const {},
+  Map<String, RuleConfigPatch> resolvedRuleConfigs = const {},
   bool printWarnings = true,
   bool fastFail = false,
   bool quiet = false,
@@ -379,8 +390,7 @@ Future<bool> validateSkillsInternal({
 
   final session = ValidationSession(
     config: config ?? Configuration(),
-    resolvedRuleSeverities: resolvedRuleSeverities,
-    resolvedRuleOptions: resolvedRuleOptions,
+    resolvedRuleConfigs: resolvedRuleConfigs,
     ignoreFileOverride: ignoreFileOverride,
     customRules: customRules,
     printWarnings: printWarnings,
@@ -453,88 +463,82 @@ List<String> _getEffectiveSkillDirPaths({
 }
 
 @visibleForTesting
-Map<String, AnalysisSeverity> resolveRuleSeverities(ArgResults results) {
-  final resolved = <String, AnalysisSeverity>{};
+Map<String, RuleConfigPatch> resolveRuleConfigsFromCli(ArgResults results) {
+  final configs = <String, RuleConfigPatch>{};
 
-  // Only load rule severities explicitly set via CLI flags.
+  // 1. Resolve severities from CLI flags (e.g. --path-does-not-exist)
+  final severityOverrides = <String, AnalysisSeverity>{};
   for (final CheckType check in RuleRegistry.allChecks) {
     final String name = check.name;
-
-    if (!results.wasParsed(name)) {
-      continue;
-    }
-
-    final Object? value = results[name];
-    if (value is! bool) {
-      continue;
-    }
-
-    if (value) {
-      resolved[name] = AnalysisSeverity.error;
-    } else {
-      resolved[name] = AnalysisSeverity.disabled;
-    }
-  }
-
-  return resolved;
-}
-
-/// Resolves rule-specific options overrides from CLI arguments.
-///
-/// Iterates over all checks in [RuleRegistry.allChecks], looks for parsed command-line
-/// flags matches in the format `--[rule-name]-[option-name]` (e.g. `--path-does-not-exist-exclude`),
-/// and returns a structured map mapping rule names to their custom key-value parameter overrides.
-///
-/// Applies type coercion based on the expected type defined in [CheckType.optionsSchema]:
-/// * [int]: Coerced using [int.tryParse].
-/// * [bool]: Coerced to `true` if matching "true" case-insensitively, `false` otherwise.
-/// * Other: Parsed as-is (e.g. [String] or [List] types).
-/// * Empty String: If the CLI flag is passed as an empty string `""`, it is parsed
-///   as a `null` map entry to explicitly clear/reset the option value.
-Map<String, CustomRuleOptions> resolveRuleOptionsOverrides(ArgResults results) {
-  final overrides = <String, CustomRuleOptions>{};
-
-  for (final CheckType check in RuleRegistry.allChecks) {
-    final Map<String, dynamic> checkOverrides = {};
-    for (final String optionName in check.optionsSchema.keys) {
-      final optionFlag = '${check.name}-$optionName';
-      if (results.wasParsed(optionFlag)) {
-        final Type expectedType = check.optionsSchema[optionName]!;
-        final Object? rawValue = results[optionFlag];
-
-        if (rawValue == '') {
-          // Empty string override clears the option completely
-          checkOverrides[optionName] = null;
-        } else {
-          // Coerce type
-          if (expectedType == int) {
-            final int? parsedInt = int.tryParse(rawValue.toString());
-            if (parsedInt == null) {
-              throw FormatException(
-                'Invalid value "$rawValue" for option "$optionFlag". Expected an integer.',
-              );
-            }
-            checkOverrides[optionName] = parsedInt;
-          } else if (expectedType == bool) {
-            final String lower = rawValue.toString().toLowerCase();
-            if (lower != 'true' && lower != 'false') {
-              throw FormatException(
-                'Invalid value "$rawValue" for option "$optionFlag". Expected "true" or "false".',
-              );
-            }
-            checkOverrides[optionName] = lower == 'true';
-          } else {
-            checkOverrides[optionName] = rawValue;
-          }
-        }
+    if (results.options.contains(name) && results.wasParsed(name)) {
+      final Object? value = results[name];
+      if (value is bool) {
+        severityOverrides[name] = value ? AnalysisSeverity.error : AnalysisSeverity.disabled;
       }
     }
+  }
+
+  // 2. Resolve options overrides from CLI flags (e.g. --path-does-not-exist-exclude)
+  final optionsOverrides = <String, Map<String, dynamic>>{};
+  for (final CheckType check in RuleRegistry.allChecks) {
+    final Map<String, dynamic> checkOverrides = _resolveOptionsForCheck(check, results);
     if (checkOverrides.isNotEmpty) {
-      overrides[check.name] = CustomRuleOptions(checkOverrides);
+      optionsOverrides[check.name] = checkOverrides;
     }
   }
 
-  return overrides;
+  // 3. Combine into RuleConfigPatch overrides
+  final Set<String> allRuleNames = {...severityOverrides.keys, ...optionsOverrides.keys};
+  for (final ruleName in allRuleNames) {
+    configs[ruleName] = RuleConfigPatch(
+      severity: severityOverrides[ruleName],
+      options: optionsOverrides.containsKey(ruleName)
+          ? CustomRuleOptions(optionsOverrides[ruleName]!)
+          : null,
+    );
+  }
+
+  return configs;
+}
+
+Map<String, dynamic> _resolveOptionsForCheck(CheckType check, ArgResults results) {
+  final Map<String, dynamic> checkOverrides = {};
+  for (final String optionName in check.optionsSchema.keys) {
+    final optionFlag = '${check.name}-$optionName';
+    if (results.options.contains(optionFlag) && results.wasParsed(optionFlag)) {
+      final Type expectedType = check.optionsSchema[optionName]!;
+      checkOverrides[optionName] = _parseOptionValue(optionFlag, results[optionFlag], expectedType);
+    }
+  }
+  return checkOverrides;
+}
+
+Object? _parseOptionValue(String optionFlag, Object? rawValue, Type expectedType) {
+  if (rawValue == '') {
+    return null;
+  }
+
+  if (expectedType == int) {
+    final int? parsedInt = int.tryParse(rawValue.toString());
+    if (parsedInt == null) {
+      throw FormatException(
+        'Invalid value "$rawValue" for option "$optionFlag". Expected an integer.',
+      );
+    }
+    return parsedInt;
+  }
+
+  if (expectedType == bool) {
+    final String lower = rawValue.toString().toLowerCase();
+    if (lower != 'true' && lower != 'false') {
+      throw FormatException(
+        'Invalid value "$rawValue" for option "$optionFlag". Expected "true" or "false".',
+      );
+    }
+    return lower == 'true';
+  }
+
+  return rawValue;
 }
 
 void _printUsage(ArgParser parser, [String? error]) {

@@ -12,6 +12,7 @@ import 'package:yaml/yaml.dart';
 import 'models/analysis_severity.dart';
 import 'models/check_type.dart';
 import 'models/custom_rule_options.dart';
+import 'models/rule_config.dart';
 import 'path_utils.dart';
 import 'rule_registry.dart';
 
@@ -83,8 +84,7 @@ class ConfigParser {
           return Configuration(
             directoryConfigs: directoryConfigs,
             individualSkillConfigs: individualSkillConfigs,
-            ruleSeverities: rulesResult.rules,
-            globalRuleOptions: rulesResult.ruleOptions.isEmpty ? null : rulesResult.ruleOptions,
+            ruleConfigs: rulesResult,
             parsingErrors: parsingErrors,
           );
         }
@@ -115,25 +115,29 @@ class ConfigParser {
   ///
   /// Extracts both default severities and options, appending any option type or key
   /// validation errors to [parsingErrors].
-  static ({Map<String, AnalysisSeverity> rules, Map<String, CustomRuleOptions> ruleOptions})
-  _parseDefaultRules(YamlMap toolConfig, List<String> parsingErrors) {
+  static Map<String, RuleConfigPatch> _parseDefaultRules(
+    YamlMap toolConfig,
+    List<String> parsingErrors,
+  ) {
     if (toolConfig.containsKey(_rulesKey)) {
       final rules = toolConfig[_rulesKey];
       if (rules is YamlMap) {
         return _parseRulesMap(rules, parsingErrors, 'Global rules');
       }
     }
-    return (rules: const {}, ruleOptions: const {});
+    return const {};
   }
 
   /// Parses a map of rules to their respective severity and option configurations.
   ///
   /// Validates that option keys and value types match their definitions in the registry,
   /// appending any validation errors to [parsingErrors] labeled by [contextLabel].
-  static ({Map<String, AnalysisSeverity> rules, Map<String, CustomRuleOptions> ruleOptions})
-  _parseRulesMap(YamlMap rulesMap, List<String> parsingErrors, String contextLabel) {
-    final rules = <String, AnalysisSeverity>{};
-    final ruleOptions = <String, CustomRuleOptions>{};
+  static Map<String, RuleConfigPatch> _parseRulesMap(
+    YamlMap rulesMap,
+    List<String> parsingErrors,
+    String contextLabel,
+  ) {
+    final ruleConfigs = <String, RuleConfigPatch>{};
 
     for (final key in rulesMap.keys) {
       final ruleName = key.toString();
@@ -144,8 +148,9 @@ class ConfigParser {
       final CheckType? check = checkMatches.isEmpty ? null : checkMatches.first;
 
       if (value is YamlMap) {
-        final severityStr = value[_severityKey]?.toString() ?? '';
-        rules[ruleName] = _parseSeverity(severityStr);
+        final severity = value.containsKey(_severityKey)
+            ? _parseSeverity(value[_severityKey]?.toString() ?? '')
+            : null;
 
         final options = <String, dynamic>{};
         for (final optKey in value.keys) {
@@ -155,23 +160,23 @@ class ConfigParser {
           }
           options[optName] = value[optKey];
         }
-        if (options.isNotEmpty) {
-          final customOpts = CustomRuleOptions(options);
-          ruleOptions[ruleName] = customOpts;
 
-          if (check != null) {
-            final errors = check.validateOptions(customOpts);
-            for (final error in errors) {
-              parsingErrors.add('$contextLabel: $error');
-            }
+        final customOpts = options.isNotEmpty ? CustomRuleOptions(options) : null;
+        ruleConfigs[ruleName] = RuleConfigPatch(severity: severity, options: customOpts);
+
+        if (customOpts != null && check != null) {
+          final errors = check.validateOptions(customOpts);
+          for (final error in errors) {
+            parsingErrors.add('$contextLabel: $error');
           }
         }
       } else {
-        rules[ruleName] = _parseSeverity(value?.toString() ?? '');
+        final severity = _parseSeverity(value?.toString() ?? '');
+        ruleConfigs[ruleName] = RuleConfigPatch(severity: severity);
       }
     }
 
-    return (rules: rules, ruleOptions: ruleOptions);
+    return ruleConfigs;
   }
 
   /// Parses a list of targets (directories or individual skills) from the configuration.
@@ -218,18 +223,15 @@ class ConfigParser {
             }
           }
 
-          final rules = <String, AnalysisSeverity>{};
-          final ruleOptions = <String, CustomRuleOptions>{};
+          Map<String, RuleConfigPatch> ruleConfigs = const {};
           if (dir.containsKey(_rulesKey)) {
             final localRules = dir[_rulesKey];
             if (localRules is YamlMap) {
-              final result = _parseRulesMap(
+              ruleConfigs = _parseRulesMap(
                 localRules,
                 parsingErrors,
                 '$entryLabelCap rules for "$path"',
               );
-              rules.addAll(result.rules);
-              ruleOptions.addAll(result.ruleOptions);
             } else {
               parsingErrors.add(
                 '$entryLabelCap "$_rulesKey" for "$path" must be a map; '
@@ -253,12 +255,7 @@ class ConfigParser {
           }
 
           configs.add(
-            LintTargetConfig(
-              path: path,
-              ruleSeverities: rules,
-              ruleOptions: ruleOptions.isEmpty ? null : ruleOptions,
-              ignoreFile: ignoreFile,
-            ),
+            LintTargetConfig(path: path, ruleConfigs: ruleConfigs, ignoreFile: ignoreFile),
           );
         }
       }
@@ -272,20 +269,14 @@ class ConfigParser {
 /// Allows overriding rules and specifying a custom ignore file for skills
 /// located within or at this path.
 class LintTargetConfig {
-  LintTargetConfig({
-    required this.path,
-    required this.ruleSeverities,
-    this.ruleOptions,
-    this.ignoreFile,
-  });
+  LintTargetConfig({required this.path, required this.ruleConfigs, this.ignoreFile});
 
   /// The path to the directory containing skills.
   ///
   /// Can be absolute or relative to the current working directory.
   /// Supports tilde expansion (e.g., `~/...`).
   final String path;
-  final Map<String, AnalysisSeverity> ruleSeverities;
-  final Map<String, CustomRuleOptions>? ruleOptions;
+  final Map<String, RuleConfigPatch> ruleConfigs;
   final String? ignoreFile;
 }
 
@@ -294,13 +285,11 @@ class Configuration {
   Configuration({
     this.directoryConfigs = const [],
     this.individualSkillConfigs = const [],
-    this.ruleSeverities = const {},
-    this.globalRuleOptions,
+    this.ruleConfigs = const {},
     this.parsingErrors = const [],
   });
   final List<LintTargetConfig> directoryConfigs;
   final List<LintTargetConfig> individualSkillConfigs;
-  final Map<String, AnalysisSeverity> ruleSeverities;
-  final Map<String, CustomRuleOptions>? globalRuleOptions;
+  final Map<String, RuleConfigPatch> ruleConfigs;
   final List<String> parsingErrors;
 }

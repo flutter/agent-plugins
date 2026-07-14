@@ -5,6 +5,7 @@
 import 'dart:io';
 
 import 'package:dart_skills_lint/src/models/analysis_severity.dart';
+import 'package:dart_skills_lint/src/models/rule_config.dart';
 import 'package:dart_skills_lint/src/models/skill_context.dart';
 import 'package:dart_skills_lint/src/models/validation_result.dart';
 
@@ -68,7 +69,9 @@ void main() {
       ).writeAsString('${buildFrontmatter(name: 'test-skill')}[Relative link](C:relative.md)\n');
 
       final validator = Validator(
-        customRuleSeverities: {RelativePathsRule.ruleName: AnalysisSeverity.disabled},
+        ruleConfigs: {
+          RelativePathsRule.ruleName: const RuleConfig(severity: AnalysisSeverity.disabled),
+        },
       );
       final ValidationResult result = await validator.validate(skillDir);
 
@@ -84,7 +87,9 @@ void main() {
       ).writeAsString('${buildFrontmatter(name: 'test-skill')}[Relative link](file.md)\n');
 
       final validator = Validator(
-        customRuleSeverities: {RelativePathsRule.ruleName: AnalysisSeverity.disabled},
+        ruleConfigs: {
+          RelativePathsRule.ruleName: const RuleConfig(severity: AnalysisSeverity.disabled),
+        },
       );
       final ValidationResult result = await validator.validate(skillDir);
 
@@ -99,7 +104,9 @@ void main() {
       );
 
       final validator = Validator(
-        customRuleSeverities: {AbsolutePathsRule.ruleName: AnalysisSeverity.disabled},
+        ruleConfigs: {
+          AbsolutePathsRule.ruleName: const RuleConfig(severity: AnalysisSeverity.disabled),
+        },
       );
       final ValidationResult result = await validator.validate(skillDir);
 
@@ -117,7 +124,9 @@ void main() {
         );
 
         final validator = Validator(
-          customRuleSeverities: {AbsolutePathsRule.ruleName: AnalysisSeverity.warning},
+          ruleConfigs: {
+            AbsolutePathsRule.ruleName: const RuleConfig(severity: AnalysisSeverity.warning),
+          },
         );
         final ValidationResult result = await validator.validate(skillDir);
 
