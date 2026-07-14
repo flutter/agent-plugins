@@ -11,6 +11,7 @@ import 'package:yaml/yaml.dart';
 
 import 'models/analysis_severity.dart';
 import 'models/check_type.dart';
+import 'models/custom_rule_options.dart';
 import 'path_utils.dart';
 import 'rule_registry.dart';
 
@@ -23,6 +24,7 @@ class ConfigParser {
   static const _individualSkillsKey = 'individual_skills';
   static const _pathKey = 'path';
   static const _ignoreFileKey = 'ignore_file';
+  static const _severityKey = 'severity';
 
   static const Set<String> _allowedTopLevelKeys = {
     _rulesKey,
@@ -70,7 +72,7 @@ class ConfigParser {
           final parsingErrors = <String>[];
 
           _validateTopLevelKeys(toolConfig, parsingErrors);
-          final rulesResult = _parseGlobalRules(toolConfig, parsingErrors);
+          final rulesResult = _parseDefaultRules(toolConfig, parsingErrors);
           final directoryConfigs = _parseConfigList(toolConfig, _directoriesKey, parsingErrors);
           final individualSkillConfigs = _parseConfigList(
             toolConfig,
@@ -105,19 +107,71 @@ class ConfigParser {
     }
   }
 
-  /// Parses the global rules configuration from the `dart_skills_lint` map.
-  /// Returns a map of rule names to their resolved `AnalysisSeverity`.
-  static Map<String, AnalysisSeverity> _parseRules(YamlMap toolConfig) {
-    final configuredRules = <String, AnalysisSeverity>{};
+  /// Parses the baseline rules configuration under the top-level `rules` key.
+  ///
+  /// The settings parsed here serve as the global defaults that apply to all
+  /// validated skills in the project. Any target-specific settings defined
+  /// under `directories` or `individual_skills` will override these global defaults.
+  ///
+  /// Extracts both default severities and options, appending any option type or key
+  /// validation errors to [parsingErrors].
+  static ({Map<String, AnalysisSeverity> rules, Map<String, CustomRuleOptions> ruleOptions})
+  _parseDefaultRules(YamlMap toolConfig, List<String> parsingErrors) {
     if (toolConfig.containsKey(_rulesKey)) {
       final rules = toolConfig[_rulesKey];
       if (rules is YamlMap) {
-        for (final key in rules.keys) {
-          configuredRules[key.toString()] = _parseSeverity(rules[key]?.toString() ?? '');
-        }
+        return _parseRulesMap(rules, parsingErrors, 'Global rules');
       }
     }
-    return configuredRules;
+    return (rules: const {}, ruleOptions: const {});
+  }
+
+  /// Parses a map of rules to their respective severity and option configurations.
+  ///
+  /// Validates that option keys and value types match their definitions in the registry,
+  /// appending any validation errors to [parsingErrors] labeled by [contextLabel].
+  static ({Map<String, AnalysisSeverity> rules, Map<String, CustomRuleOptions> ruleOptions})
+  _parseRulesMap(YamlMap rulesMap, List<String> parsingErrors, String contextLabel) {
+    final rules = <String, AnalysisSeverity>{};
+    final ruleOptions = <String, CustomRuleOptions>{};
+
+    for (final key in rulesMap.keys) {
+      final ruleName = key.toString();
+      final value = rulesMap[key];
+
+      // Rules must have a unique name so we can assume one match.
+      final checkMatches = RuleRegistry.allChecks.where((c) => c.name == ruleName);
+      final CheckType? check = checkMatches.isEmpty ? null : checkMatches.first;
+
+      if (value is YamlMap) {
+        final severityStr = value[_severityKey]?.toString() ?? '';
+        rules[ruleName] = _parseSeverity(severityStr);
+
+        final options = <String, dynamic>{};
+        for (final optKey in value.keys) {
+          final optName = optKey.toString();
+          if (optName == _severityKey) {
+            continue;
+          }
+          options[optName] = value[optKey];
+        }
+        if (options.isNotEmpty) {
+          final customOpts = CustomRuleOptions(options);
+          ruleOptions[ruleName] = customOpts;
+
+          if (check != null) {
+            final errors = check.validateOptions(customOpts);
+            for (final error in errors) {
+              parsingErrors.add('$contextLabel: $error');
+            }
+          }
+        }
+      } else {
+        rules[ruleName] = _parseSeverity(value?.toString() ?? '');
+      }
+    }
+
+    return (rules: rules, ruleOptions: ruleOptions);
   }
 
   /// Parses a list of targets (directories or individual skills) from the configuration.
@@ -165,12 +219,17 @@ class ConfigParser {
           }
 
           final rules = <String, AnalysisSeverity>{};
+          final ruleOptions = <String, CustomRuleOptions>{};
           if (dir.containsKey(_rulesKey)) {
             final localRules = dir[_rulesKey];
             if (localRules is YamlMap) {
-              for (final key in localRules.keys) {
-                rules[key.toString()] = _parseSeverity(localRules[key]?.toString() ?? '');
-              }
+              final result = _parseRulesMap(
+                localRules,
+                parsingErrors,
+                '$entryLabelCap rules for "$path"',
+              );
+              rules.addAll(result.rules);
+              ruleOptions.addAll(result.ruleOptions);
             } else {
               parsingErrors.add(
                 '$entryLabelCap "$_rulesKey" for "$path" must be a map; '
@@ -193,7 +252,14 @@ class ConfigParser {
             }
           }
 
-          configs.add(LintTargetConfig(path: path, rules: rules, ignoreFile: ignoreFile));
+          configs.add(
+            LintTargetConfig(
+              path: path,
+              ruleSeverities: rules,
+              ruleOptions: ruleOptions.isEmpty ? null : ruleOptions,
+              ignoreFile: ignoreFile,
+            ),
+          );
         }
       }
     }
@@ -206,14 +272,20 @@ class ConfigParser {
 /// Allows overriding rules and specifying a custom ignore file for skills
 /// located within or at this path.
 class LintTargetConfig {
-  LintTargetConfig({required this.path, required this.rules, this.ignoreFile});
+  LintTargetConfig({
+    required this.path,
+    required this.ruleSeverities,
+    this.ruleOptions,
+    this.ignoreFile,
+  });
 
   /// The path to the directory containing skills.
   ///
   /// Can be absolute or relative to the current working directory.
   /// Supports tilde expansion (e.g., `~/...`).
   final String path;
-  final Map<String, AnalysisSeverity> rules;
+  final Map<String, AnalysisSeverity> ruleSeverities;
+  final Map<String, CustomRuleOptions>? ruleOptions;
   final String? ignoreFile;
 }
 
@@ -222,11 +294,13 @@ class Configuration {
   Configuration({
     this.directoryConfigs = const [],
     this.individualSkillConfigs = const [],
-    this.configuredRules = const {},
+    this.ruleSeverities = const {},
+    this.globalRuleOptions,
     this.parsingErrors = const [],
   });
   final List<LintTargetConfig> directoryConfigs;
   final List<LintTargetConfig> individualSkillConfigs;
-  final Map<String, AnalysisSeverity> configuredRules;
+  final Map<String, AnalysisSeverity> ruleSeverities;
+  final Map<String, CustomRuleOptions>? globalRuleOptions;
   final List<String> parsingErrors;
 }

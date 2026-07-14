@@ -425,6 +425,72 @@ dart_skills_lint:
       await process.shouldExit(1);
     });
 
+    test('fails on unrecognized option key in YAML rule definition by default', () async {
+      await Directory('${tempDir.path}/test-skill').create();
+      await File('${tempDir.path}/test-skill/SKILL.md').writeAsString('''
+---
+name: test-skill
+description: A test skill
+---
+Body''');
+
+      await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+dart_skills_lint:
+  rules:
+    path-does-not-exist:
+      severity: error
+      invalid-option-key: value
+''');
+
+      final TestProcess process = await TestProcess.start('dart', [
+        p.normalize(p.absolute('bin/cli.dart')),
+        '-s',
+        'test-skill',
+      ], workingDirectory: tempDir.path);
+
+      final List<String> stderr = await process.stderr.rest.toList();
+      expect(
+        stderr.join('\n'),
+        contains(
+          'Configuration error: Global rules: Unrecognized option "invalid-option-key" for rule "path-does-not-exist".',
+        ),
+      );
+      await process.shouldExit(1);
+    });
+
+    test('fails on invalid option value type in YAML rule definition by default', () async {
+      await Directory('${tempDir.path}/test-skill').create();
+      await File('${tempDir.path}/test-skill/SKILL.md').writeAsString('''
+---
+name: test-skill
+description: A test skill
+---
+Body''');
+
+      await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+dart_skills_lint:
+  rules:
+    path-does-not-exist:
+      severity: error
+      exclude: 123
+''');
+
+      final TestProcess process = await TestProcess.start('dart', [
+        p.normalize(p.absolute('bin/cli.dart')),
+        '-s',
+        'test-skill',
+      ], workingDirectory: tempDir.path);
+
+      final List<String> stderr = await process.stderr.rest.toList();
+      expect(
+        stderr.join('\n'),
+        contains(
+          'Configuration error: Global rules: Invalid type for option "exclude" in rule "path-does-not-exist". Expected String, got "123"',
+        ),
+      );
+      await process.shouldExit(1);
+    });
+
     test('succeeds with warning on invalid key when --allow-misconfigured-keys passed', () async {
       await Directory('${tempDir.path}/test-skill').create();
       await File('${tempDir.path}/test-skill/SKILL.md').writeAsString('''
@@ -681,6 +747,67 @@ dart_skills_lint:
       // Should show a warning, not an error. Exit code 0 for warnings.
       expect(output, contains('Warnings:'));
       expect(output, contains('Line 5 has 1 trailing space(s)'));
+      await process.shouldExit(0);
+    });
+
+    test('obeys map-based rule options configuration', () async {
+      await Directory('${tempDir.path}/skills-root').create();
+      await Directory('${tempDir.path}/skills-root/definition-of-done-workspace').create();
+      final Directory validSkill = await Directory(
+        '${tempDir.path}/skills-root/valid-skill',
+      ).create();
+      await File(
+        '${validSkill.path}/SKILL.md',
+      ).writeAsString('---\nname: valid-skill\ndescription: Valid\n---\nBody');
+
+      await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+dart_skills_lint:
+  directories:
+    - path: "skills-root"
+      rules:
+        path-does-not-exist:
+          severity: error
+          exclude: ".*-workspace"
+''');
+
+      final TestProcess process = await TestProcess.start('dart', [
+        p.normalize(p.absolute('bin/cli.dart')),
+        '-d',
+        'skills-root',
+      ], workingDirectory: tempDir.path);
+
+      await process.shouldExit(0);
+    });
+
+    test('preserves global rule options when target overrides only severity', () async {
+      await Directory('${tempDir.path}/skills-root').create();
+      await Directory('${tempDir.path}/skills-root/definition-of-done-workspace').create();
+      final Directory validSkill = await Directory(
+        '${tempDir.path}/skills-root/valid-skill',
+      ).create();
+      await File(
+        '${validSkill.path}/SKILL.md',
+      ).writeAsString('---\nname: valid-skill\ndescription: Valid\n---\nBody');
+
+      await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+dart_skills_lint:
+  rules:
+    path-does-not-exist:
+      severity: warning
+      exclude: ".*-workspace"
+  directories:
+    - path: "skills-root"
+      rules:
+        path-does-not-exist: error
+''');
+
+      final TestProcess process = await TestProcess.start('dart', [
+        p.normalize(p.absolute('bin/cli.dart')),
+        '-d',
+        'skills-root',
+      ], workingDirectory: tempDir.path);
+
+      // Exits with 0 because definition-of-done-workspace is still excluded (inherited global options)
       await process.shouldExit(0);
     });
   });

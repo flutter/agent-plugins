@@ -73,14 +73,11 @@ class RuleRegistry {
   static SkillRule? createRule(
     String name,
     AnalysisSeverity severity, [
-    Map<String, dynamic>? options,
+    CustomRuleOptions? options,
   ]) {
     switch (name) {
       case PathDoesNotExistRule.ruleName:
-        return PathDoesNotExistRule(
-          severity: severity,
-          customRuleOptions: options != null ? CustomRuleOptions(options) : null,
-        );
+        return PathDoesNotExistRule(severity: severity, customRuleOptions: options);
       case AbsolutePathsRule.ruleName:
         return AbsolutePathsRule(severity: severity);
       case DescriptionLengthRule.ruleName:

@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import 'analysis_severity.dart';
+import 'custom_rule_options.dart';
 
 /// Encapsulates metadata and severity state for a specific validation rule.
 class CheckType {
@@ -22,4 +23,42 @@ class CheckType {
 
   /// Custom configuration options supported by this check.
   final Map<String, Type> allowedOptions;
+
+  /// Validates the given [options] against this check's [allowedOptions] schema.
+  ///
+  /// Returns a list of error messages for any unrecognized options or type mismatches.
+  List<String> validateOptions(CustomRuleOptions options) {
+    final List<String> errors = [];
+    for (final String key in options.keys) {
+      if (!allowedOptions.containsKey(key)) {
+        errors.add('Unrecognized option "$key" for rule "$name".');
+        continue;
+      }
+      final Type expectedType = allowedOptions[key]!;
+      final Object? actualValue = options[key];
+      if (actualValue != null && !_isTypeValid(actualValue, expectedType)) {
+        errors.add(
+          'Invalid type for option "$key" in rule "$name". '
+          'Expected $expectedType, got "$actualValue" (${actualValue.runtimeType}).',
+        );
+      }
+    }
+    return errors;
+  }
+
+  static bool _isTypeValid(Object value, Type expectedType) {
+    if (expectedType == String) {
+      return value is String;
+    }
+    if (expectedType == int) {
+      return value is int;
+    }
+    if (expectedType == bool) {
+      return value is bool;
+    }
+    if (expectedType == List || expectedType == List<String>) {
+      return value is List;
+    }
+    return true;
+  }
 }

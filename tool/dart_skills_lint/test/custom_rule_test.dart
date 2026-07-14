@@ -52,6 +52,21 @@ class MismatchRule extends SkillRule {
   }
 }
 
+class AlwaysFailsRule extends SkillRule {
+  @override
+  final String name = 'always-fails-rule';
+
+  @override
+  final AnalysisSeverity severity = AnalysisSeverity.error;
+
+  @override
+  Future<List<ValidationError>> validate(SkillContext context) async {
+    return [
+      ValidationError(ruleId: name, severity: severity, file: 'SKILL.md', message: 'Always fails'),
+    ];
+  }
+}
+
 void main() {
   group('Custom Rules', () {
     late Directory tempDir;

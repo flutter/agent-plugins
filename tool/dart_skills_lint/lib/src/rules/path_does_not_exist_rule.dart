@@ -41,9 +41,6 @@ class PathDoesNotExistRule extends ConfigurableSkillRule {
   String get name => ruleName;
 
   @override
-  Map<String, Type> get allowedOptions => const {excludeOption: String};
-
-  @override
   Future<List<ValidationError>> validate(SkillContext context) async {
     final List<ValidationError> errors = [];
     final Directory dir = context.directory;

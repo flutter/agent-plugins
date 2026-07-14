@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import '../rule_registry.dart';
+import 'check_type.dart';
 import 'custom_rule_options.dart';
 import 'skill_rule.dart';
 
@@ -9,7 +11,7 @@ import 'skill_rule.dart';
 ///
 /// Concrete subclasses of [ConfigurableSkillRule] are compile-time required to pass
 /// their custom options to the base class constructor. Option keys and types are
-/// automatically validated against the rule's defined [allowedOptions] schema.
+/// automatically validated against the rule's defined schema in [RuleRegistry].
 abstract class ConfigurableSkillRule extends SkillRule {
   ConfigurableSkillRule(this.customRuleOptions) {
     _validateOptions();
@@ -18,25 +20,20 @@ abstract class ConfigurableSkillRule extends SkillRule {
   /// The parsed custom configuration options for this rule.
   final CustomRuleOptions? customRuleOptions;
 
-  /// The schema mapping allowed options parameter keys to their expected Types.
-  Map<String, Type> get allowedOptions;
-
   void _validateOptions() {
     final CustomRuleOptions? opts = customRuleOptions;
     if (opts == null) {
       return;
     }
-    for (final String key in opts.keys) {
-      if (!allowedOptions.containsKey(key)) {
-        throw ArgumentError('Rule "$name" does not support option "$key".');
-      }
-      final Type? expectedType = allowedOptions[key];
-      final Object? actualValue = opts[key];
-      if (actualValue != null && actualValue.runtimeType != expectedType) {
-        throw ArgumentError(
-          'Option "$key" for rule "$name" must be of type $expectedType (found ${actualValue.runtimeType}).',
-        );
-      }
+    // Rules must have a unique name so we can assume one match.
+    final Iterable<CheckType> checkMatches = RuleRegistry.allChecks.where((c) => c.name == name);
+    if (checkMatches.isEmpty) {
+      return;
+    }
+    final CheckType check = checkMatches.first;
+    final List<String> errors = check.validateOptions(opts);
+    if (errors.isNotEmpty) {
+      throw ArgumentError(errors.join('\n'));
     }
   }
 }

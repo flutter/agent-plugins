@@ -12,6 +12,7 @@ import 'package:path/path.dart' as p;
 import 'config_parser.dart';
 import 'fixable_rule.dart';
 import 'models/analysis_severity.dart';
+import 'models/custom_rule_options.dart';
 import 'models/ignore_entry.dart';
 import 'models/skill_context.dart';
 import 'models/skill_rule.dart';
@@ -86,7 +87,7 @@ class ValidationSession {
 
   final Configuration config;
   final Map<String, AnalysisSeverity> resolvedRuleSeverities;
-  final Map<String, Map<String, dynamic>> resolvedRuleOptions;
+  final Map<String, CustomRuleOptions> resolvedRuleOptions;
   final String? ignoreFileOverride;
   final List<SkillRule> customRules;
   final bool printWarnings;
@@ -131,7 +132,7 @@ class ValidationSession {
     final Map<String, AnalysisSeverity> localRuleSeverities = resolveRuleSeveritiesForPath(
       normalizedSkillPath,
     );
-    final Map<String, Map<String, dynamic>> localRuleOptions = resolveRuleOptionsForPath(
+    final Map<String, CustomRuleOptions> localRuleOptions = resolveRuleOptionsForPath(
       normalizedSkillPath,
     );
     final String? localIgnoreFile = resolveIgnoreFile(normalizedSkillPath);
@@ -227,7 +228,7 @@ class ValidationSession {
       final Map<String, AnalysisSeverity> localRuleSeverities = resolveRuleSeveritiesForPath(
         normalizedSkillPath,
       );
-      final Map<String, Map<String, dynamic>> localRuleOptions = resolveRuleOptionsForPath(
+      final Map<String, CustomRuleOptions> localRuleOptions = resolveRuleOptionsForPath(
         normalizedSkillPath,
       );
       final String? localIgnoreFile = resolveIgnoreFile(normalizedSkillPath);
@@ -354,15 +355,15 @@ class ValidationSession {
   /// * The outer key is the rule name (e.g., `'path-does-not-exist'`).
   /// * The inner map contains the resolved key-value options for that rule (e.g., `{'exclude': '.*-workspace'}`).
   @visibleForTesting
-  Map<String, Map<String, dynamic>> resolveRuleOptionsForPath(String path) {
+  Map<String, CustomRuleOptions> resolveRuleOptionsForPath(String path) {
     final String targetPath = p.absolute(path);
-    final resolved = <String, Map<String, dynamic>>{};
+    final resolvedRaw = <String, Map<String, dynamic>>{};
 
     // Step 1: Initialize with global rule options from configuration file.
-    final Map<String, Map<String, dynamic>>? globalOptions = config.globalRuleOptions;
+    final Map<String, CustomRuleOptions>? globalOptions = config.globalRuleOptions;
     if (globalOptions != null) {
-      for (final MapEntry<String, Map<String, dynamic>> entry in globalOptions.entries) {
-        resolved[entry.key] = Map<String, dynamic>.from(entry.value);
+      for (final MapEntry<String, CustomRuleOptions> entry in globalOptions.entries) {
+        resolvedRaw[entry.key] = Map<String, dynamic>.from(entry.value.params);
       }
     }
 
@@ -373,23 +374,23 @@ class ValidationSession {
       final bool isMatch = p.equals(configPath, targetPath) || p.isWithin(configPath, targetPath);
 
       if (isMatch && entry.config.ruleOptions != null) {
-        for (final MapEntry<String, Map<String, dynamic>> ruleEntry
+        for (final MapEntry<String, CustomRuleOptions> ruleEntry
             in entry.config.ruleOptions!.entries) {
-          resolved[ruleEntry.key] = Map<String, dynamic>.from(ruleEntry.value);
+          resolvedRaw[ruleEntry.key] = Map<String, dynamic>.from(ruleEntry.value.params);
         }
       }
     }
 
     // Step 3: Apply CLI overrides (command-line options take highest precedence).
     // An override value of `null` explicitly removes/clears the option.
-    for (final MapEntry<String, Map<String, dynamic>> ruleOverrideEntry
+    for (final MapEntry<String, CustomRuleOptions> ruleOverrideEntry
         in resolvedRuleOptions.entries) {
       final String ruleName = ruleOverrideEntry.key;
-      final Map<String, dynamic> overrides = ruleOverrideEntry.value;
+      final CustomRuleOptions overrides = ruleOverrideEntry.value;
 
-      final Map<String, dynamic> currentOptions = resolved[ruleName] ?? <String, dynamic>{};
+      final Map<String, dynamic> currentOptions = resolvedRaw[ruleName] ?? <String, dynamic>{};
 
-      for (final MapEntry<String, dynamic> optionEntry in overrides.entries) {
+      for (final MapEntry<String, dynamic> optionEntry in overrides.params.entries) {
         final String optionName = optionEntry.key;
         final Object? value = optionEntry.value;
 
@@ -401,13 +402,13 @@ class ValidationSession {
       }
 
       if (currentOptions.isNotEmpty) {
-        resolved[ruleName] = currentOptions;
+        resolvedRaw[ruleName] = currentOptions;
       } else {
-        resolved.remove(ruleName);
+        resolvedRaw.remove(ruleName);
       }
     }
 
-    return resolved;
+    return resolvedRaw.map((ruleName, params) => MapEntry(ruleName, CustomRuleOptions(params)));
   }
 
   @visibleForTesting

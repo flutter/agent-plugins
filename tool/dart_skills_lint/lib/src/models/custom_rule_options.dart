@@ -23,4 +23,7 @@ class CustomRuleOptions {
 
   /// The parameter keys defined in this configuration.
   Iterable<String> get keys => params.keys;
+
+  /// Whether the configuration contains the specified [key].
+  bool containsKey(String key) => params.containsKey(key);
 }

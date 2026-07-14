@@ -10,6 +10,7 @@ import 'package:yaml/yaml.dart';
 
 import 'models/analysis_severity.dart';
 import 'models/check_type.dart';
+import 'models/custom_rule_options.dart';
 import 'models/skill_context.dart';
 import 'models/skill_rule.dart';
 import 'models/validation_error.dart';
@@ -29,7 +30,7 @@ class Validator {
   Validator({
     Map<String, AnalysisSeverity>? customRuleSeverities,
     List<SkillRule>? customRules,
-    Map<String, Map<String, dynamic>>? ruleOptions,
+    Map<String, CustomRuleOptions>? ruleOptions,
   }) : _customRuleSeverities = customRuleSeverities ?? {},
        _rules = _buildRules(customRuleSeverities ?? {}, customRules ?? [], ruleOptions ?? {});
   static const String _skillFileName = SkillContext.skillFileName;
@@ -145,7 +146,7 @@ class Validator {
   static List<SkillRule> _buildRules(
     Map<String, AnalysisSeverity> customRuleSeverities,
     List<SkillRule> customRules,
-    Map<String, Map<String, dynamic>> ruleOptions,
+    Map<String, CustomRuleOptions> ruleOptions,
   ) {
     final rules = <SkillRule>[];
     final seenNames = <String>{};
@@ -162,7 +163,7 @@ class Validator {
 
     for (final CheckType check in RuleRegistry.allChecks) {
       final AnalysisSeverity severity = customRuleSeverities[check.name] ?? check.defaultSeverity;
-      final Map<String, dynamic>? options = ruleOptions[check.name];
+      final CustomRuleOptions? options = ruleOptions[check.name];
       final SkillRule? rule = RuleRegistry.createRule(check.name, severity, options);
       if (rule != null) {
         addRule(rule);
