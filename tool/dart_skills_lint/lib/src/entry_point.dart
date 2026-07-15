@@ -322,7 +322,7 @@ Future<bool> validateSkills({
   List<String> skillDirPaths = const [],
   List<String> individualSkillPaths = const [],
   @Deprecated('Use resolvedRuleConfigs instead')
-  Map<String, AnalysisSeverity> resolvedRuleSeverities = const {},
+  Map<String, AnalysisSeverity> resolvedRules = const {},
   Map<String, RuleConfigPatch> resolvedRuleConfigs = const {},
   bool printWarnings = true,
   bool fastFail = false,
@@ -332,17 +332,17 @@ Future<bool> validateSkills({
   Configuration? config,
   List<SkillRule> customRules = const [],
 }) {
-  if (resolvedRuleSeverities.isNotEmpty && resolvedRuleConfigs.isNotEmpty) {
+  if (resolvedRules.isNotEmpty && resolvedRuleConfigs.isNotEmpty) {
     throw ArgumentError(
-      'Cannot specify both deprecated resolvedRuleSeverities and new resolvedRuleConfigs. '
+      'Cannot specify both deprecated resolvedRules and new resolvedRuleConfigs. '
       'Please migrate all overrides to resolvedRuleConfigs.',
     );
   }
 
   final Map<String, RuleConfigPatch> mergedConfigs = Map.from(resolvedRuleConfigs);
-  if (resolvedRuleSeverities.isNotEmpty) {
-    for (final String ruleName in resolvedRuleSeverities.keys) {
-      mergedConfigs[ruleName] = RuleConfigPatch(severity: resolvedRuleSeverities[ruleName]);
+  if (resolvedRules.isNotEmpty) {
+    for (final String ruleName in resolvedRules.keys) {
+      mergedConfigs[ruleName] = RuleConfigPatch(severity: resolvedRules[ruleName]);
     }
   }
 

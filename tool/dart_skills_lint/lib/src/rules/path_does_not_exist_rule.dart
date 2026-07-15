@@ -21,7 +21,7 @@ class PathDoesNotExistRule extends SkillRule {
 
   static const String ruleName = 'path-does-not-exist';
   static const String excludeParameter = 'exclude';
-  static const String _skillFileName = 'SKILL.md';
+  static const String _skillFileName = SkillContext.skillFileName;
   static const String _dirStructureUrl = 'https://agentskills.io/specification#directory-structure';
 
   @override

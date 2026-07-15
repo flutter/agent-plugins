@@ -62,7 +62,7 @@ void main() {
 
   group('Backwards Compatibility & API Guard Rails', () {
     test(
-      'validateSkills throws ArgumentError when passing both resolvedRuleSeverities and resolvedRuleConfigs',
+      'validateSkills throws ArgumentError when passing both resolvedRules and resolvedRuleConfigs',
       () async {
         await withTempDir((tempDir) async {
           final Directory skillDir = await Directory('${tempDir.path}/test-skill').create();
@@ -74,7 +74,7 @@ void main() {
             () => validateSkills(
               individualSkillPaths: [skillDir.path],
               // ignore: deprecated_member_use_from_same_package
-              resolvedRuleSeverities: {'valid-yaml-metadata': AnalysisSeverity.warning},
+              resolvedRules: {'valid-yaml-metadata': AnalysisSeverity.warning},
               resolvedRuleConfigs: {
                 'valid-yaml-metadata': const RuleConfigPatch(severity: AnalysisSeverity.error),
               },

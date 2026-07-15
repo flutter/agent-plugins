@@ -8,11 +8,11 @@
 ### Breaking Changes
 
 - Refactored `ValidationResult` out of `src/validator.dart` and into `src/models/validation_result.dart`. Packages that imported the internal implementation file `package:dart_skills_lint/src/validator.dart` and referenced `ValidationResult` will need to explicitly import `package:dart_skills_lint/src/models/validation_result.dart` or migrate to importing the public entrypoint `package:dart_skills_lint/dart_skills_lint.dart`.
-- Renamed rule severity configuration concepts across model structures and APIs to use consistent `ruleSeverities` / `customRuleSeverities` naming:
-  - Renamed `Validator` constructor parameter `ruleOverrides` to `customRuleSeverities`.
-  - Renamed `Configuration.configuredRules` and `LintTargetConfig.rules` to `ruleSeverities`.
-  - Renamed `ValidationSession` constructor parameter `resolvedRules` to `resolvedRuleSeverities`.
-  - Renamed `ValidationSession` method `resolveRulesForPath` to `resolveRuleSeveritiesForPath`.
+- Renamed rule configuration concepts across model structures and APIs to use consistent `ruleConfigs` naming:
+  - Renamed `Validator` constructor parameter `ruleOverrides` to `ruleConfigs`.
+  - Renamed `Configuration.configuredRules` and `LintTargetConfig.rules` to `ruleConfigs`.
+  - Renamed `ValidationSession` constructor parameter `resolvedRules` to `resolvedRuleConfigs`.
+  - Renamed `ValidationSession` method `resolveRulesForPath` to `resolveRuleConfigsForPath`.
 
 ## 0.4.0
 
