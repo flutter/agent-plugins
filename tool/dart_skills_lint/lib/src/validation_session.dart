@@ -71,7 +71,9 @@ class ValidationSession {
   /// * [fixApply] is the deprecated flag indicating if fixes should be automatically applied.
   ValidationSession({
     required this.config,
-    this.resolvedRuleConfigs = const {},
+    @Deprecated('Use resolvedRuleConfigs instead')
+    Map<String, AnalysisSeverity> resolvedRules = const {},
+    Map<String, RuleConfigPatch> resolvedRuleConfigs = const {},
     required this.ignoreFileOverride,
     required this.customRules,
     required this.printWarnings,
@@ -80,10 +82,31 @@ class ValidationSession {
     required this.generateBaseline,
     required this.fix,
     required this.fixApply,
-  }) : _normalizedDirectoryConfigs = [
+  }) : resolvedRuleConfigs = _mergeLegacyRules(resolvedRules, resolvedRuleConfigs),
+       _normalizedDirectoryConfigs = [
          for (final dc in [...config.directoryConfigs, ...config.individualSkillConfigs])
            (normalizedPath: p.absolute(p.normalize(expandPath(dc.path))), config: dc),
        ];
+
+  static Map<String, RuleConfigPatch> _mergeLegacyRules(
+    Map<String, AnalysisSeverity> legacy,
+    Map<String, RuleConfigPatch> current,
+  ) {
+    if (legacy.isEmpty && current.isEmpty) {
+      return const {};
+    }
+    if (legacy.isNotEmpty && current.isNotEmpty) {
+      throw ArgumentError(
+        'Cannot specify both deprecated resolvedRules and new resolvedRuleConfigs. '
+        'Please migrate all overrides to resolvedRuleConfigs.',
+      );
+    }
+    final merged = Map<String, RuleConfigPatch>.from(current);
+    for (final MapEntry<String, AnalysisSeverity> entry in legacy.entries) {
+      merged[entry.key] = RuleConfigPatch(severity: entry.value);
+    }
+    return merged;
+  }
 
   final Configuration config;
   final Map<String, RuleConfigPatch> resolvedRuleConfigs;
@@ -303,7 +326,13 @@ class ValidationSession {
     _anyFailed = true;
   }
 
-  @visibleForTesting
+  @Deprecated('Use resolveRuleConfigsForPath instead')
+  Map<String, AnalysisSeverity> resolveRulesForPath(String path) {
+    return resolveRuleConfigsForPath(
+      path,
+    ).map((String key, RuleConfig value) => MapEntry(key, value.severity));
+  }
+
   @visibleForTesting
   Map<String, RuleConfig> resolveRuleConfigsForPath(String path) {
     final String normalizedPath = p.absolute(path);
