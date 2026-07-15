@@ -14,33 +14,33 @@ void main() {
     test('RuleConfig initialization defaults', () {
       final config = RuleConfig(severity: AnalysisSeverity.error);
       expect(config.severity, equals(AnalysisSeverity.error));
-      expect(config.options.params, isEmpty);
+      expect(config.parameters.params, isEmpty);
       expect(config.severity != AnalysisSeverity.disabled, isTrue);
     });
 
     test('RuleConfigPatch overrides severity only', () {
       final base = RuleConfig(
         severity: AnalysisSeverity.warning,
-        options: CustomRuleOptions({'exclude': '.*-workspace', 'max': 50}),
+        parameters: CustomRuleParameters({'exclude': '.*-workspace', 'max': 50}),
       );
       const patch = RuleConfigPatch(severity: AnalysisSeverity.error);
 
       final RuleConfig merged = patch.applyTo(base);
       expect(merged.severity, equals(AnalysisSeverity.error));
-      expect(merged.options.params, equals({'exclude': '.*-workspace', 'max': 50}));
+      expect(merged.parameters.params, equals({'exclude': '.*-workspace', 'max': 50}));
     });
 
-    test('RuleConfigPatch overrides options only', () {
+    test('RuleConfigPatch overrides parameters only', () {
       final base = RuleConfig(
         severity: AnalysisSeverity.warning,
-        options: CustomRuleOptions({'exclude': '.*-workspace', 'max': 50}),
+        parameters: CustomRuleParameters({'exclude': '.*-workspace', 'max': 50}),
       );
-      final patch = RuleConfigPatch(options: CustomRuleOptions({'max': 100, 'strict': true}));
+      final patch = RuleConfigPatch(parameters: CustomRuleParameters({'max': 100, 'strict': true}));
 
       final RuleConfig merged = patch.applyTo(base);
       expect(merged.severity, equals(AnalysisSeverity.warning));
       expect(
-        merged.options.params,
+        merged.parameters.params,
         equals({'exclude': '.*-workspace', 'max': 100, 'strict': true}),
       );
     });
@@ -48,13 +48,15 @@ void main() {
     test('RuleConfigPatch nullifies keys via null value overrides', () {
       final base = RuleConfig(
         severity: AnalysisSeverity.warning,
-        options: CustomRuleOptions({'exclude': '.*-workspace', 'max': 50}),
+        parameters: CustomRuleParameters({'exclude': '.*-workspace', 'max': 50}),
       );
-      final patch = RuleConfigPatch(options: CustomRuleOptions({'exclude': null, 'max': 100}));
+      final patch = RuleConfigPatch(
+        parameters: CustomRuleParameters({'exclude': null, 'max': 100}),
+      );
 
       final RuleConfig merged = patch.applyTo(base);
       expect(merged.severity, equals(AnalysisSeverity.warning));
-      expect(merged.options.params, equals({'max': 100}));
+      expect(merged.parameters.params, equals({'max': 100}));
     });
   });
 

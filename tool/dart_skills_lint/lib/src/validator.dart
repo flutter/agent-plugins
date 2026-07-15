@@ -162,7 +162,7 @@ class Validator {
         final SkillRule? rule = RuleRegistry.createRule(
           check.name,
           config.severity,
-          config.options,
+          config.parameters,
         );
         if (rule != null) {
           addRule(rule);

@@ -11,7 +11,7 @@ import 'package:yaml/yaml.dart';
 
 import 'models/analysis_severity.dart';
 import 'models/check_type.dart';
-import 'models/custom_rule_options.dart';
+import 'models/custom_rule_parameters.dart';
 import 'models/rule_config.dart';
 import 'path_utils.dart';
 import 'rule_registry.dart';
@@ -113,7 +113,7 @@ class ConfigParser {
   /// validated skills in the project. Any target-specific settings defined
   /// under `directories` or `individual_skills` will override these global defaults.
   ///
-  /// Extracts both default severities and options, appending any option type or key
+  /// Extracts both default severities and parameters, appending any parameter type or key
   /// validation errors to [parsingErrors].
   static Map<String, RuleConfigPatch> _parseDefaultRules(
     YamlMap toolConfig,
@@ -128,9 +128,9 @@ class ConfigParser {
     return const {};
   }
 
-  /// Parses a map of rules to their respective severity and option configurations.
+  /// Parses a map of rules to their respective severity and parameter configurations.
   ///
-  /// Validates that option keys and value types match their definitions in the registry,
+  /// Validates that parameter keys and value types match their definitions in the registry,
   /// appending any validation errors to [parsingErrors] labeled by [contextLabel].
   static Map<String, RuleConfigPatch> _parseRulesMap(
     YamlMap rulesMap,
@@ -152,20 +152,20 @@ class ConfigParser {
             ? _parseSeverity(value[_severityKey]?.toString() ?? '')
             : null;
 
-        final options = <String, dynamic>{};
-        for (final optKey in value.keys) {
-          final optName = optKey.toString();
-          if (optName == _severityKey) {
+        final parameters = <String, dynamic>{};
+        for (final paramKey in value.keys) {
+          final paramName = paramKey.toString();
+          if (paramName == _severityKey) {
             continue;
           }
-          options[optName] = value[optKey];
+          parameters[paramName] = value[paramKey];
         }
 
-        final customOpts = options.isNotEmpty ? CustomRuleOptions(options) : null;
-        ruleConfigs[ruleName] = RuleConfigPatch(severity: severity, options: customOpts);
+        final customParams = parameters.isNotEmpty ? CustomRuleParameters(parameters) : null;
+        ruleConfigs[ruleName] = RuleConfigPatch(severity: severity, parameters: customParams);
 
-        if (customOpts != null && check != null) {
-          final errors = check.validateOptions(customOpts);
+        if (customParams != null && check != null) {
+          final errors = check.validateParameters(customParams);
           for (final error in errors) {
             parsingErrors.add('$contextLabel: $error');
           }

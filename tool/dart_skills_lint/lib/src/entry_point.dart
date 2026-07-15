@@ -12,9 +12,9 @@ import 'config_parser.dart';
 import 'missing_defaults_exception.dart';
 import 'models/analysis_severity.dart';
 import 'models/check_type.dart';
-import 'models/custom_rule_options.dart';
-import 'models/option_type.dart';
+import 'models/custom_rule_parameters.dart';
 import 'models/rule_config.dart';
+import 'models/rule_parameter_type.dart';
 import 'models/skill_rule.dart';
 import 'rule_registry.dart';
 import 'validation_session.dart';
@@ -180,18 +180,18 @@ ArgParser _createArgParser(String helpFlag) {
       help: check.help,
     );
 
-    // Register namespaced delegated options
-    for (final String optionName in check.optionsSchema.keys) {
-      final RuleOptionType expectedType = check.optionsSchema[optionName]!;
-      if (expectedType == RuleOptionType.stringList) {
+    // Register namespaced delegated parameters
+    for (final String paramName in check.parameterSchema.keys) {
+      final RuleParameterType expectedType = check.parameterSchema[paramName]!;
+      if (expectedType == RuleParameterType.stringList) {
         parser.addMultiOption(
-          '${check.name}-$optionName',
-          help: "Override option '$optionName' list for rule '${check.name}'.",
+          '${check.name}-$paramName',
+          help: "Override parameter '$paramName' list for rule '${check.name}'.",
         );
       } else {
         parser.addOption(
-          '${check.name}-$optionName',
-          help: "Override option '$optionName' for rule '${check.name}'.",
+          '${check.name}-$paramName',
+          help: "Override parameter '$paramName' for rule '${check.name}'.",
         );
       }
     }
@@ -482,22 +482,22 @@ Map<String, RuleConfigPatch> resolveRuleConfigsFromCli(ArgResults results) {
     }
   }
 
-  // 2. Resolve options overrides from CLI flags (e.g. --path-does-not-exist-exclude)
-  final optionsOverrides = <String, Map<String, dynamic>>{};
+  // 2. Resolve parameter overrides from CLI flags (e.g. --path-does-not-exist-exclude)
+  final parameterOverrides = <String, Map<String, dynamic>>{};
   for (final CheckType check in RuleRegistry.allChecks) {
-    final Map<String, dynamic> checkOverrides = _resolveOptionsForCheck(check, results);
+    final Map<String, dynamic> checkOverrides = _resolveParametersForCheck(check, results);
     if (checkOverrides.isNotEmpty) {
-      optionsOverrides[check.name] = checkOverrides;
+      parameterOverrides[check.name] = checkOverrides;
     }
   }
 
   // 3. Combine into RuleConfigPatch overrides
-  final Set<String> allRuleNames = {...severityOverrides.keys, ...optionsOverrides.keys};
+  final Set<String> allRuleNames = {...severityOverrides.keys, ...parameterOverrides.keys};
   for (final ruleName in allRuleNames) {
     configs[ruleName] = RuleConfigPatch(
       severity: severityOverrides[ruleName],
-      options: optionsOverrides.containsKey(ruleName)
-          ? CustomRuleOptions(optionsOverrides[ruleName]!)
+      parameters: parameterOverrides.containsKey(ruleName)
+          ? CustomRuleParameters(parameterOverrides[ruleName]!)
           : null,
     );
   }
@@ -505,38 +505,38 @@ Map<String, RuleConfigPatch> resolveRuleConfigsFromCli(ArgResults results) {
   return configs;
 }
 
-Map<String, dynamic> _resolveOptionsForCheck(CheckType check, ArgResults results) {
+Map<String, dynamic> _resolveParametersForCheck(CheckType check, ArgResults results) {
   final Map<String, dynamic> checkOverrides = {};
-  for (final String optionName in check.optionsSchema.keys) {
-    final optionFlag = '${check.name}-$optionName';
-    if (results.options.contains(optionFlag) && results.wasParsed(optionFlag)) {
-      final RuleOptionType expectedType = check.optionsSchema[optionName]!;
-      checkOverrides[optionName] = _parseOptionValue(optionFlag, results[optionFlag], expectedType);
+  for (final String paramName in check.parameterSchema.keys) {
+    final paramFlag = '${check.name}-$paramName';
+    if (results.options.contains(paramFlag) && results.wasParsed(paramFlag)) {
+      final RuleParameterType expectedType = check.parameterSchema[paramName]!;
+      checkOverrides[paramName] = _parseParameterValue(paramFlag, results[paramFlag], expectedType);
     }
   }
   return checkOverrides;
 }
 
-Object? _parseOptionValue(String optionFlag, Object? rawValue, RuleOptionType expectedType) {
+Object? _parseParameterValue(String paramFlag, Object? rawValue, RuleParameterType expectedType) {
   if (rawValue == '') {
     return null;
   }
 
-  if (expectedType == RuleOptionType.integer) {
+  if (expectedType == RuleParameterType.integer) {
     final int? parsedInt = int.tryParse(rawValue.toString());
     if (parsedInt == null) {
       throw FormatException(
-        'Invalid value "$rawValue" for option "$optionFlag". Expected an integer.',
+        'Invalid value "$rawValue" for parameter "$paramFlag". Expected an integer.',
       );
     }
     return parsedInt;
   }
 
-  if (expectedType == RuleOptionType.boolean) {
+  if (expectedType == RuleParameterType.boolean) {
     final String lower = rawValue.toString().toLowerCase();
     if (lower != 'true' && lower != 'false') {
       throw FormatException(
-        'Invalid value "$rawValue" for option "$optionFlag". Expected "true" or "false".',
+        'Invalid value "$rawValue" for parameter "$paramFlag". Expected "true" or "false".',
       );
     }
     return lower == 'true';

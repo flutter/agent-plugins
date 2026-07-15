@@ -2,8 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-/// Defines the expected schema types for custom rule configuration options.
-enum RuleOptionType {
+/// Defines the expected schema types for custom rule configuration parameters.
+enum RuleParameterType {
   string,
   integer,
   boolean,
@@ -13,15 +13,15 @@ enum RuleOptionType {
   /// Returns whether [value] matches this schema type constraint and syntax format.
   bool isValid(Object? value) {
     switch (this) {
-      case RuleOptionType.string:
+      case RuleParameterType.string:
         return value is String;
-      case RuleOptionType.integer:
+      case RuleParameterType.integer:
         return value is int;
-      case RuleOptionType.boolean:
+      case RuleParameterType.boolean:
         return value is bool;
-      case RuleOptionType.stringList:
+      case RuleParameterType.stringList:
         return value is List && value.every((e) => e is String);
-      case RuleOptionType.regExp:
+      case RuleParameterType.regExp:
         if (value is! String) {
           return false;
         }
@@ -37,15 +37,15 @@ enum RuleOptionType {
   /// User-facing type description.
   String get description {
     switch (this) {
-      case RuleOptionType.string:
+      case RuleParameterType.string:
         return 'String';
-      case RuleOptionType.integer:
+      case RuleParameterType.integer:
         return 'int';
-      case RuleOptionType.boolean:
+      case RuleParameterType.boolean:
         return 'bool';
-      case RuleOptionType.stringList:
+      case RuleParameterType.stringList:
         return 'List<String>';
-      case RuleOptionType.regExp:
+      case RuleParameterType.regExp:
         return 'RegExp (valid regular expression string)';
     }
   }

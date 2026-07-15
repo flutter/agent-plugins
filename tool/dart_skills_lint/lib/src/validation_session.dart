@@ -49,7 +49,7 @@ const directoryErrorMsg = 'Directory error:';
 /// Per-invocation state and orchestration for skill validation.
 ///
 /// One session is constructed per CLI invocation (or embedded call). The
-/// session aggregates configuration options, custom rules, ignores, and CLI overrides,
+/// session aggregates configuration parameters, custom rules, ignores, and CLI overrides,
 /// then orchestrates the validation of multiple target skill directories.
 ///
 /// Callers invoke [processIndividualSkill] for each `--skill` path and

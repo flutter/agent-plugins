@@ -425,7 +425,7 @@ dart_skills_lint:
       await process.shouldExit(1);
     });
 
-    test('fails on unrecognized option key in YAML rule definition by default', () async {
+    test('fails on unrecognized parameter key in YAML rule definition by default', () async {
       await Directory('${tempDir.path}/test-skill').create();
       await File('${tempDir.path}/test-skill/SKILL.md').writeAsString('''
 ---
@@ -439,7 +439,7 @@ dart_skills_lint:
   rules:
     path-does-not-exist:
       severity: error
-      invalid-option-key: value
+      invalid-parameter-key: value
 ''');
 
       final TestProcess process = await TestProcess.start('dart', [
@@ -452,13 +452,13 @@ dart_skills_lint:
       expect(
         stderr.join('\n'),
         contains(
-          'Configuration error: Global rules: Unrecognized option "invalid-option-key" for rule "path-does-not-exist".',
+          'Configuration error: Global rules: Unrecognized parameter "invalid-parameter-key" for rule "path-does-not-exist".',
         ),
       );
       await process.shouldExit(1);
     });
 
-    test('fails on invalid option value type in YAML rule definition by default', () async {
+    test('fails on invalid parameter value type in YAML rule definition by default', () async {
       await Directory('${tempDir.path}/test-skill').create();
       await File('${tempDir.path}/test-skill/SKILL.md').writeAsString('''
 ---
@@ -485,7 +485,7 @@ dart_skills_lint:
       expect(
         stderr.join('\n'),
         contains(
-          'Configuration error: Global rules: Invalid value/type for option "exclude" in rule "path-does-not-exist". Expected RegExp (valid regular expression string), got "123".',
+          'Configuration error: Global rules: Invalid value/type for parameter "exclude" in rule "path-does-not-exist". Expected RegExp (valid regular expression string), got "123".',
         ),
       );
       await process.shouldExit(1);
@@ -752,7 +752,7 @@ dart_skills_lint:
       await process.shouldExit(0);
     });
 
-    test('obeys map-based rule options configuration', () async {
+    test('obeys map-based rule parameters configuration', () async {
       await Directory('${tempDir.path}/skills-root').create();
       await Directory('${tempDir.path}/skills-root/definition-of-done-workspace').create();
       final Directory validSkill = await Directory(
@@ -781,7 +781,7 @@ dart_skills_lint:
       await process.shouldExit(0);
     });
 
-    test('preserves global rule options when target overrides only severity', () async {
+    test('preserves global rule parameters when target overrides only severity', () async {
       await Directory('${tempDir.path}/skills-root').create();
       await Directory('${tempDir.path}/skills-root/definition-of-done-workspace').create();
       final Directory validSkill = await Directory(
@@ -809,12 +809,12 @@ dart_skills_lint:
         'skills-root',
       ], workingDirectory: tempDir.path);
 
-      // Exits with 0 because definition-of-done-workspace is still excluded (inherited global options)
+      // Exits with 0 because definition-of-done-workspace is still excluded (inherited global parameters)
       await process.shouldExit(0);
     });
 
     test(
-      'clears inherited rule options when target overrides key with tilde (~) null value',
+      'clears inherited rule parameters when target overrides key with tilde (~) null value',
       () async {
         await Directory('${tempDir.path}/skills-root').create();
         await Directory('${tempDir.path}/skills-root/definition-of-done-workspace').create();
@@ -850,7 +850,7 @@ dart_skills_lint:
       },
     );
 
-    test('yields OptionType schema validation error for nested collections', () async {
+    test('yields RuleParameterType schema validation error for nested collections', () async {
       await Directory('${tempDir.path}/test-skill').create();
       await File('${tempDir.path}/test-skill/SKILL.md').writeAsString('''
 ---
@@ -878,22 +878,24 @@ dart_skills_lint:
       expect(
         stderr.join('\n'),
         contains(
-          'Configuration error: Global rules: Invalid value/type for option "exclude" in rule "path-does-not-exist"',
+          'Configuration error: Global rules: Invalid value/type for parameter "exclude" in rule "path-does-not-exist"',
         ),
       );
       await process.shouldExit(1);
     });
 
-    test('yields OptionType schema validation error for malformed regular expression', () async {
-      await Directory('${tempDir.path}/test-skill').create();
-      await File('${tempDir.path}/test-skill/SKILL.md').writeAsString('''
+    test(
+      'yields RuleParameterType schema validation error for malformed regular expression',
+      () async {
+        await Directory('${tempDir.path}/test-skill').create();
+        await File('${tempDir.path}/test-skill/SKILL.md').writeAsString('''
 ---
 name: test-skill
 description: A test skill
 ---
 Body''');
 
-      await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+        await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
 dart_skills_lint:
   rules:
     path-does-not-exist:
@@ -901,21 +903,22 @@ dart_skills_lint:
       exclude: "[a-z"
 ''');
 
-      final TestProcess process = await TestProcess.start('dart', [
-        p.normalize(p.absolute('bin/cli.dart')),
-        '-s',
-        'test-skill',
-      ], workingDirectory: tempDir.path);
+        final TestProcess process = await TestProcess.start('dart', [
+          p.normalize(p.absolute('bin/cli.dart')),
+          '-s',
+          'test-skill',
+        ], workingDirectory: tempDir.path);
 
-      final List<String> stderr = await process.stderr.rest.toList();
-      expect(
-        stderr.join('\n'),
-        contains(
-          'Configuration error: Global rules: Invalid value/type for option "exclude" in rule "path-does-not-exist"',
-        ),
-      );
-      expect(stderr.join('\n'), contains('Expected RegExp (valid regular expression string)'));
-      await process.shouldExit(1);
-    });
+        final List<String> stderr = await process.stderr.rest.toList();
+        expect(
+          stderr.join('\n'),
+          contains(
+            'Configuration error: Global rules: Invalid value/type for parameter "exclude" in rule "path-does-not-exist"',
+          ),
+        );
+        expect(stderr.join('\n'), contains('Expected RegExp (valid regular expression string)'));
+        await process.shouldExit(1);
+      },
+    );
   });
 }

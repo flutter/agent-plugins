@@ -1,9 +1,9 @@
 ## 0.5.0
 
-- Added support for rule-specific custom options in `dart_skills_lint.yaml`, allowing rules to be configured with parameter maps (e.g. passing exclusions, thresholds, length limits, etc.).
+- Added support for rule-specific custom parameters in `dart_skills_lint.yaml`, allowing rules to be configured with parameter maps (e.g. passing exclusions, thresholds, length limits, etc.).
 - Refactored `path-does-not-exist` from an inline structure check into a class-based `SkillRule`, enabling it to be disabled or overridden.
-- Exposed namespaced CLI flags for custom options (e.g. `--path-does-not-exist-exclude`) with support for empty string overrides to clear options.
-- Implemented option type-coercion for `int`, `bool`, and `List` types parsed from the command line.
+- Exposed namespaced CLI flags for custom parameters (e.g. `--path-does-not-exist-exclude`) with support for empty string overrides to clear parameters.
+- Implemented parameter type-coercion for `int`, `bool`, and `List` types parsed from the command line.
 
 ### Breaking Changes
 
