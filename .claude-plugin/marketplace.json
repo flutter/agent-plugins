@@ -1,0 +1,21 @@
+{
+  "name": "dart-flutter",
+  "owner": {
+    "name": "Dart and Flutter Team",
+    "email": "stores@flutter.io"
+  },
+  "description": "Official Claude Marketplace for Dart and Flutter plugins",
+  "plugins": [
+    {
+      "name": "dart-flutter",
+      "description": "The official Claude plugin for Dart and Flutter that installs Flutter/Dart Skills and Dart MCP server for building natively compiled, visually stunning applications for mobile, web, desktop, and embedded devices from a single codebase",
+      "category": "development",
+      "tags": [
+        "dart",
+        "flutter",
+        "mobile"
+      ],
+      "source": "./"
+    }
+  ]
+}
