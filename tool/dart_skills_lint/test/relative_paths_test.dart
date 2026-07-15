@@ -39,9 +39,7 @@ void main() {
       await File('${refDir.path}/DETAILS.md').writeAsString('Details here');
 
       final validator = Validator(
-        ruleConfigs: {
-          RelativePathsRule.ruleName: const RuleConfig(severity: AnalysisSeverity.warning),
-        },
+        ruleConfigs: {RelativePathsRule.ruleName: RuleConfig(severity: AnalysisSeverity.warning)},
       );
       final ValidationResult result = await validator.validate(skillDir);
 
@@ -57,9 +55,7 @@ void main() {
       );
 
       final validator = Validator(
-        ruleConfigs: {
-          RelativePathsRule.ruleName: const RuleConfig(severity: AnalysisSeverity.warning),
-        },
+        ruleConfigs: {RelativePathsRule.ruleName: RuleConfig(severity: AnalysisSeverity.warning)},
       );
       final ValidationResult result = await validator.validate(skillDir);
 
@@ -84,9 +80,7 @@ void main() {
       await File('${refs.path}/DETAILS.md').writeAsString('Details');
 
       final validator = Validator(
-        ruleConfigs: {
-          RelativePathsRule.ruleName: const RuleConfig(severity: AnalysisSeverity.warning),
-        },
+        ruleConfigs: {RelativePathsRule.ruleName: RuleConfig(severity: AnalysisSeverity.warning)},
       );
       final ValidationResult result = await validator.validate(skillDir);
       expect(result.isValid, isTrue);
@@ -104,9 +98,7 @@ void main() {
       await File('${refs.path}/UNRELATED.txt').writeAsString('Nope');
 
       final validator = Validator(
-        ruleConfigs: {
-          RelativePathsRule.ruleName: const RuleConfig(severity: AnalysisSeverity.warning),
-        },
+        ruleConfigs: {RelativePathsRule.ruleName: RuleConfig(severity: AnalysisSeverity.warning)},
       );
       final ValidationResult result = await validator.validate(skillDir);
       expect(result.isValid, isTrue);
@@ -122,8 +114,8 @@ void main() {
 
       final validator = Validator(
         ruleConfigs: {
-          RelativePathsRule.ruleName: const RuleConfig(severity: AnalysisSeverity.warning),
-          AbsolutePathsRule.ruleName: const RuleConfig(severity: AnalysisSeverity.error),
+          RelativePathsRule.ruleName: RuleConfig(severity: AnalysisSeverity.warning),
+          AbsolutePathsRule.ruleName: RuleConfig(severity: AnalysisSeverity.error),
         },
       );
       final ValidationResult result = await validator.validate(skillDir);
@@ -139,9 +131,7 @@ void main() {
       );
 
       final validator = Validator(
-        ruleConfigs: {
-          RelativePathsRule.ruleName: const RuleConfig(severity: AnalysisSeverity.warning),
-        },
+        ruleConfigs: {RelativePathsRule.ruleName: RuleConfig(severity: AnalysisSeverity.warning)},
       );
       final ValidationResult result = await validator.validate(skillDir);
 
@@ -160,9 +150,7 @@ void main() {
       await File('${imgDir.path}/screenshot.png').writeAsString('image content');
 
       final validator = Validator(
-        ruleConfigs: {
-          RelativePathsRule.ruleName: const RuleConfig(severity: AnalysisSeverity.warning),
-        },
+        ruleConfigs: {RelativePathsRule.ruleName: RuleConfig(severity: AnalysisSeverity.warning)},
       );
       final ValidationResult result = await validator.validate(skillDir);
 
@@ -182,9 +170,7 @@ void main() {
       await File('${tempDir.path}/a/CONTRIBUTING.md').create(recursive: true);
 
       final validator = Validator(
-        ruleConfigs: {
-          RelativePathsRule.ruleName: const RuleConfig(severity: AnalysisSeverity.warning),
-        },
+        ruleConfigs: {RelativePathsRule.ruleName: RuleConfig(severity: AnalysisSeverity.warning)},
       );
       final ValidationResult result = await validator.validate(skillDir);
 
@@ -202,9 +188,7 @@ void main() {
       await File('${skillDir.path}/styleguide.md').writeAsString('Styleguide content');
 
       final validator = Validator(
-        ruleConfigs: {
-          RelativePathsRule.ruleName: const RuleConfig(severity: AnalysisSeverity.warning),
-        },
+        ruleConfigs: {RelativePathsRule.ruleName: RuleConfig(severity: AnalysisSeverity.warning)},
       );
       final ValidationResult result = await validator.validate(skillDir);
 
@@ -222,9 +206,7 @@ void main() {
       await File('${skillDir.path}/styleguide.md').writeAsString('Styleguide content');
 
       final validator = Validator(
-        ruleConfigs: {
-          RelativePathsRule.ruleName: const RuleConfig(severity: AnalysisSeverity.warning),
-        },
+        ruleConfigs: {RelativePathsRule.ruleName: RuleConfig(severity: AnalysisSeverity.warning)},
       );
       final ValidationResult result = await validator.validate(skillDir);
 

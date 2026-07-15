@@ -7,23 +7,17 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 
 import '../models/analysis_severity.dart';
-import '../models/configurable_skill_rule.dart';
-import '../models/custom_rule_options.dart';
 import '../models/skill_context.dart';
+import '../models/skill_rule.dart';
 import '../models/validation_error.dart';
 
 /// Checks that a skill directory exists and contains a SKILL.md file.
 ///
-/// If [exclude] is specified, it compiles it as a [RegExp] and skips validation
-/// if the directory name matches the pattern.
-class PathDoesNotExistRule extends ConfigurableSkillRule {
-  PathDoesNotExistRule({required this.severity, CustomRuleOptions? customRuleOptions})
-    : super(customRuleOptions) {
-    final String? excludeVal = customRuleOptions?.getString(excludeOption);
-    if (excludeVal != null && excludeVal.isNotEmpty) {
-      _excludeRegExp = RegExp(excludeVal);
-    }
-  }
+/// If [excludeRegExp] is specified, it skips validation if the normalized
+/// directory path matches the pattern.
+/// Note on `exclude` regular expressions: To guarantee cross-platform portability across macOS, Linux, and Windows, path separators across evaluated absolute paths are **always normalized to forward slashes (`/`) prior to matching**. Always write `/` instead of `\` when separating directories within your regular expression exclusions.
+class PathDoesNotExistRule extends SkillRule {
+  PathDoesNotExistRule({required this.severity, this.excludeRegExp});
 
   static const String ruleName = 'path-does-not-exist';
   static const String excludeOption = 'exclude';
@@ -33,7 +27,10 @@ class PathDoesNotExistRule extends ConfigurableSkillRule {
   @override
   final AnalysisSeverity severity;
 
-  RegExp? _excludeRegExp;
+  /// Optional regex pattern to exclude matching directories.
+  /// Note: Target paths evaluated against this regex always normalize path
+  /// separators to forward slashes (`/`), even on Windows.
+  final RegExp? excludeRegExp;
 
   @override
   String get name => ruleName;
@@ -42,9 +39,9 @@ class PathDoesNotExistRule extends ConfigurableSkillRule {
   Future<List<ValidationError>> validate(SkillContext context) async {
     final List<ValidationError> errors = [];
     final Directory dir = context.directory;
-    final String dirName = p.basename(dir.path);
+    final String normalizedPath = dir.path.replaceAll(r'\', '/');
 
-    if (_excludeRegExp != null && _excludeRegExp!.hasMatch(dirName)) {
+    if (excludeRegExp != null && excludeRegExp!.hasMatch(normalizedPath)) {
       return errors;
     }
 

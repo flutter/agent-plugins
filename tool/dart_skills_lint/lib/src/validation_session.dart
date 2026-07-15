@@ -320,7 +320,7 @@ class ValidationSession {
         final RuleConfigPatch patch = entry.value;
 
         final RuleConfig base =
-            resolvedConfigs[ruleName] ?? const RuleConfig(severity: AnalysisSeverity.disabled);
+            resolvedConfigs[ruleName] ?? RuleConfig(severity: AnalysisSeverity.disabled);
         resolvedConfigs[ruleName] = patch.applyTo(base);
       }
     }

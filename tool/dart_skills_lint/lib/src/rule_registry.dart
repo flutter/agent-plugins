@@ -5,6 +5,7 @@
 import 'models/analysis_severity.dart';
 import 'models/check_type.dart';
 import 'models/custom_rule_options.dart';
+import 'models/option_type.dart';
 import 'models/skill_rule.dart';
 import 'rules/absolute_paths_rule.dart';
 import 'rules/description_length_rule.dart';
@@ -25,7 +26,7 @@ class RuleRegistry {
       name: PathDoesNotExistRule.ruleName,
       defaultSeverity: AnalysisSeverity.error,
       help: 'Check if SKILL.md and directory structure are correct.',
-      optionsSchema: {'exclude': String},
+      optionsSchema: {PathDoesNotExistRule.excludeOption: RuleOptionType.regExp},
     ),
     const CheckType(
       name: AbsolutePathsRule.ruleName,
@@ -77,7 +78,12 @@ class RuleRegistry {
   ]) {
     switch (name) {
       case PathDoesNotExistRule.ruleName:
-        return PathDoesNotExistRule(severity: severity, customRuleOptions: options);
+        RegExp? excludeRegExp;
+        final String? excludePattern = options?.getString(PathDoesNotExistRule.excludeOption);
+        if (excludePattern != null && excludePattern.isNotEmpty) {
+          excludeRegExp = RegExp(excludePattern);
+        }
+        return PathDoesNotExistRule(severity: severity, excludeRegExp: excludeRegExp);
       case AbsolutePathsRule.ruleName:
         return AbsolutePathsRule(severity: severity);
       case DescriptionLengthRule.ruleName:

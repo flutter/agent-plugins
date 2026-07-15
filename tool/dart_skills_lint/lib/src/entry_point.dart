@@ -13,6 +13,7 @@ import 'missing_defaults_exception.dart';
 import 'models/analysis_severity.dart';
 import 'models/check_type.dart';
 import 'models/custom_rule_options.dart';
+import 'models/option_type.dart';
 import 'models/rule_config.dart';
 import 'models/skill_rule.dart';
 import 'rule_registry.dart';
@@ -181,8 +182,8 @@ ArgParser _createArgParser(String helpFlag) {
 
     // Register namespaced delegated options
     for (final String optionName in check.optionsSchema.keys) {
-      final Type expectedType = check.optionsSchema[optionName]!;
-      if (expectedType == List || expectedType == List<String>) {
+      final RuleOptionType expectedType = check.optionsSchema[optionName]!;
+      if (expectedType == RuleOptionType.stringList) {
         parser.addMultiOption(
           '${check.name}-$optionName',
           help: "Override option '$optionName' list for rule '${check.name}'.",
@@ -282,6 +283,9 @@ Future<Configuration?> _loadConfig(ArgResults results) async {
   if (config.parsingErrors.isNotEmpty) {
     final allowMisconfiguredKeys = results[_allowMisconfiguredKeysFlag] as bool;
     if (allowMisconfiguredKeys) {
+      _log.warning(
+        'DEPRECATION WARNING: --allow-misconfigured-keys is deprecated and will be removed in a future release. Fix misconfigured configuration keys rather than bypassing validation.',
+      );
       for (final String error in config.parsingErrors) {
         _log.warning('Configuration warning: $error');
       }
@@ -506,19 +510,19 @@ Map<String, dynamic> _resolveOptionsForCheck(CheckType check, ArgResults results
   for (final String optionName in check.optionsSchema.keys) {
     final optionFlag = '${check.name}-$optionName';
     if (results.options.contains(optionFlag) && results.wasParsed(optionFlag)) {
-      final Type expectedType = check.optionsSchema[optionName]!;
+      final RuleOptionType expectedType = check.optionsSchema[optionName]!;
       checkOverrides[optionName] = _parseOptionValue(optionFlag, results[optionFlag], expectedType);
     }
   }
   return checkOverrides;
 }
 
-Object? _parseOptionValue(String optionFlag, Object? rawValue, Type expectedType) {
+Object? _parseOptionValue(String optionFlag, Object? rawValue, RuleOptionType expectedType) {
   if (rawValue == '') {
     return null;
   }
 
-  if (expectedType == int) {
+  if (expectedType == RuleOptionType.integer) {
     final int? parsedInt = int.tryParse(rawValue.toString());
     if (parsedInt == null) {
       throw FormatException(
@@ -528,7 +532,7 @@ Object? _parseOptionValue(String optionFlag, Object? rawValue, Type expectedType
     return parsedInt;
   }
 
-  if (expectedType == bool) {
+  if (expectedType == RuleOptionType.boolean) {
     final String lower = rawValue.toString().toLowerCase();
     if (lower != 'true' && lower != 'false') {
       throw FormatException(

@@ -4,6 +4,7 @@
 
 import 'dart:io';
 import 'package:dart_skills_lint/dart_skills_lint.dart';
+import 'package:dart_skills_lint/src/models/rule_config.dart';
 import 'package:dart_skills_lint/src/rules/description_length_rule.dart';
 import 'package:dart_skills_lint/src/rules/trailing_whitespace_rule.dart';
 import 'package:dart_skills_lint/src/rules/valid_yaml_metadata_rule.dart';
@@ -39,7 +40,7 @@ void main() {
       // Create validator with the rule disabled.
       final validator = Validator(
         ruleConfigs: {
-          ValidYamlMetadataRule.ruleName: const RuleConfig(severity: AnalysisSeverity.disabled),
+          ValidYamlMetadataRule.ruleName: RuleConfig(severity: AnalysisSeverity.disabled),
         },
       );
       final ValidationResult result = await validator.validate(skillDir);

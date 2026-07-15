@@ -5,7 +5,6 @@
 import 'dart:io';
 
 import 'package:dart_skills_lint/src/models/analysis_severity.dart';
-import 'package:dart_skills_lint/src/models/custom_rule_options.dart';
 import 'package:dart_skills_lint/src/models/skill_context.dart';
 import 'package:dart_skills_lint/src/models/validation_error.dart';
 import 'package:dart_skills_lint/src/rules/path_does_not_exist_rule.dart';
@@ -76,15 +75,33 @@ void main() {
       expect(errors.first.message, contains('Path is not a directory'));
     });
 
-    test('bypasses validation when directory name matches exclude RegExp', () async {
-      final skillDir = Directory(p.join(tempDir.path, 'test-workspace'));
-      await skillDir.create(); // missing SKILL.md
+    test('bypasses validation when full directory path matches exclude RegExp', () async {
+      final skillDir = Directory(p.join(tempDir.path, 'nested', 'target-workspace'));
+      await skillDir.create(recursive: true); // missing SKILL.md
 
       final rule = PathDoesNotExistRule(
         severity: AnalysisSeverity.error,
-        customRuleOptions: const CustomRuleOptions({'exclude': '.*-workspace'}),
+        excludeRegExp: RegExp(r'nested/target-workspace'),
       );
       final context = SkillContext(directory: skillDir, rawContent: '');
+
+      final List<ValidationError> errors = await rule.validate(context);
+      expect(errors, isEmpty);
+    });
+
+    test('bypasses validation when full directory path with backslashes is normalized', () async {
+      final skillDir = Directory(p.join(tempDir.path, 'target-workspace'));
+      await skillDir.create();
+
+      // Simulate Windows path structure intentionally using backslashes
+      final String windowsStylePath = skillDir.path.replaceAll('/', r'\');
+      final windowsDir = Directory(windowsStylePath);
+
+      final rule = PathDoesNotExistRule(
+        severity: AnalysisSeverity.error,
+        excludeRegExp: RegExp(r'/target-workspace'),
+      );
+      final context = SkillContext(directory: windowsDir, rawContent: '');
 
       final List<ValidationError> errors = await rule.validate(context);
       expect(errors, isEmpty);
@@ -98,7 +115,7 @@ void main() {
 
       final rule = PathDoesNotExistRule(
         severity: AnalysisSeverity.error,
-        customRuleOptions: const CustomRuleOptions({'exclude': '.*-workspace|evals'}),
+        excludeRegExp: RegExp(r'.*-workspace|evals'),
       );
 
       final context1 = SkillContext(directory: skillDir1, rawContent: '');
@@ -106,36 +123,6 @@ void main() {
 
       expect(await rule.validate(context1), isEmpty);
       expect(await rule.validate(context2), isEmpty);
-    });
-
-    test('validates options keys and throws ArgumentError on unknown keys', () {
-      expect(
-        () => PathDoesNotExistRule(
-          severity: AnalysisSeverity.error,
-          customRuleOptions: const CustomRuleOptions({'unknown_option': 'val'}),
-        ),
-        throwsArgumentError,
-      );
-    });
-
-    test('validates options types and throws ArgumentError on type mismatch', () {
-      expect(
-        () => PathDoesNotExistRule(
-          severity: AnalysisSeverity.error,
-          customRuleOptions: const CustomRuleOptions({'exclude': 123}),
-        ),
-        throwsArgumentError,
-      );
-    });
-
-    test('throws FormatException on invalid regex option', () {
-      expect(
-        () => PathDoesNotExistRule(
-          severity: AnalysisSeverity.error,
-          customRuleOptions: const CustomRuleOptions({'exclude': '[invalid(regex'}),
-        ),
-        throwsFormatException,
-      );
     });
   });
 }

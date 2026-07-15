@@ -485,40 +485,42 @@ dart_skills_lint:
       expect(
         stderr.join('\n'),
         contains(
-          'Configuration error: Global rules: Invalid type for option "exclude" in rule "path-does-not-exist". Expected String, got "123"',
+          'Configuration error: Global rules: Invalid value/type for option "exclude" in rule "path-does-not-exist". Expected RegExp (valid regular expression string), got "123".',
         ),
       );
       await process.shouldExit(1);
     });
 
-    test('succeeds with warning on invalid key when --allow-misconfigured-keys passed', () async {
-      await Directory('${tempDir.path}/test-skill').create();
-      await File('${tempDir.path}/test-skill/SKILL.md').writeAsString('''
+    test(
+      'succeeds with warning on invalid key and prints deprecation when --allow-misconfigured-keys passed',
+      () async {
+        await Directory('${tempDir.path}/test-skill').create();
+        await File('${tempDir.path}/test-skill/SKILL.md').writeAsString('''
 ---
 name: test-skill
 description: A test skill
 ---
 Body''');
 
-      await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+        await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
 dart_skills_lint:
   invalid-key: value
 ''');
 
-      final TestProcess process = await TestProcess.start('dart', [
-        p.normalize(p.absolute('bin/cli.dart')),
-        '-s',
-        'test-skill',
-        '--allow-misconfigured-keys',
-      ], workingDirectory: tempDir.path);
+        final TestProcess process = await TestProcess.start('dart', [
+          p.normalize(p.absolute('bin/cli.dart')),
+          '-s',
+          'test-skill',
+          '--allow-misconfigured-keys',
+        ], workingDirectory: tempDir.path);
 
-      final List<String> stdout = await process.stdout.rest.toList();
-      expect(
-        stdout.join('\n'),
-        contains('Configuration warning: Unrecognized top-level key "invalid-key"'),
-      );
-      await process.shouldExit(0);
-    });
+        final List<String> stdout = await process.stdout.rest.toList();
+        final String output = stdout.join('\n');
+        expect(output, contains('Configuration warning: Unrecognized top-level key "invalid-key"'));
+        expect(output, contains('DEPRECATION WARNING: --allow-misconfigured-keys is deprecated'));
+        await process.shouldExit(0);
+      },
+    );
 
     test('obeys custom configuration file path via --config', () async {
       final Directory skillDir = await Directory('${tempDir.path}/test-skill').create();
@@ -847,5 +849,73 @@ dart_skills_lint:
         await process.shouldExit(1);
       },
     );
+
+    test('yields OptionType schema validation error for nested collections', () async {
+      await Directory('${tempDir.path}/test-skill').create();
+      await File('${tempDir.path}/test-skill/SKILL.md').writeAsString('''
+---
+name: test-skill
+description: A test skill
+---
+Body''');
+
+      await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+dart_skills_lint:
+  rules:
+    path-does-not-exist:
+      severity: error
+      exclude:
+        - ".*-workspace"
+''');
+
+      final TestProcess process = await TestProcess.start('dart', [
+        p.normalize(p.absolute('bin/cli.dart')),
+        '-s',
+        'test-skill',
+      ], workingDirectory: tempDir.path);
+
+      final List<String> stderr = await process.stderr.rest.toList();
+      expect(
+        stderr.join('\n'),
+        contains(
+          'Configuration error: Global rules: Invalid value/type for option "exclude" in rule "path-does-not-exist"',
+        ),
+      );
+      await process.shouldExit(1);
+    });
+
+    test('yields OptionType schema validation error for malformed regular expression', () async {
+      await Directory('${tempDir.path}/test-skill').create();
+      await File('${tempDir.path}/test-skill/SKILL.md').writeAsString('''
+---
+name: test-skill
+description: A test skill
+---
+Body''');
+
+      await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+dart_skills_lint:
+  rules:
+    path-does-not-exist:
+      severity: error
+      exclude: "[a-z"
+''');
+
+      final TestProcess process = await TestProcess.start('dart', [
+        p.normalize(p.absolute('bin/cli.dart')),
+        '-s',
+        'test-skill',
+      ], workingDirectory: tempDir.path);
+
+      final List<String> stderr = await process.stderr.rest.toList();
+      expect(
+        stderr.join('\n'),
+        contains(
+          'Configuration error: Global rules: Invalid value/type for option "exclude" in rule "path-does-not-exist"',
+        ),
+      );
+      expect(stderr.join('\n'), contains('Expected RegExp (valid regular expression string)'));
+      await process.shouldExit(1);
+    });
   });
 }

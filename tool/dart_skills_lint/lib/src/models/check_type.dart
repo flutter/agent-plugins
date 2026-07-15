@@ -4,6 +4,7 @@
 
 import 'analysis_severity.dart';
 import 'custom_rule_options.dart';
+import 'option_type.dart';
 
 /// Encapsulates metadata and severity state for a specific validation rule.
 class CheckType {
@@ -22,43 +23,27 @@ class CheckType {
   final String help;
 
   /// Custom configuration options supported by this check.
-  final Map<String, Type> optionsSchema;
+  final Map<String, RuleOptionType> optionsSchema;
 
   /// Validates the given [options] against this check's [optionsSchema] schema.
   ///
   /// Returns a list of error messages for any unrecognized options or type mismatches.
   List<String> validateOptions(CustomRuleOptions options) {
     final List<String> errors = [];
-    for (final String key in options.keys) {
+    for (final String key in options.params.keys) {
       if (!optionsSchema.containsKey(key)) {
         errors.add('Unrecognized option "$key" for rule "$name".');
         continue;
       }
-      final Type expectedType = optionsSchema[key]!;
-      final Object? actualValue = options[key];
-      if (actualValue != null && !_isTypeValid(actualValue, expectedType)) {
+      final RuleOptionType expectedType = optionsSchema[key]!;
+      final Object? actualValue = options.params[key];
+      if (actualValue != null && !expectedType.isValid(actualValue)) {
         errors.add(
-          'Invalid type for option "$key" in rule "$name". '
-          'Expected $expectedType, got "$actualValue" (${actualValue.runtimeType}).',
+          'Invalid value/type for option "$key" in rule "$name". '
+          'Expected ${expectedType.description}, got "$actualValue".',
         );
       }
     }
     return errors;
-  }
-
-  static bool _isTypeValid(Object value, Type expectedType) {
-    if (expectedType == String) {
-      return value is String;
-    }
-    if (expectedType == int) {
-      return value is int;
-    }
-    if (expectedType == bool) {
-      return value is bool;
-    }
-    if (expectedType == List || expectedType == List<String>) {
-      return value is List;
-    }
-    return true;
   }
 }

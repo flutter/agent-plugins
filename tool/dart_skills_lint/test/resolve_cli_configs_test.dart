@@ -7,6 +7,7 @@ import 'package:dart_skills_lint/src/entry_point.dart';
 import 'package:dart_skills_lint/src/models/analysis_severity.dart';
 import 'package:dart_skills_lint/src/models/check_type.dart';
 import 'package:dart_skills_lint/src/models/custom_rule_options.dart';
+import 'package:dart_skills_lint/src/models/option_type.dart';
 import 'package:dart_skills_lint/src/models/rule_config.dart';
 import 'package:dart_skills_lint/src/rule_registry.dart';
 import 'package:dart_skills_lint/src/rules/relative_paths_rule.dart';
@@ -62,7 +63,13 @@ void main() {
         name: mockCheckName,
         defaultSeverity: AnalysisSeverity.disabled,
         help: 'Mock rule for testing.',
-        optionsSchema: {'exclude': String, 'max': int, 'strict': bool, 'items': List},
+        optionsSchema: {
+          'exclude': RuleOptionType.string,
+          'max': RuleOptionType.integer,
+          'strict': RuleOptionType.boolean,
+          'items': RuleOptionType.stringList,
+          'pattern': RuleOptionType.regExp,
+        },
       );
       RuleRegistry.allChecks.add(mockCheck);
     });
@@ -76,8 +83,8 @@ void main() {
       for (final CheckType check in RuleRegistry.allChecks) {
         parser.addFlag(check.name, defaultsTo: check.defaultSeverity != AnalysisSeverity.disabled);
         for (final String optionName in check.optionsSchema.keys) {
-          final Type type = check.optionsSchema[optionName]!;
-          if (type == List || type == List<String>) {
+          final RuleOptionType type = check.optionsSchema[optionName]!;
+          if (type == RuleOptionType.stringList) {
             parser.addMultiOption('${check.name}-$optionName');
           } else {
             parser.addOption('${check.name}-$optionName');
@@ -93,11 +100,12 @@ void main() {
       expect(configs, isEmpty);
     });
 
-    test('parses and coerces String, int, and bool options correctly', () {
+    test('parses and coerces String, RegExp, int, and bool options correctly', () {
       final ArgResults results = createParser().parse([
         '--$mockCheckName-exclude=.*-workspace',
         '--$mockCheckName-max=75',
         '--$mockCheckName-strict=true',
+        '--$mockCheckName-pattern=^[a-z]+\$',
       ]);
 
       final Map<String, RuleConfigPatch> configs = resolveRuleConfigsFromCli(results);
@@ -109,6 +117,7 @@ void main() {
       expect(mockOpts!['exclude'], equals('.*-workspace'));
       expect(mockOpts['max'], equals(75));
       expect(mockOpts['strict'], isTrue);
+      expect(mockOpts['pattern'], equals(r'^[a-z]+$'));
     });
 
     test('parses and coerces List option correctly', () {

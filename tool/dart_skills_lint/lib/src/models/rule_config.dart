@@ -8,7 +8,8 @@ import 'custom_rule_options.dart';
 /// Represents the resolved, active configuration for a validation rule,
 /// bundling both orchestration (severity) and execution (custom options) parameters.
 class RuleConfig {
-  const RuleConfig({required this.severity, this.options = const CustomRuleOptions({})});
+  RuleConfig({required this.severity, CustomRuleOptions? options})
+    : options = options ?? CustomRuleOptions({});
 
   final AnalysisSeverity severity;
 

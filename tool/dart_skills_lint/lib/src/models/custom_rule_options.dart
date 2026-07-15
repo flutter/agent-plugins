@@ -7,7 +7,8 @@
 /// Prevents exposing raw [Map] APIs directly inside rule logic, and provides
 /// standard lookups and properties for rule configuration parameters.
 class CustomRuleOptions {
-  const CustomRuleOptions(this.params);
+  CustomRuleOptions(Map<String, dynamic> params)
+    : params = Map<String, dynamic>.unmodifiable(params);
 
   /// The underlying map containing the parameters.
   final Map<String, dynamic> params;

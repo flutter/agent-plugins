@@ -5,20 +5,21 @@
 import 'dart:io';
 
 import 'package:dart_skills_lint/dart_skills_lint.dart';
+import 'package:dart_skills_lint/src/models/rule_config.dart';
 import 'package:test/test.dart';
 import 'test_utils.dart';
 
 void main() {
   group('RuleConfig & RuleConfigPatch Merging', () {
     test('RuleConfig initialization defaults', () {
-      const config = RuleConfig(severity: AnalysisSeverity.error);
+      final config = RuleConfig(severity: AnalysisSeverity.error);
       expect(config.severity, equals(AnalysisSeverity.error));
       expect(config.options.params, isEmpty);
       expect(config.severity != AnalysisSeverity.disabled, isTrue);
     });
 
     test('RuleConfigPatch overrides severity only', () {
-      const base = RuleConfig(
+      final base = RuleConfig(
         severity: AnalysisSeverity.warning,
         options: CustomRuleOptions({'exclude': '.*-workspace', 'max': 50}),
       );
@@ -30,11 +31,11 @@ void main() {
     });
 
     test('RuleConfigPatch overrides options only', () {
-      const base = RuleConfig(
+      final base = RuleConfig(
         severity: AnalysisSeverity.warning,
         options: CustomRuleOptions({'exclude': '.*-workspace', 'max': 50}),
       );
-      const patch = RuleConfigPatch(options: CustomRuleOptions({'max': 100, 'strict': true}));
+      final patch = RuleConfigPatch(options: CustomRuleOptions({'max': 100, 'strict': true}));
 
       final RuleConfig merged = patch.applyTo(base);
       expect(merged.severity, equals(AnalysisSeverity.warning));
@@ -45,11 +46,11 @@ void main() {
     });
 
     test('RuleConfigPatch nullifies keys via null value overrides', () {
-      const base = RuleConfig(
+      final base = RuleConfig(
         severity: AnalysisSeverity.warning,
         options: CustomRuleOptions({'exclude': '.*-workspace', 'max': 50}),
       );
-      const patch = RuleConfigPatch(options: CustomRuleOptions({'exclude': null, 'max': 100}));
+      final patch = RuleConfigPatch(options: CustomRuleOptions({'exclude': null, 'max': 100}));
 
       final RuleConfig merged = patch.applyTo(base);
       expect(merged.severity, equals(AnalysisSeverity.warning));
