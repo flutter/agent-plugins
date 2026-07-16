@@ -5,7 +5,6 @@
 import 'dart:io';
 
 import 'package:dart_skills_lint/src/models/skill_context.dart';
-import 'package:dart_skills_lint/src/models/validation_result.dart';
 import 'package:dart_skills_lint/src/rules/description_length_rule.dart';
 import 'package:dart_skills_lint/src/rules/name_format_rule.dart';
 import 'package:dart_skills_lint/src/rules/valid_yaml_metadata_rule.dart';

@@ -101,12 +101,43 @@ void main() {
             resolvedRules: {'valid-yaml-metadata': AnalysisSeverity.warning},
           );
           // Just confirming it runs without throwing the ArgumentError
-          expect(
-            isValid,
-            isTrue,
-          );
+          expect(isValid, isTrue);
         });
       },
     );
+    test('Validator throws ArgumentError when passing both ruleOverrides and ruleConfigs', () {
+      expect(
+        () => Validator(
+          // ignore: deprecated_member_use_from_same_package
+          ruleOverrides: {'foo': AnalysisSeverity.warning},
+          ruleConfigs: {'foo': RuleConfig(severity: AnalysisSeverity.error)},
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('Validator maps deprecated ruleOverrides properly', () {
+      // ignore: deprecated_member_use_from_same_package
+      final validator = Validator(ruleOverrides: {'foo': AnalysisSeverity.warning});
+      // Ensure the mapping happened without error. Validation runs successfully.
+      expect(validator, isNotNull);
+    });
+
+    test('LintTargetConfig deprecated rules getter maps correctly', () {
+      final config = LintTargetConfig(
+        path: 'foo',
+        ruleConfigs: {'foo': const RuleConfigPatch(severity: AnalysisSeverity.warning)},
+      );
+      // ignore: deprecated_member_use_from_same_package
+      expect(config.rules['foo'], equals(AnalysisSeverity.warning));
+    });
+
+    test('Configuration deprecated configuredRules getter maps correctly', () {
+      final config = Configuration(
+        ruleConfigs: {'bar': const RuleConfigPatch(severity: AnalysisSeverity.error)},
+      );
+      // ignore: deprecated_member_use_from_same_package
+      expect(config.configuredRules['bar'], equals(AnalysisSeverity.error));
+    });
   });
 }

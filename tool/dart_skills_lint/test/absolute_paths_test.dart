@@ -7,7 +7,6 @@ import 'dart:io';
 import 'package:dart_skills_lint/src/models/analysis_severity.dart';
 import 'package:dart_skills_lint/src/models/rule_config.dart';
 import 'package:dart_skills_lint/src/models/skill_context.dart';
-import 'package:dart_skills_lint/src/models/validation_result.dart';
 
 import 'package:dart_skills_lint/src/rules/absolute_paths_rule.dart';
 import 'package:dart_skills_lint/src/rules/relative_paths_rule.dart';

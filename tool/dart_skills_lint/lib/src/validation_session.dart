@@ -19,7 +19,6 @@ import 'models/skill_context.dart';
 import 'models/skill_rule.dart';
 import 'models/skills_ignores.dart';
 import 'models/validation_error.dart';
-import 'models/validation_result.dart';
 import 'path_utils.dart';
 import 'rule_registry.dart';
 import 'skills_ignores_storage.dart';
@@ -71,6 +70,7 @@ class ValidationSession {
   /// * [fixApply] is the deprecated flag indicating if fixes should be automatically applied.
   ValidationSession({
     required this.config,
+    // TODO(reidbaker): https://github.com/flutter/agent-plugins/issues/179
     @Deprecated('Use resolvedRuleConfigs instead')
     Map<String, AnalysisSeverity> resolvedRules = const {},
     Map<String, RuleConfigPatch> resolvedRuleConfigs = const {},
@@ -326,6 +326,7 @@ class ValidationSession {
     _anyFailed = true;
   }
 
+  // TODO(reidbaker): https://github.com/flutter/agent-plugins/issues/179
   @Deprecated('Use resolveRuleConfigsForPath instead')
   Map<String, AnalysisSeverity> resolveRulesForPath(String path) {
     return resolveRuleConfigsForPath(

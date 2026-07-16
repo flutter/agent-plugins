@@ -278,6 +278,12 @@ class LintTargetConfig {
   final String path;
   final Map<String, RuleConfigPatch> ruleConfigs;
   final String? ignoreFile;
+
+  // TODO(reidbaker): https://github.com/flutter/agent-plugins/issues/179
+  @Deprecated('Use ruleConfigs instead')
+  Map<String, AnalysisSeverity> get rules {
+    return ruleConfigs.map((key, patch) => MapEntry(key, patch.severity ?? AnalysisSeverity.error));
+  }
 }
 
 /// Structured configuration for the linter.
@@ -292,4 +298,10 @@ class Configuration {
   final List<LintTargetConfig> individualSkillConfigs;
   final Map<String, RuleConfigPatch> ruleConfigs;
   final List<String> parsingErrors;
+
+  // TODO(reidbaker): https://github.com/flutter/agent-plugins/issues/179
+  @Deprecated('Use ruleConfigs instead')
+  Map<String, AnalysisSeverity> get configuredRules {
+    return ruleConfigs.map((key, patch) => MapEntry(key, patch.severity ?? AnalysisSeverity.error));
+  }
 }

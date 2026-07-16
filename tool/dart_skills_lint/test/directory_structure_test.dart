@@ -7,7 +7,6 @@ import 'dart:io';
 
 import 'package:dart_skills_lint/src/models/analysis_severity.dart';
 import 'package:dart_skills_lint/src/models/rule_config.dart';
-import 'package:dart_skills_lint/src/models/validation_result.dart';
 import 'package:dart_skills_lint/src/validator.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';

@@ -18,6 +18,9 @@ import 'models/validation_result.dart';
 import 'rule_registry.dart';
 import 'rules/path_does_not_exist_rule.dart';
 
+// TODO(reidbaker): https://github.com/flutter/agent-plugins/issues/179
+export 'models/validation_result.dart';
+
 final _log = Logger('dart_skills_lint');
 
 /// Validates agent skill directories against the Agent Skills specification.
@@ -26,9 +29,36 @@ class Validator {
   ///
   /// * [ruleConfigs] defines resolved severity and options for the validation rules.
   /// * [customRules] specifies custom rules to be included in the validation.
-  Validator({Map<String, RuleConfig>? ruleConfigs, List<SkillRule>? customRules})
-    : _ruleConfigs = ruleConfigs ?? {},
-      _rules = _buildRules(ruleConfigs ?? {}, customRules ?? []);
+  Validator({
+    // TODO(reidbaker): https://github.com/flutter/agent-plugins/issues/179
+    @Deprecated('Use ruleConfigs instead') Map<String, AnalysisSeverity>? ruleOverrides,
+    Map<String, RuleConfig>? ruleConfigs,
+    List<SkillRule>? customRules,
+  }) : _ruleConfigs = _mergeOverrides(ruleOverrides, ruleConfigs),
+       _rules = _buildRules(_mergeOverrides(ruleOverrides, ruleConfigs), customRules ?? []);
+
+  static Map<String, RuleConfig> _mergeOverrides(
+    Map<String, AnalysisSeverity>? legacy,
+    Map<String, RuleConfig>? current,
+  ) {
+    if (legacy == null && current == null) {
+      return {};
+    }
+    if (legacy != null && legacy.isNotEmpty && current != null && current.isNotEmpty) {
+      throw ArgumentError(
+        'Cannot specify both deprecated ruleOverrides and new ruleConfigs. '
+        'Please migrate all overrides to ruleConfigs.',
+      );
+    }
+    final merged = Map<String, RuleConfig>.from(current ?? {});
+    if (legacy != null) {
+      for (final MapEntry<String, AnalysisSeverity> entry in legacy.entries) {
+        merged[entry.key] = RuleConfig(severity: entry.value);
+      }
+    }
+    return merged;
+  }
+
   static const String _skillFileName = SkillContext.skillFileName;
 
   /// The name of the special check for missing files or directories.
