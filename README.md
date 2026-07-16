@@ -49,7 +49,7 @@ mkdir -p ~/.cursor/plugins/local
 cp -r /path/to/flutter/agent-plugins ~/.cursor/plugins/local/dart-flutter
 ```
 
-2. Restart Cursor. The editor will automatically discover and load the skills under `skills/` and configure the MCP server defined in `mcp.json`.
+2. Restart Cursor. The editor will automatically discover and load the skills under skills/ and configure the MCP server defined in .mcp.json.
 
 ## Updating Plugins
 
