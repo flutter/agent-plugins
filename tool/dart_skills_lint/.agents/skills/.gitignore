@@ -1,8 +1,10 @@
-# Ignore everything by default
-*
+# Ignore everything by default right in this directory
+/*
+*.log
 
 # Un-ignore specific checked-in skills
 !add-dart-lint-validation-rule/
+!check-downstream-consumers/
 !dart-skills-lint-integration/
 !definition-of-done/
 
