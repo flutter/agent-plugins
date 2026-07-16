@@ -482,7 +482,7 @@ dart_skills_lint:
       }
     });
 
-    test('CLI help does not display path-does-not-exist', () async {
+    test('CLI help displays path-does-not-exist', () async {
       final TestProcess process = await TestProcess.start('dart', [
         p.normalize(p.absolute('bin/cli.dart')),
         '--help',
@@ -491,7 +491,7 @@ dart_skills_lint:
       final List<String> stdout = await process.stdout.rest.toList();
       final String stdoutStr = stdout.join('\n');
 
-      expect(stdoutStr, isNot(contains(Validator.pathDoesNotExist)));
+      expect(stdoutStr, contains(Validator.pathDoesNotExist));
     });
 
     test('ignores directory missing SKILL.md if listed in ignore file', () async {

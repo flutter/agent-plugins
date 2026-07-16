@@ -6,6 +6,7 @@ import 'dart:io';
 
 import 'package:dart_skills_lint/src/config_parser.dart';
 import 'package:dart_skills_lint/src/models/analysis_severity.dart';
+import 'package:dart_skills_lint/src/models/rule_config.dart';
 import 'package:dart_skills_lint/src/validation_session.dart';
 import 'package:test/test.dart';
 
@@ -40,7 +41,6 @@ void main() {
     final Configuration config = await ConfigParser.loadConfig();
     final session = ValidationSession(
       config: config,
-      resolvedRules: {},
       ignoreFileOverride: null,
       customRules: [],
       printWarnings: false,
@@ -53,11 +53,13 @@ void main() {
 
     for (final skillDir in trackedSkillDirs) {
       final expectedPath = '.agents/skills/$skillDir';
-      final Map<String, AnalysisSeverity> resolvedRules = session.resolveRulesForPath(expectedPath);
+      final Map<String, RuleConfig> resolvedConfigs = session.resolveRuleConfigsForPath(
+        expectedPath,
+      );
 
       expect(
-        resolvedRules.containsKey('prevent-skills-sh-publishing'),
-        isTrue,
+        resolvedConfigs['prevent-skills-sh-publishing']?.severity,
+        AnalysisSeverity.error,
         reason:
             'The tracked skill "$skillDir" must have "prevent-skills-sh-publishing" explicitly configured in dart_skills_lint.yaml.',
       );

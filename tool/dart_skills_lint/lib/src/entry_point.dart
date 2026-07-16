@@ -12,6 +12,9 @@ import 'config_parser.dart';
 import 'missing_defaults_exception.dart';
 import 'models/analysis_severity.dart';
 import 'models/check_type.dart';
+import 'models/custom_rule_parameters.dart';
+import 'models/rule_config.dart';
+import 'models/rule_parameter_type.dart';
 import 'models/skill_rule.dart';
 import 'rule_registry.dart';
 import 'validation_session.dart';
@@ -86,12 +89,15 @@ Future<void> runApp(List<String> args) async {
   final ArgParser parser = _createArgParser(helpFlag);
 
   final ArgResults results;
+  final Map<String, RuleConfigPatch> resolvedRuleConfigs;
+
   try {
     results = parser.parse(args);
     if (results[helpFlag] as bool) {
       _printUsage(parser);
       return;
     }
+    resolvedRuleConfigs = resolveRuleConfigsFromCli(results);
   } catch (e) {
     _printUsage(parser, e.toString());
     exitCode = 64; // Bad usage
@@ -106,8 +112,6 @@ Future<void> runApp(List<String> args) async {
 
   final skillDirPaths = results[_skillsDirectoryFlag] as List<String>;
   final individualSkillPaths = results[_skillOption] as List<String>;
-
-  final Map<String, AnalysisSeverity> resolvedRules = resolveRules(results);
 
   final printWarnings = results[_printWarningsFlag] as bool;
   final fastFail = results[_fastFailFlag] as bool;
@@ -139,7 +143,7 @@ Future<void> runApp(List<String> args) async {
     success = await validateSkillsInternal(
       skillDirPaths: skillDirPaths,
       individualSkillPaths: individualSkillPaths,
-      resolvedRules: resolvedRules,
+      resolvedRuleConfigs: resolvedRuleConfigs,
       printWarnings: printWarnings,
       fastFail: fastFail,
       quiet: quiet,
@@ -175,6 +179,22 @@ ArgParser _createArgParser(String helpFlag) {
       defaultsTo: check.defaultSeverity != AnalysisSeverity.disabled,
       help: check.help,
     );
+
+    // Register namespaced delegated parameters
+    for (final String paramName in check.parameterSchema.keys) {
+      final RuleParameterType expectedType = check.parameterSchema[paramName]!;
+      if (expectedType == RuleParameterType.stringList) {
+        parser.addMultiOption(
+          '${check.name}-$paramName',
+          help: "Override parameter '$paramName' list for rule '${check.name}'.",
+        );
+      } else {
+        parser.addOption(
+          '${check.name}-$paramName',
+          help: "Override parameter '$paramName' for rule '${check.name}'.",
+        );
+      }
+    }
   }
 
   parser
@@ -263,6 +283,9 @@ Future<Configuration?> _loadConfig(ArgResults results) async {
   if (config.parsingErrors.isNotEmpty) {
     final allowMisconfiguredKeys = results[_allowMisconfiguredKeysFlag] as bool;
     if (allowMisconfiguredKeys) {
+      _log.warning(
+        'DEPRECATION WARNING: --allow-misconfigured-keys is deprecated and will be removed in a future release. Fix misconfigured configuration keys rather than bypassing validation.',
+      );
       for (final String error in config.parsingErrors) {
         _log.warning('Configuration warning: $error');
       }
@@ -298,7 +321,9 @@ Future<Configuration?> _loadConfig(ArgResults results) async {
 Future<bool> validateSkills({
   List<String> skillDirPaths = const [],
   List<String> individualSkillPaths = const [],
+  @Deprecated('Use resolvedRuleConfigs instead')
   Map<String, AnalysisSeverity> resolvedRules = const {},
+  Map<String, RuleConfigPatch> resolvedRuleConfigs = const {},
   bool printWarnings = true,
   bool fastFail = false,
   bool quiet = false,
@@ -307,10 +332,24 @@ Future<bool> validateSkills({
   Configuration? config,
   List<SkillRule> customRules = const [],
 }) {
+  if (resolvedRules.isNotEmpty && resolvedRuleConfigs.isNotEmpty) {
+    throw ArgumentError(
+      'Cannot specify both deprecated resolvedRules and new resolvedRuleConfigs. '
+      'Please migrate all overrides to resolvedRuleConfigs.',
+    );
+  }
+
+  final Map<String, RuleConfigPatch> mergedConfigs = Map.from(resolvedRuleConfigs);
+  if (resolvedRules.isNotEmpty) {
+    for (final String ruleName in resolvedRules.keys) {
+      mergedConfigs[ruleName] = RuleConfigPatch(severity: resolvedRules[ruleName]);
+    }
+  }
+
   return validateSkillsInternal(
     skillDirPaths: skillDirPaths,
     individualSkillPaths: individualSkillPaths,
-    resolvedRules: resolvedRules,
+    resolvedRuleConfigs: mergedConfigs,
     printWarnings: printWarnings,
     fastFail: fastFail,
     quiet: quiet,
@@ -330,7 +369,7 @@ Future<bool> validateSkills({
 Future<bool> validateSkillsInternal({
   List<String> skillDirPaths = const [],
   List<String> individualSkillPaths = const [],
-  Map<String, AnalysisSeverity> resolvedRules = const {},
+  Map<String, RuleConfigPatch> resolvedRuleConfigs = const {},
   bool printWarnings = true,
   bool fastFail = false,
   bool quiet = false,
@@ -355,7 +394,7 @@ Future<bool> validateSkillsInternal({
 
   final session = ValidationSession(
     config: config ?? Configuration(),
-    resolvedRules: resolvedRules,
+    resolvedRuleConfigs: resolvedRuleConfigs,
     ignoreFileOverride: ignoreFileOverride,
     customRules: customRules,
     printWarnings: printWarnings,
@@ -428,30 +467,82 @@ List<String> _getEffectiveSkillDirPaths({
 }
 
 @visibleForTesting
-Map<String, AnalysisSeverity> resolveRules(ArgResults results) {
-  final resolved = <String, AnalysisSeverity>{};
+Map<String, RuleConfigPatch> resolveRuleConfigsFromCli(ArgResults results) {
+  final configs = <String, RuleConfigPatch>{};
 
-  // Only load rules explicitly set via CLI flags.
+  // 1. Resolve severities from CLI flags (e.g. --path-does-not-exist)
+  final severityOverrides = <String, AnalysisSeverity>{};
   for (final CheckType check in RuleRegistry.allChecks) {
     final String name = check.name;
-
-    if (!results.wasParsed(name)) {
-      continue;
-    }
-
-    final Object? value = results[name];
-    if (value is! bool) {
-      continue;
-    }
-
-    if (value) {
-      resolved[name] = AnalysisSeverity.error;
-    } else {
-      resolved[name] = AnalysisSeverity.disabled;
+    if (results.options.contains(name) && results.wasParsed(name)) {
+      final Object? value = results[name];
+      if (value is bool) {
+        severityOverrides[name] = value ? AnalysisSeverity.error : AnalysisSeverity.disabled;
+      }
     }
   }
 
-  return resolved;
+  // 2. Resolve parameter overrides from CLI flags (e.g. --path-does-not-exist-exclude)
+  final parameterOverrides = <String, Map<String, dynamic>>{};
+  for (final CheckType check in RuleRegistry.allChecks) {
+    final Map<String, dynamic> checkOverrides = _resolveParametersForCheck(check, results);
+    if (checkOverrides.isNotEmpty) {
+      parameterOverrides[check.name] = checkOverrides;
+    }
+  }
+
+  // 3. Combine into RuleConfigPatch overrides
+  final Set<String> allRuleNames = {...severityOverrides.keys, ...parameterOverrides.keys};
+  for (final ruleName in allRuleNames) {
+    configs[ruleName] = RuleConfigPatch(
+      severity: severityOverrides[ruleName],
+      parameters: parameterOverrides.containsKey(ruleName)
+          ? CustomRuleParameters(parameterOverrides[ruleName]!)
+          : null,
+    );
+  }
+
+  return configs;
+}
+
+Map<String, dynamic> _resolveParametersForCheck(CheckType check, ArgResults results) {
+  final Map<String, dynamic> checkOverrides = {};
+  for (final String paramName in check.parameterSchema.keys) {
+    final paramFlag = '${check.name}-$paramName';
+    if (results.options.contains(paramFlag) && results.wasParsed(paramFlag)) {
+      final RuleParameterType expectedType = check.parameterSchema[paramName]!;
+      checkOverrides[paramName] = _parseParameterValue(paramFlag, results[paramFlag], expectedType);
+    }
+  }
+  return checkOverrides;
+}
+
+Object? _parseParameterValue(String paramFlag, Object? rawValue, RuleParameterType expectedType) {
+  if (rawValue == '') {
+    return null;
+  }
+
+  if (expectedType == RuleParameterType.integer) {
+    final int? parsedInt = int.tryParse(rawValue.toString());
+    if (parsedInt == null) {
+      throw FormatException(
+        'Invalid value "$rawValue" for parameter "$paramFlag". Expected an integer.',
+      );
+    }
+    return parsedInt;
+  }
+
+  if (expectedType == RuleParameterType.boolean) {
+    final String lower = rawValue.toString().toLowerCase();
+    if (lower != 'true' && lower != 'false') {
+      throw FormatException(
+        'Invalid value "$rawValue" for parameter "$paramFlag". Expected "true" or "false".',
+      );
+    }
+    return lower == 'true';
+  }
+
+  return rawValue;
 }
 
 void _printUsage(ArgParser parser, [String? error]) {

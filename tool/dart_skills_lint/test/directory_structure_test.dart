@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_skills_lint/src/models/analysis_severity.dart';
+import 'package:dart_skills_lint/src/models/rule_config.dart';
 import 'package:dart_skills_lint/src/validator.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -120,7 +121,9 @@ void main() {
       await IOOverrides.runWithIOOverrides(() async {
         try {
           final validator = Validator(
-            ruleOverrides: {Validator.skillFileInaccessible: AnalysisSeverity.warning},
+            ruleConfigs: {
+              Validator.skillFileInaccessible: RuleConfig(severity: AnalysisSeverity.warning),
+            },
           );
           final ValidationResult validationResult = await validator.validate(skillDir);
 

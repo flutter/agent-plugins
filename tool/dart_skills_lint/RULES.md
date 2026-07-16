@@ -174,3 +174,14 @@ governs how changes to these rules ship.
 - **Auto-fix behavior:** none. A broken frontmatter block isn't
   safely mechanically repairable.
 - **Disable:** `--no-valid-yaml-metadata`.
+
+## path-does-not-exist
+
+- **Default severity:** error
+- **Fixable:** no
+- **What it checks:** the skill directory exists, is actually a directory, and contains a `SKILL.md` file.
+- **Diagnostic shape:**
+  `SKILL.md is missing in directory: <dir> (see https://agentskills.io/specification#directory-structure)`
+- **Auto-fix behavior:** none.
+- **Disable:** `--no-path-does-not-exist`.
+

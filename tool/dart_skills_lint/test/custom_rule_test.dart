@@ -52,6 +52,21 @@ class MismatchRule extends SkillRule {
   }
 }
 
+class AlwaysFailsRule extends SkillRule {
+  @override
+  final String name = 'always-fails-rule';
+
+  @override
+  final AnalysisSeverity severity = AnalysisSeverity.error;
+
+  @override
+  Future<List<ValidationError>> validate(SkillContext context) async {
+    return [
+      ValidationError(ruleId: name, severity: severity, file: 'SKILL.md', message: 'Always fails'),
+    ];
+  }
+}
+
 void main() {
   group('Custom Rules', () {
     late Directory tempDir;
@@ -121,6 +136,23 @@ Body''');
       final rule2 = CustomRule(); // Same name 'custom-rule'
 
       expect(() => Validator(customRules: [rule1, rule2]), throwsArgumentError);
+    });
+
+    test('Validator skips other rules if SKILL.md is missing', () async {
+      final Directory skillDir = await Directory('${tempDir.path}/missing-skill').create();
+
+      final validator = Validator(customRules: [AlwaysFailsRule()]);
+      final ValidationResult result = await validator.validate(skillDir);
+
+      // Verify path-does-not-exist error is reported
+      expect(result.isValid, isFalse);
+      expect(result.errors, contains(contains('SKILL.md is missing')));
+
+      // Verify always-fails-rule was NOT executed (its error is not present)
+      final bool hasAlwaysFails = result.validationErrors.any(
+        (e) => e.ruleId == 'always-fails-rule',
+      );
+      expect(hasAlwaysFails, isFalse);
     });
   });
 }

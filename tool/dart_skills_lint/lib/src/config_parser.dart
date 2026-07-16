@@ -10,7 +10,11 @@ import 'package:logging/logging.dart';
 import 'package:yaml/yaml.dart';
 
 import 'models/analysis_severity.dart';
+import 'models/check_type.dart';
+import 'models/custom_rule_parameters.dart';
+import 'models/rule_config.dart';
 import 'path_utils.dart';
+import 'rule_registry.dart';
 
 final _log = Logger('dart_skills_lint');
 
@@ -21,6 +25,7 @@ class ConfigParser {
   static const _individualSkillsKey = 'individual_skills';
   static const _pathKey = 'path';
   static const _ignoreFileKey = 'ignore_file';
+  static const _severityKey = 'severity';
 
   static const Set<String> _allowedTopLevelKeys = {
     _rulesKey,
@@ -68,7 +73,7 @@ class ConfigParser {
           final parsingErrors = <String>[];
 
           _validateTopLevelKeys(toolConfig, parsingErrors);
-          final configuredRules = _parseRules(toolConfig);
+          final rulesResult = _parseDefaultRules(toolConfig, parsingErrors);
           final directoryConfigs = _parseConfigList(toolConfig, _directoriesKey, parsingErrors);
           final individualSkillConfigs = _parseConfigList(
             toolConfig,
@@ -79,7 +84,7 @@ class ConfigParser {
           return Configuration(
             directoryConfigs: directoryConfigs,
             individualSkillConfigs: individualSkillConfigs,
-            configuredRules: configuredRules,
+            ruleConfigs: rulesResult,
             parsingErrors: parsingErrors,
           );
         }
@@ -102,19 +107,76 @@ class ConfigParser {
     }
   }
 
-  /// Parses the global rules configuration from the `dart_skills_lint` map.
-  /// Returns a map of rule names to their resolved `AnalysisSeverity`.
-  static Map<String, AnalysisSeverity> _parseRules(YamlMap toolConfig) {
-    final configuredRules = <String, AnalysisSeverity>{};
+  /// Parses the baseline rules configuration under the top-level `rules` key.
+  ///
+  /// The settings parsed here serve as the global defaults that apply to all
+  /// validated skills in the project. Any target-specific settings defined
+  /// under `directories` or `individual_skills` will override these global defaults.
+  ///
+  /// Extracts both default severities and parameters, appending any parameter type or key
+  /// validation errors to [parsingErrors].
+  static Map<String, RuleConfigPatch> _parseDefaultRules(
+    YamlMap toolConfig,
+    List<String> parsingErrors,
+  ) {
     if (toolConfig.containsKey(_rulesKey)) {
       final rules = toolConfig[_rulesKey];
       if (rules is YamlMap) {
-        for (final key in rules.keys) {
-          configuredRules[key.toString()] = _parseSeverity(rules[key]?.toString() ?? '');
-        }
+        return _parseRulesMap(rules, parsingErrors, 'Global rules');
       }
     }
-    return configuredRules;
+    return const {};
+  }
+
+  /// Parses a map of rules to their respective severity and parameter configurations.
+  ///
+  /// Validates that parameter keys and value types match their definitions in the registry,
+  /// appending any validation errors to [parsingErrors] labeled by [contextLabel].
+  static Map<String, RuleConfigPatch> _parseRulesMap(
+    YamlMap rulesMap,
+    List<String> parsingErrors,
+    String contextLabel,
+  ) {
+    final ruleConfigs = <String, RuleConfigPatch>{};
+
+    for (final key in rulesMap.keys) {
+      final ruleName = key.toString();
+      final value = rulesMap[key];
+
+      // Rules must have a unique name so we can assume one match.
+      final checkMatches = RuleRegistry.allChecks.where((c) => c.name == ruleName);
+      final CheckType? check = checkMatches.isEmpty ? null : checkMatches.first;
+
+      if (value is YamlMap) {
+        final severity = value.containsKey(_severityKey)
+            ? _parseSeverity(value[_severityKey]?.toString() ?? '')
+            : null;
+
+        final parameters = <String, dynamic>{};
+        for (final paramKey in value.keys) {
+          final paramName = paramKey.toString();
+          if (paramName == _severityKey) {
+            continue;
+          }
+          parameters[paramName] = value[paramKey];
+        }
+
+        final customParams = parameters.isNotEmpty ? CustomRuleParameters(parameters) : null;
+        ruleConfigs[ruleName] = RuleConfigPatch(severity: severity, parameters: customParams);
+
+        if (customParams != null && check != null) {
+          final errors = check.validateParameters(customParams);
+          for (final error in errors) {
+            parsingErrors.add('$contextLabel: $error');
+          }
+        }
+      } else {
+        final severity = _parseSeverity(value?.toString() ?? '');
+        ruleConfigs[ruleName] = RuleConfigPatch(severity: severity);
+      }
+    }
+
+    return ruleConfigs;
   }
 
   /// Parses a list of targets (directories or individual skills) from the configuration.
@@ -161,13 +223,15 @@ class ConfigParser {
             }
           }
 
-          final rules = <String, AnalysisSeverity>{};
+          Map<String, RuleConfigPatch> ruleConfigs = const {};
           if (dir.containsKey(_rulesKey)) {
             final localRules = dir[_rulesKey];
             if (localRules is YamlMap) {
-              for (final key in localRules.keys) {
-                rules[key.toString()] = _parseSeverity(localRules[key]?.toString() ?? '');
-              }
+              ruleConfigs = _parseRulesMap(
+                localRules,
+                parsingErrors,
+                '$entryLabelCap rules for "$path"',
+              );
             } else {
               parsingErrors.add(
                 '$entryLabelCap "$_rulesKey" for "$path" must be a map; '
@@ -190,7 +254,9 @@ class ConfigParser {
             }
           }
 
-          configs.add(LintTargetConfig(path: path, rules: rules, ignoreFile: ignoreFile));
+          configs.add(
+            LintTargetConfig(path: path, ruleConfigs: ruleConfigs, ignoreFile: ignoreFile),
+          );
         }
       }
     }
@@ -203,15 +269,28 @@ class ConfigParser {
 /// Allows overriding rules and specifying a custom ignore file for skills
 /// located within or at this path.
 class LintTargetConfig {
-  LintTargetConfig({required this.path, required this.rules, this.ignoreFile});
+  LintTargetConfig({required this.path, required this.ruleConfigs, this.ignoreFile});
 
   /// The path to the directory containing skills.
   ///
   /// Can be absolute or relative to the current working directory.
   /// Supports tilde expansion (e.g., `~/...`).
   final String path;
-  final Map<String, AnalysisSeverity> rules;
+  final Map<String, RuleConfigPatch> ruleConfigs;
   final String? ignoreFile;
+
+  // TODO(reidbaker): https://github.com/flutter/agent-plugins/issues/179
+  @Deprecated('Use ruleConfigs instead')
+  Map<String, AnalysisSeverity> get rules {
+    final resolvedSeverities = <String, AnalysisSeverity>{};
+    for (final entry in ruleConfigs.entries) {
+      final AnalysisSeverity? severity = entry.value.severity;
+      if (severity != null) {
+        resolvedSeverities[entry.key] = severity;
+      }
+    }
+    return resolvedSeverities;
+  }
 }
 
 /// Structured configuration for the linter.
@@ -219,11 +298,24 @@ class Configuration {
   Configuration({
     this.directoryConfigs = const [],
     this.individualSkillConfigs = const [],
-    this.configuredRules = const {},
+    this.ruleConfigs = const {},
     this.parsingErrors = const [],
   });
   final List<LintTargetConfig> directoryConfigs;
   final List<LintTargetConfig> individualSkillConfigs;
-  final Map<String, AnalysisSeverity> configuredRules;
+  final Map<String, RuleConfigPatch> ruleConfigs;
   final List<String> parsingErrors;
+
+  // TODO(reidbaker): https://github.com/flutter/agent-plugins/issues/179
+  @Deprecated('Use ruleConfigs instead')
+  Map<String, AnalysisSeverity> get configuredRules {
+    final resolvedSeverities = <String, AnalysisSeverity>{};
+    for (final entry in ruleConfigs.entries) {
+      final AnalysisSeverity? severity = entry.value.severity;
+      if (severity != null) {
+        resolvedSeverities[entry.key] = severity;
+      }
+    }
+    return resolvedSeverities;
+  }
 }

@@ -12,12 +12,15 @@ import 'package:path/path.dart' as p;
 import 'config_parser.dart';
 import 'fixable_rule.dart';
 import 'models/analysis_severity.dart';
+import 'models/check_type.dart';
 import 'models/ignore_entry.dart';
+import 'models/rule_config.dart';
 import 'models/skill_context.dart';
 import 'models/skill_rule.dart';
 import 'models/skills_ignores.dart';
 import 'models/validation_error.dart';
 import 'path_utils.dart';
+import 'rule_registry.dart';
 import 'skills_ignores_storage.dart';
 import 'validator.dart';
 
@@ -45,14 +48,32 @@ const directoryErrorMsg = 'Directory error:';
 /// Per-invocation state and orchestration for skill validation.
 ///
 /// One session is constructed per CLI invocation (or embedded call). The
-/// caller invokes [processIndividualSkill] for each `--skill` path and
+/// session aggregates configuration parameters, custom rules, ignores, and CLI overrides,
+/// then orchestrates the validation of multiple target skill directories.
+///
+/// Callers invoke [processIndividualSkill] for each `--skill` path and
 /// [processSkillRoot] for each `--skills-directory` path, then optionally
 /// [reportNoSkillsValidated] to emit the "no skills found" diagnostics.
-/// Failure state is exposed via [anyFailed] and [anySkillsValidated].
+/// The failure state of the session is exposed via [anyFailed] and [anySkillsValidated].
 class ValidationSession {
+  /// Creates a validation session with the specified configuration, overrides, and rules.
+  ///
+  /// * [config] is the parsed YAML configuration file settings.
+  /// * [resolvedRuleConfigs] maps rule names to rule configuration patches (e.g., CLI-passed flags).
+  /// * [ignoreFileOverride] specifies a custom file path containing lint ignores to load.
+  /// * [customRules] contains programmatically injected custom skill rule checks.
+  /// * [printWarnings] controls whether warnings are printed to stdout.
+  /// * [fastFail] controls whether validation stops immediately on the first error.
+  /// * [quiet] controls whether success messages and other info logs are silenced.
+  /// * [generateBaseline] controls whether the validation should output/update baseline ignores.
+  /// * [fix] controls whether to apply fixable rule modifications directly to files.
+  /// * [fixApply] is the deprecated flag indicating if fixes should be automatically applied.
   ValidationSession({
     required this.config,
-    required this.resolvedRules,
+    // TODO(reidbaker): https://github.com/flutter/agent-plugins/issues/179
+    @Deprecated('Use resolvedRuleConfigs instead')
+    Map<String, AnalysisSeverity> resolvedRules = const {},
+    Map<String, RuleConfigPatch> resolvedRuleConfigs = const {},
     required this.ignoreFileOverride,
     required this.customRules,
     required this.printWarnings,
@@ -61,13 +82,34 @@ class ValidationSession {
     required this.generateBaseline,
     required this.fix,
     required this.fixApply,
-  }) : _normalizedDirectoryConfigs = [
+  }) : resolvedRuleConfigs = _mergeDeprecatedRules(resolvedRules, resolvedRuleConfigs),
+       _normalizedDirectoryConfigs = [
          for (final dc in [...config.directoryConfigs, ...config.individualSkillConfigs])
            (normalizedPath: p.absolute(p.normalize(expandPath(dc.path))), config: dc),
        ];
 
+  static Map<String, RuleConfigPatch> _mergeDeprecatedRules(
+    Map<String, AnalysisSeverity> deprecatedRules,
+    Map<String, RuleConfigPatch> configPatches,
+  ) {
+    if (deprecatedRules.isEmpty && configPatches.isEmpty) {
+      return const {};
+    }
+    if (deprecatedRules.isNotEmpty && configPatches.isNotEmpty) {
+      throw ArgumentError(
+        'Cannot specify both deprecated resolvedRules and new resolvedRuleConfigs. '
+        'Please migrate all overrides to resolvedRuleConfigs.',
+      );
+    }
+    final merged = Map<String, RuleConfigPatch>.from(configPatches);
+    for (final MapEntry<String, AnalysisSeverity> entry in deprecatedRules.entries) {
+      merged[entry.key] = RuleConfigPatch(severity: entry.value);
+    }
+    return merged;
+  }
+
   final Configuration config;
-  final Map<String, AnalysisSeverity> resolvedRules;
+  final Map<String, RuleConfigPatch> resolvedRuleConfigs;
   final String? ignoreFileOverride;
   final List<SkillRule> customRules;
   final bool printWarnings;
@@ -109,9 +151,9 @@ class ValidationSession {
       return true;
     }
 
-    final Map<String, AnalysisSeverity> localRules = resolveRulesForPath(normalizedSkillPath);
+    final Map<String, RuleConfig> resolvedConfigs = resolveRuleConfigsForPath(normalizedSkillPath);
     final String? localIgnoreFile = resolveIgnoreFile(normalizedSkillPath);
-    final validator = Validator(ruleOverrides: localRules, customRules: customRules);
+    final validator = Validator(ruleConfigs: resolvedConfigs, customRules: customRules);
 
     final ({SkillsIgnores ignores, String ignorePath}) loaded = await _loadIgnores(
       localIgnoreFile,
@@ -196,9 +238,11 @@ class ValidationSession {
       }
 
       final String normalizedSkillPath = p.normalize(entity.path);
-      final Map<String, AnalysisSeverity> localRules = resolveRulesForPath(normalizedSkillPath);
+      final Map<String, RuleConfig> resolvedConfigs = resolveRuleConfigsForPath(
+        normalizedSkillPath,
+      );
       final String? localIgnoreFile = resolveIgnoreFile(normalizedSkillPath);
-      final validator = Validator(ruleOverrides: localRules, customRules: customRules);
+      final validator = Validator(ruleConfigs: resolvedConfigs, customRules: customRules);
 
       final String ignorePath = localIgnoreFile != null
           ? p.normalize(expandPath(localIgnoreFile))
@@ -282,27 +326,51 @@ class ValidationSession {
     _anyFailed = true;
   }
 
-  @visibleForTesting
+  // TODO(reidbaker): https://github.com/flutter/agent-plugins/issues/179
+  @Deprecated('Use resolveRuleConfigsForPath instead')
   Map<String, AnalysisSeverity> resolveRulesForPath(String path) {
+    return resolveRuleConfigsForPath(
+      path,
+    ).map((String key, RuleConfig value) => MapEntry(key, value.severity));
+  }
+
+  @visibleForTesting
+  Map<String, RuleConfig> resolveRuleConfigsForPath(String path) {
     final String normalizedPath = p.absolute(path);
-    final localRules = <String, AnalysisSeverity>{};
+    final resolvedConfigs = <String, RuleConfig>{};
+
+    // Initialize with all checks defaults
+    for (final CheckType check in RuleRegistry.allChecks) {
+      resolvedConfigs[check.name] = RuleConfig(severity: check.defaultSeverity);
+    }
+
+    void applyPatchMap(Map<String, RuleConfigPatch> patches) {
+      for (final MapEntry<String, RuleConfigPatch> entry in patches.entries) {
+        final String ruleName = entry.key;
+        final RuleConfigPatch patch = entry.value;
+
+        final RuleConfig base =
+            resolvedConfigs[ruleName] ?? RuleConfig(severity: AnalysisSeverity.disabled);
+        resolvedConfigs[ruleName] = patch.applyTo(base);
+      }
+    }
 
     // 1. Global Config (from YAML)
-    localRules.addAll(config.configuredRules);
+    applyPatchMap(config.ruleConfigs);
 
     // 2. Path-Specific Config (from YAML)
     for (final ({String normalizedPath, LintTargetConfig config}) entry
         in _normalizedDirectoryConfigs) {
       final String configPath = entry.normalizedPath;
       if (p.equals(configPath, normalizedPath) || p.isWithin(configPath, normalizedPath)) {
-        localRules.addAll(entry.config.rules);
+        applyPatchMap(entry.config.ruleConfigs);
       }
     }
 
     // 3. Overrides (CLI flags or API caller) take highest precedence
-    localRules.addAll(resolvedRules);
+    applyPatchMap(resolvedRuleConfigs);
 
-    return localRules;
+    return resolvedConfigs;
   }
 
   @visibleForTesting

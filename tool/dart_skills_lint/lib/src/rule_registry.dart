@@ -4,11 +4,14 @@
 
 import 'models/analysis_severity.dart';
 import 'models/check_type.dart';
+import 'models/custom_rule_parameters.dart';
+import 'models/rule_parameter_type.dart';
 import 'models/skill_rule.dart';
 import 'rules/absolute_paths_rule.dart';
 import 'rules/description_length_rule.dart';
 import 'rules/disallowed_field_rule.dart';
 import 'rules/name_format_rule.dart';
+import 'rules/path_does_not_exist_rule.dart';
 import 'rules/prevent_skills_sh_publishing_rule.dart';
 import 'rules/relative_paths_rule.dart';
 import 'rules/trailing_whitespace_rule.dart';
@@ -19,6 +22,12 @@ class RuleRegistry {
   /// All registered rules and their default configurations.
   // TODO(reidbaker): Break out flags vs options here so entry_point can generate appropriate CLI arguments.
   static final List<CheckType> allChecks = [
+    const CheckType(
+      name: PathDoesNotExistRule.ruleName,
+      defaultSeverity: AnalysisSeverity.error,
+      help: 'Check if SKILL.md and directory structure are correct.',
+      parameterSchema: {PathDoesNotExistRule.excludeParameter: RuleParameterType.regExp},
+    ),
     const CheckType(
       name: AbsolutePathsRule.ruleName,
       defaultSeverity: AbsolutePathsRule.defaultSeverity,
@@ -62,8 +71,19 @@ class RuleRegistry {
   ];
 
   /// Creates a rule instance by name, or returns null if not a class-based rule.
-  static SkillRule? createRule(String name, AnalysisSeverity severity) {
+  static SkillRule? createRule(
+    String name,
+    AnalysisSeverity severity, [
+    CustomRuleParameters? parameters,
+  ]) {
     switch (name) {
+      case PathDoesNotExistRule.ruleName:
+        RegExp? excludeRegExp;
+        final String? excludePattern = parameters?.getString(PathDoesNotExistRule.excludeParameter);
+        if (excludePattern != null && excludePattern.isNotEmpty) {
+          excludeRegExp = RegExp(excludePattern);
+        }
+        return PathDoesNotExistRule(severity: severity, excludeRegExp: excludeRegExp);
       case AbsolutePathsRule.ruleName:
         return AbsolutePathsRule(severity: severity);
       case DescriptionLengthRule.ruleName:

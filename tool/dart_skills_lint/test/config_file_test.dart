@@ -425,7 +425,7 @@ dart_skills_lint:
       await process.shouldExit(1);
     });
 
-    test('succeeds with warning on invalid key when --allow-misconfigured-keys passed', () async {
+    test('fails on unrecognized parameter key in YAML rule definition by default', () async {
       await Directory('${tempDir.path}/test-skill').create();
       await File('${tempDir.path}/test-skill/SKILL.md').writeAsString('''
 ---
@@ -436,23 +436,91 @@ Body''');
 
       await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
 dart_skills_lint:
-  invalid-key: value
+  rules:
+    path-does-not-exist:
+      severity: error
+      invalid-parameter-key: value
 ''');
 
       final TestProcess process = await TestProcess.start('dart', [
         p.normalize(p.absolute('bin/cli.dart')),
         '-s',
         'test-skill',
-        '--allow-misconfigured-keys',
       ], workingDirectory: tempDir.path);
 
-      final List<String> stdout = await process.stdout.rest.toList();
+      final List<String> stderr = await process.stderr.rest.toList();
       expect(
-        stdout.join('\n'),
-        contains('Configuration warning: Unrecognized top-level key "invalid-key"'),
+        stderr.join('\n'),
+        contains(
+          'Configuration error: Global rules: Unrecognized parameter "invalid-parameter-key" for rule "path-does-not-exist".',
+        ),
       );
-      await process.shouldExit(0);
+      await process.shouldExit(1);
     });
+
+    test('fails on invalid parameter value type in YAML rule definition by default', () async {
+      await Directory('${tempDir.path}/test-skill').create();
+      await File('${tempDir.path}/test-skill/SKILL.md').writeAsString('''
+---
+name: test-skill
+description: A test skill
+---
+Body''');
+
+      await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+dart_skills_lint:
+  rules:
+    path-does-not-exist:
+      severity: error
+      exclude: 123
+''');
+
+      final TestProcess process = await TestProcess.start('dart', [
+        p.normalize(p.absolute('bin/cli.dart')),
+        '-s',
+        'test-skill',
+      ], workingDirectory: tempDir.path);
+
+      final List<String> stderr = await process.stderr.rest.toList();
+      expect(
+        stderr.join('\n'),
+        contains(
+          'Configuration error: Global rules: Invalid value/type for parameter "exclude" in rule "path-does-not-exist". Expected RegExp (valid regular expression string), got "123".',
+        ),
+      );
+      await process.shouldExit(1);
+    });
+
+    test(
+      'succeeds with warning on invalid key and prints deprecation when --allow-misconfigured-keys passed',
+      () async {
+        await Directory('${tempDir.path}/test-skill').create();
+        await File('${tempDir.path}/test-skill/SKILL.md').writeAsString('''
+---
+name: test-skill
+description: A test skill
+---
+Body''');
+
+        await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+dart_skills_lint:
+  invalid-key: value
+''');
+
+        final TestProcess process = await TestProcess.start('dart', [
+          p.normalize(p.absolute('bin/cli.dart')),
+          '-s',
+          'test-skill',
+          '--allow-misconfigured-keys',
+        ], workingDirectory: tempDir.path);
+
+        final List<String> stdout = await process.stdout.rest.toList();
+        final String output = stdout.join('\n');
+        expect(output, contains('Configuration warning: Unrecognized top-level key "invalid-key"'));
+        expect(output, contains('DEPRECATION WARNING: --allow-misconfigured-keys is deprecated'));
+        await process.shouldExit(0);
+      },
+    );
 
     test('obeys custom configuration file path via --config', () async {
       final Directory skillDir = await Directory('${tempDir.path}/test-skill').create();
@@ -683,5 +751,174 @@ dart_skills_lint:
       expect(output, contains('Line 5 has 1 trailing space(s)'));
       await process.shouldExit(0);
     });
+
+    test('obeys map-based rule parameters configuration', () async {
+      await Directory('${tempDir.path}/skills-root').create();
+      await Directory('${tempDir.path}/skills-root/definition-of-done-workspace').create();
+      final Directory validSkill = await Directory(
+        '${tempDir.path}/skills-root/valid-skill',
+      ).create();
+      await File(
+        '${validSkill.path}/SKILL.md',
+      ).writeAsString('---\nname: valid-skill\ndescription: Valid\n---\nBody');
+
+      await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+dart_skills_lint:
+  directories:
+    - path: "skills-root"
+      rules:
+        path-does-not-exist:
+          severity: error
+          exclude: ".*-workspace"
+''');
+
+      final TestProcess process = await TestProcess.start('dart', [
+        p.normalize(p.absolute('bin/cli.dart')),
+        '-d',
+        'skills-root',
+      ], workingDirectory: tempDir.path);
+
+      await process.shouldExit(0);
+    });
+
+    test('preserves global rule parameters when target overrides only severity', () async {
+      await Directory('${tempDir.path}/skills-root').create();
+      await Directory('${tempDir.path}/skills-root/definition-of-done-workspace').create();
+      final Directory validSkill = await Directory(
+        '${tempDir.path}/skills-root/valid-skill',
+      ).create();
+      await File(
+        '${validSkill.path}/SKILL.md',
+      ).writeAsString('---\nname: valid-skill\ndescription: Valid\n---\nBody');
+
+      await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+dart_skills_lint:
+  rules:
+    path-does-not-exist:
+      severity: warning
+      exclude: ".*-workspace"
+  directories:
+    - path: "skills-root"
+      rules:
+        path-does-not-exist: error
+''');
+
+      final TestProcess process = await TestProcess.start('dart', [
+        p.normalize(p.absolute('bin/cli.dart')),
+        '-d',
+        'skills-root',
+      ], workingDirectory: tempDir.path);
+
+      // Exits with 0 because definition-of-done-workspace is still excluded (inherited global parameters)
+      await process.shouldExit(0);
+    });
+
+    test(
+      'clears inherited rule parameters when target overrides key with tilde (~) null value',
+      () async {
+        await Directory('${tempDir.path}/skills-root').create();
+        await Directory('${tempDir.path}/skills-root/definition-of-done-workspace').create();
+        final Directory validSkill = await Directory(
+          '${tempDir.path}/skills-root/valid-skill',
+        ).create();
+        await File(
+          '${validSkill.path}/SKILL.md',
+        ).writeAsString('---\nname: valid-skill\ndescription: Valid\n---\nBody');
+
+        await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+dart_skills_lint:
+  rules:
+    path-does-not-exist:
+      severity: error
+      exclude: ".*-workspace"
+  directories:
+    - path: "skills-root"
+      rules:
+        path-does-not-exist:
+          exclude: ~
+''');
+
+        final TestProcess process = await TestProcess.start('dart', [
+          p.normalize(p.absolute('bin/cli.dart')),
+          '-d',
+          'skills-root',
+        ], workingDirectory: tempDir.path);
+
+        // Exits with 1 because exclude was nullified by ~, so definition-of-done-workspace is evaluated
+        // and fails due to missing SKILL.md.
+        await process.shouldExit(1);
+      },
+    );
+
+    test('yields RuleParameterType schema validation error for nested collections', () async {
+      await Directory('${tempDir.path}/test-skill').create();
+      await File('${tempDir.path}/test-skill/SKILL.md').writeAsString('''
+---
+name: test-skill
+description: A test skill
+---
+Body''');
+
+      await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+dart_skills_lint:
+  rules:
+    path-does-not-exist:
+      severity: error
+      exclude:
+        - ".*-workspace"
+''');
+
+      final TestProcess process = await TestProcess.start('dart', [
+        p.normalize(p.absolute('bin/cli.dart')),
+        '-s',
+        'test-skill',
+      ], workingDirectory: tempDir.path);
+
+      final List<String> stderr = await process.stderr.rest.toList();
+      expect(
+        stderr.join('\n'),
+        contains(
+          'Configuration error: Global rules: Invalid value/type for parameter "exclude" in rule "path-does-not-exist"',
+        ),
+      );
+      await process.shouldExit(1);
+    });
+
+    test(
+      'yields RuleParameterType schema validation error for malformed regular expression',
+      () async {
+        await Directory('${tempDir.path}/test-skill').create();
+        await File('${tempDir.path}/test-skill/SKILL.md').writeAsString('''
+---
+name: test-skill
+description: A test skill
+---
+Body''');
+
+        await File('${tempDir.path}/dart_skills_lint.yaml').writeAsString('''
+dart_skills_lint:
+  rules:
+    path-does-not-exist:
+      severity: error
+      exclude: "[a-z"
+''');
+
+        final TestProcess process = await TestProcess.start('dart', [
+          p.normalize(p.absolute('bin/cli.dart')),
+          '-s',
+          'test-skill',
+        ], workingDirectory: tempDir.path);
+
+        final List<String> stderr = await process.stderr.rest.toList();
+        expect(
+          stderr.join('\n'),
+          contains(
+            'Configuration error: Global rules: Invalid value/type for parameter "exclude" in rule "path-does-not-exist"',
+          ),
+        );
+        expect(stderr.join('\n'), contains('Expected RegExp (valid regular expression string)'));
+        await process.shouldExit(1);
+      },
+    );
   });
 }
