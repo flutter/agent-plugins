@@ -1,0 +1,9 @@
+name: api_boundary_runner
+description: An example code runner that validates the public API boundary.
+environment:
+  sdk: ^3.11.0-0
+dependencies:
+  path: ^1.9.0
+  logging: ^1.2.0
+  dart_skills_lint:
+    path: ../../

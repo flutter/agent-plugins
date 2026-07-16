@@ -17,7 +17,7 @@ against. It deliberately does nothing useful — it's documentation.
 Run it with:
 
 ```bash
-dart run dart_skills_lint --skill ./example/valid
+dart run dart_skills_lint --skill ./example/skills/valid
 ```
 
 Expected output: `Skill is valid.` and exit code 0.

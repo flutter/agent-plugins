@@ -27,13 +27,13 @@ The broken link: [absolute link](/tmp/this/does/not/exist.md)
 Run it with default rules:
 
 ```bash
-dart run dart_skills_lint --skill ./example/invalid
+dart run dart_skills_lint --skill ./example/skills/invalid
 ```
 
 …and again with every rule turned up to error:
 
 ```bash
-dart run dart_skills_lint --skill ./example/invalid \
+dart run dart_skills_lint --skill ./example/skills/invalid \
   --disallowed-field --check-absolute-paths
 ```
 
