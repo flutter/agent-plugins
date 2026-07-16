@@ -5,14 +5,14 @@
 - Exposed namespaced CLI flags for custom parameters (e.g. `--path-does-not-exist-exclude`) with support for empty string overrides to clear parameters.
 - Implemented parameter type-coercion for `int`, `bool`, and `List` types parsed from the command line.
 
-### Breaking Changes
+### Deprecations & Refactoring
 
-- Refactored `ValidationResult` out of `src/validator.dart` and into `src/models/validation_result.dart`. Packages that imported the internal implementation file `package:dart_skills_lint/src/validator.dart` and referenced `ValidationResult` will need to explicitly import `package:dart_skills_lint/src/models/validation_result.dart` or migrate to importing the public entrypoint `package:dart_skills_lint/dart_skills_lint.dart`.
-- Renamed rule configuration concepts across model structures and APIs to use consistent `ruleConfigs` naming:
-  - Renamed `Validator` constructor parameter `ruleOverrides` to `ruleConfigs`.
-  - Renamed `Configuration.configuredRules` and `LintTargetConfig.rules` to `ruleConfigs`.
-  - Renamed `ValidationSession` constructor parameter `resolvedRules` to `resolvedRuleConfigs`.
-  - Renamed `ValidationSession` method `resolveRulesForPath` to `resolveRuleConfigsForPath`.
+- Refactored `ValidationResult` out of `src/validator.dart` into `src/models/validation_result.dart`. `src/validator.dart` re-exports `ValidationResult` to preserve complete backward compatibility for packages importing internal structure directly.
+- Deprecated and transitioned rule configuration concepts across model structures and APIs to use consistent `ruleConfigs` naming, alongside backwards-compatible deprecation shims:
+  - Deprecated `Validator` constructor parameter `ruleOverrides` in favor of `ruleConfigs`.
+  - Deprecated `Configuration.configuredRules` and `LintTargetConfig.rules` getters in favor of `ruleConfigs`.
+  - Deprecated `ValidationSession` constructor parameter `resolvedRules` in favor of `resolvedRuleConfigs`.
+  - Deprecated `ValidationSession` method `resolveRulesForPath` in favor of `resolveRuleConfigsForPath`.
 
 ## 0.4.0
 

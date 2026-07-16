@@ -38,21 +38,24 @@ class Validator {
        _rules = _buildRules(_mergeOverrides(ruleOverrides, ruleConfigs), customRules ?? []);
 
   static Map<String, RuleConfig> _mergeOverrides(
-    Map<String, AnalysisSeverity>? legacy,
-    Map<String, RuleConfig>? current,
+    Map<String, AnalysisSeverity>? deprecatedOverrides,
+    Map<String, RuleConfig>? configOverrides,
   ) {
-    if (legacy == null && current == null) {
+    if (deprecatedOverrides == null && configOverrides == null) {
       return {};
     }
-    if (legacy != null && legacy.isNotEmpty && current != null && current.isNotEmpty) {
+    if (deprecatedOverrides != null &&
+        deprecatedOverrides.isNotEmpty &&
+        configOverrides != null &&
+        configOverrides.isNotEmpty) {
       throw ArgumentError(
         'Cannot specify both deprecated ruleOverrides and new ruleConfigs. '
         'Please migrate all overrides to ruleConfigs.',
       );
     }
-    final merged = Map<String, RuleConfig>.from(current ?? {});
-    if (legacy != null) {
-      for (final MapEntry<String, AnalysisSeverity> entry in legacy.entries) {
+    final merged = Map<String, RuleConfig>.from(configOverrides ?? {});
+    if (deprecatedOverrides != null) {
+      for (final MapEntry<String, AnalysisSeverity> entry in deprecatedOverrides.entries) {
         merged[entry.key] = RuleConfig(severity: entry.value);
       }
     }
@@ -144,6 +147,9 @@ class Validator {
     );
 
     for (final SkillRule rule in _rules) {
+      // If SKILL.md or the directory does not exist or is inaccessible, running content validation rules
+      // against empty or non-existent content produces redundant cascading errors. We run solely PathDoesNotExistRule
+      // to report the missing structure cleanly, skipping subsequent rules.
       if (!skillMdExists && rule.name != PathDoesNotExistRule.ruleName) {
         continue;
       }

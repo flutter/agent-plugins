@@ -282,7 +282,14 @@ class LintTargetConfig {
   // TODO(reidbaker): https://github.com/flutter/agent-plugins/issues/179
   @Deprecated('Use ruleConfigs instead')
   Map<String, AnalysisSeverity> get rules {
-    return ruleConfigs.map((key, patch) => MapEntry(key, patch.severity ?? AnalysisSeverity.error));
+    final resolvedSeverities = <String, AnalysisSeverity>{};
+    for (final entry in ruleConfigs.entries) {
+      final AnalysisSeverity? severity = entry.value.severity;
+      if (severity != null) {
+        resolvedSeverities[entry.key] = severity;
+      }
+    }
+    return resolvedSeverities;
   }
 }
 
@@ -302,6 +309,13 @@ class Configuration {
   // TODO(reidbaker): https://github.com/flutter/agent-plugins/issues/179
   @Deprecated('Use ruleConfigs instead')
   Map<String, AnalysisSeverity> get configuredRules {
-    return ruleConfigs.map((key, patch) => MapEntry(key, patch.severity ?? AnalysisSeverity.error));
+    final resolvedSeverities = <String, AnalysisSeverity>{};
+    for (final entry in ruleConfigs.entries) {
+      final AnalysisSeverity? severity = entry.value.severity;
+      if (severity != null) {
+        resolvedSeverities[entry.key] = severity;
+      }
+    }
+    return resolvedSeverities;
   }
 }

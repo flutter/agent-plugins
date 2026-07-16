@@ -82,27 +82,27 @@ class ValidationSession {
     required this.generateBaseline,
     required this.fix,
     required this.fixApply,
-  }) : resolvedRuleConfigs = _mergeLegacyRules(resolvedRules, resolvedRuleConfigs),
+  }) : resolvedRuleConfigs = _mergeDeprecatedRules(resolvedRules, resolvedRuleConfigs),
        _normalizedDirectoryConfigs = [
          for (final dc in [...config.directoryConfigs, ...config.individualSkillConfigs])
            (normalizedPath: p.absolute(p.normalize(expandPath(dc.path))), config: dc),
        ];
 
-  static Map<String, RuleConfigPatch> _mergeLegacyRules(
-    Map<String, AnalysisSeverity> legacy,
-    Map<String, RuleConfigPatch> current,
+  static Map<String, RuleConfigPatch> _mergeDeprecatedRules(
+    Map<String, AnalysisSeverity> deprecatedRules,
+    Map<String, RuleConfigPatch> configPatches,
   ) {
-    if (legacy.isEmpty && current.isEmpty) {
+    if (deprecatedRules.isEmpty && configPatches.isEmpty) {
       return const {};
     }
-    if (legacy.isNotEmpty && current.isNotEmpty) {
+    if (deprecatedRules.isNotEmpty && configPatches.isNotEmpty) {
       throw ArgumentError(
         'Cannot specify both deprecated resolvedRules and new resolvedRuleConfigs. '
         'Please migrate all overrides to resolvedRuleConfigs.',
       );
     }
-    final merged = Map<String, RuleConfigPatch>.from(current);
-    for (final MapEntry<String, AnalysisSeverity> entry in legacy.entries) {
+    final merged = Map<String, RuleConfigPatch>.from(configPatches);
+    for (final MapEntry<String, AnalysisSeverity> entry in deprecatedRules.entries) {
       merged[entry.key] = RuleConfigPatch(severity: entry.value);
     }
     return merged;

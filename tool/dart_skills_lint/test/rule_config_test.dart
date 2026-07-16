@@ -139,5 +139,19 @@ void main() {
       // ignore: deprecated_member_use_from_same_package
       expect(config.configuredRules['bar'], equals(AnalysisSeverity.error));
     });
+
+    test('deprecated rules and configuredRules getters omit patches without explicit severity', () {
+      const patchWithoutSeverity = RuleConfigPatch();
+      final targetConfig = LintTargetConfig(
+        path: 'foo',
+        ruleConfigs: {'path-does-not-exist': patchWithoutSeverity},
+      );
+      final topConfig = Configuration(ruleConfigs: {'path-does-not-exist': patchWithoutSeverity});
+
+      // ignore: deprecated_member_use_from_same_package
+      expect(targetConfig.rules.containsKey('path-does-not-exist'), isFalse);
+      // ignore: deprecated_member_use_from_same_package
+      expect(topConfig.configuredRules.containsKey('path-does-not-exist'), isFalse);
+    });
   });
 }
