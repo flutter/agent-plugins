@@ -46,9 +46,18 @@ For each downstream consumer under evaluation:
          ref: <LATEST_COMMIT_HASH>
      ```
 
-2. **Resolve Dependencies & Run Verification Tests**
+2. **Resolve Dependencies & Run Verification Tests (Legacy Check)**
    - Execute dependency resolution according to the consumer environment (Flutter workspaces require `flutter pub get`; standard pure Dart repositories require `dart pub get`).
-   - Run the consumer's verification tests (typically targeting tests like `test/validate_skills_test.dart` or running `flutter test` / `dart test`).
+   - Run the consumer's verification tests right against their existing code (typically targeting tests like `test/validate_skills_test.dart` or running `flutter test` / `dart test`).
+   - Confirm that all existing tests and static analyses compile and pass without disruptions right when using their established calling syntax. This ensures backward-compatibility deprecation shims work correctly right as they did before.
+
+3. **Perform Diagnostic API Migration & Boundary Verification**
+   After verifying right across each target consumer that deprecated legacy calls function properly without regressions right across Step 2:
+   - **Migrate Consumer Calling Syntax**: For every repository across the set of downstream targets right under evaluation (whether a single target, a requested subset, or all known consumers), update its codebase right right off any deprecated getters, parameters, or constructors directly right onto the new replacement API surface introduced right across `dart_skills_lint` (e.g., transitioning `resolvedRules` arguments across to `resolvedRuleConfigs`).
+   - **Verify Public Boundary Resolution**: Execute strict static analysis (`dart analyze --fatal-infos <modified_test_or_package_path>`) directly across the consumer's package directory right right right right after completing the migration.
+     - Confirm all new classes and parameters resolve cleanly completely through the public library barrier (`import 'package:dart_skills_lint/dart_skills_lint.dart';`).
+     - Any syntax reporting `Undefined class` right or requiring implementation imports (`import 'package:dart_skills_lint/src/...';`) to resolve indicates an explicit **public export deficit** inside `lib/dart_skills_lint.dart`.
+   - **Run Migrated Test Suite**: Re-run the full downstream consumer test harness across the newly migrated calling structure (`flutter test` / `dart test`) to guarantee behavioral correctness right before accepting the upstream change.
 
 ---
 
