@@ -84,5 +84,29 @@ void main() {
         });
       },
     );
+
+    test(
+      'validateSkills successfully processes deprecated resolvedRules API backwards compatibly',
+      () async {
+        await withTempDir((tempDir) async {
+          final Directory skillDir = await Directory('${tempDir.path}/test-skill').create();
+          await File(
+            '${skillDir.path}/SKILL.md',
+          ).writeAsString('${buildFrontmatter(name: 'test-skill')}Body content');
+
+          // ignore: deprecated_member_use_from_same_package
+          final bool isValid = await validateSkills(
+            individualSkillPaths: [skillDir.path],
+            // ignore: deprecated_member_use_from_same_package
+            resolvedRules: {'valid-yaml-metadata': AnalysisSeverity.warning},
+          );
+          // Just confirming it runs without throwing the ArgumentError
+          expect(
+            isValid,
+            isTrue,
+          );
+        });
+      },
+    );
   });
 }
