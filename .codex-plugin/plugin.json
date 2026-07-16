@@ -1,7 +1,7 @@
 {
   "name": "dart-flutter",
   "version": "1.0.0",
-  "description": "Official Codex plugin for Dart and Flutter that installs Flutter/Dart Skills and Dart MCP server for building natively compiled, visually stunning applications for mobile, web, desktop, and embedded devices from a single codebase",
+  "description": "Official Codex plugin for Dart and Flutter that installs Flutter/Dart Skills and Dart MCP server for building natively compiled, visually stunning applications for mobile, web, desktop, and embedded devices from a single codebase.",
   "author": {
     "name": "Dart and Flutter",
     "url": "https://flutter.dev"
