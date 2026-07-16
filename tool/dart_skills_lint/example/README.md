@@ -4,8 +4,8 @@ Two reference fixtures live in this directory:
 
 | Fixture | Expected outcome |
 | --- | --- |
-| [`valid/`](valid/SKILL.md) | All rules pass; the CLI exits 0. |
-| [`invalid/`](invalid/SKILL.md) | Multiple rules fail; the CLI exits 1. |
+| [`valid/`](skills/valid/SKILL.md) | All rules pass; the CLI exits 0. |
+| [`invalid/`](skills/invalid/SKILL.md) | Multiple rules fail; the CLI exits 1. |
 
 Use them to take the linter for a spin without writing your own skill
 first, and to see exactly what real diagnostic output looks like.
@@ -13,13 +13,13 @@ first, and to see exactly what real diagnostic output looks like.
 ## Run the valid fixture
 
 ```bash
-dart run dart_skills_lint --skill ./example/valid
+dart run dart_skills_lint --skill ./example/skills/valid
 ```
 
 You should see:
 
 ```
-Evaluating directory: example/valid
+Evaluating directory: example/skills/valid
 --- Validating skill: valid ---
   Skill is valid.
 ```
@@ -32,14 +32,14 @@ With default rule severities, only `invalid-skill-name` fires (the other
 two violations are below their default threshold):
 
 ```bash
-dart run dart_skills_lint --skill ./example/invalid
+dart run dart_skills_lint --skill ./example/skills/invalid
 ```
 
 Exit code: `1`. To see every violation surface as an error, escalate the
 other two rules with explicit flags:
 
 ```bash
-dart run dart_skills_lint --skill ./example/invalid \
+dart run dart_skills_lint --skill ./example/skills/invalid \
   --disallowed-field --check-absolute-paths
 ```
 
@@ -63,7 +63,7 @@ when the target file exists. To experiment, point it at a real local
 file:
 
 ```bash
-dart run dart_skills_lint --skill ./example/invalid --fix --dry-run
+dart run dart_skills_lint --skill ./example/skills/invalid --fix --dry-run
 ```
 
 `--dry-run` shows the proposed diff without writing; drop it to apply
