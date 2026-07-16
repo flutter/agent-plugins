@@ -4,7 +4,6 @@
 
 import 'dart:io';
 import 'package:dart_skills_lint/dart_skills_lint.dart';
-import 'package:dart_skills_lint/src/models/rule_config.dart';
 import 'package:dart_skills_lint/src/rules/description_length_rule.dart';
 import 'package:dart_skills_lint/src/rules/trailing_whitespace_rule.dart';
 import 'package:dart_skills_lint/src/rules/valid_yaml_metadata_rule.dart';

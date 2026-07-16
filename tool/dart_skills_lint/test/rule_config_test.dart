@@ -5,7 +5,6 @@
 import 'dart:io';
 
 import 'package:dart_skills_lint/dart_skills_lint.dart';
-import 'package:dart_skills_lint/src/models/rule_config.dart';
 import 'package:test/test.dart';
 import 'test_utils.dart';
 
