@@ -42,7 +42,7 @@ claude plugin marketplace list
 
 You can test this plugin locally by copying it to your Cursor plugins directory.
 
-1. Copy the `plugins` directory to your local Cursor plugins folder:
+1. Copy the repository directory to your local Cursor plugins folder:
 
 ```bash
 mkdir -p ~/.cursor/plugins/local
