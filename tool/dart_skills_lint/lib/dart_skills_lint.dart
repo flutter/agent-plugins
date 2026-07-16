@@ -6,6 +6,7 @@ export 'src/config_parser.dart';
 export 'src/entry_point.dart';
 export 'src/models/analysis_severity.dart';
 export 'src/models/custom_rule_parameters.dart';
+export 'src/models/rule_config.dart';
 export 'src/models/skill_context.dart';
 export 'src/models/skill_rule.dart';
 export 'src/models/validation_error.dart';
