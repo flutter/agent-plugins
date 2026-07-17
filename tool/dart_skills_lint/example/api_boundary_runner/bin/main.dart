@@ -16,13 +16,24 @@ Future<void> main(List<String> args) async {
 
   print('Running API boundary validation runner...');
 
-  final String scriptDir = p.dirname(Platform.script.toFilePath());
-  final String validSkillPath = p.normalize(
-    p.absolute(p.join(scriptDir, '..', '..', 'skills', 'valid')),
-  );
-  final String invalidSkillPath = p.normalize(
-    p.absolute(p.join(scriptDir, '..', '..', 'skills', 'invalid')),
-  );
+  String findPath(String relativeSuffix) {
+    final pathsToTry = <String>[
+      p.join('example', 'skills', relativeSuffix),
+      p.join('..', 'skills', relativeSuffix),
+      if (Platform.script.scheme == 'file')
+        p.join(p.dirname(Platform.script.toFilePath()), '..', '..', 'skills', relativeSuffix),
+    ];
+    for (final path in pathsToTry) {
+      final String absolutePath = p.absolute(path);
+      if (Directory(absolutePath).existsSync()) {
+        return p.normalize(absolutePath);
+      }
+    }
+    throw StateError('Could not locate skills/$relativeSuffix directory.');
+  }
+
+  final String validSkillPath = findPath('valid');
+  final String invalidSkillPath = findPath('invalid');
 
   print('Validating valid skill at: $validSkillPath');
   final bool validResult = await validateSkills(
@@ -34,7 +45,8 @@ Future<void> main(List<String> args) async {
 
   if (!validResult) {
     print('Error: Valid skill fixture failed validation!');
-    exit(1);
+    exitCode = 1;
+    return;
   }
   print('Success: Valid skill fixture validated cleanly.');
 
@@ -48,7 +60,8 @@ Future<void> main(List<String> args) async {
 
   if (invalidResult) {
     print('Error: Invalid skill fixture unexpectedly passed validation!');
-    exit(1);
+    exitCode = 1;
+    return;
   }
   print('Success: Invalid skill fixture failed validation as expected.');
 
