@@ -42,6 +42,14 @@ jobs:
 
       - run: dart test
 
+      - name: Verify API boundary runner example
+        run: |
+          cd example/api_boundary_runner
+          dart pub get
+          dart format --output=none --set-exit-if-changed .
+          dart analyze --fatal-infos .
+          dart run bin/main.dart
+
   coverage:
     runs-on: ubuntu-latest
     steps:

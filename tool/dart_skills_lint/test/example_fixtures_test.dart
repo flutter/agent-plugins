@@ -22,8 +22,8 @@ import 'package:test_process/test_process.dart';
 void main() {
   group('example fixtures', () {
     final String cliPath = p.normalize(p.absolute('bin/cli.dart'));
-    final String validPath = p.normalize(p.absolute('example/valid'));
-    final String invalidPath = p.normalize(p.absolute('example/invalid'));
+    final String validPath = p.normalize(p.absolute('example/skills/valid'));
+    final String invalidPath = p.normalize(p.absolute('example/skills/invalid'));
 
     test('example/valid passes with default rules', () async {
       final TestProcess process = await TestProcess.start('dart', [cliPath, '--skill', validPath]);

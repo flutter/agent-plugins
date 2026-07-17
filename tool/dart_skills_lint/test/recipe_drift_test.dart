@@ -30,8 +30,8 @@ void main() {
   group('README Recipes drift', () {
     late _RecipeReader reader;
     final String cliPath = p.normalize(p.absolute('bin/cli.dart'));
-    final String validFixture = p.normalize(p.absolute('example/valid'));
-    final String invalidFixture = p.normalize(p.absolute('example/invalid'));
+    final String validFixture = p.normalize(p.absolute('example/skills/valid'));
+    final String invalidFixture = p.normalize(p.absolute('example/skills/invalid'));
 
     setUpAll(() {
       reader = _RecipeReader.fromFile(p.normalize(p.absolute('README.md')));
