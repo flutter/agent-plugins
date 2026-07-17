@@ -1,0 +1,20 @@
+{
+  "name": "dart-flutter",
+  "interface": {
+    "displayName": "Dart and Flutter"
+  },
+  "plugins": [
+    {
+      "name": "dart-flutter",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}
