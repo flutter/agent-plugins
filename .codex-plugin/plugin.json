@@ -29,10 +29,6 @@
       "Skills",
       "MCP"
     ],
-    "websiteURL": "https://flutter.dev",
-    "defaultPrompt": [
-      "Set up Flutter in this app.",
-      "Create a new Dart skill."
-    ]
+    "websiteURL": "https://flutter.dev"
   }
 }
