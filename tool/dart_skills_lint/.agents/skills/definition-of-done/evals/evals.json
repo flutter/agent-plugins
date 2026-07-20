@@ -1,5 +1,8 @@
 {
   "skill_name": "definition-of-done",
+  "repo-criteria": [
+    "evals/code_quality_rubric.json"
+  ],
   "evals": [
     {
       "id": 1,
