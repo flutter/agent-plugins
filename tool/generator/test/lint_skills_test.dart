@@ -20,9 +20,10 @@ void main() {
 
     final originalDir = Directory.current;
     final parts = p.split(originalDir.path);
-    final isRoot = !(parts.length >= 2 &&
-        parts[parts.length - 2] == 'tool' &&
-        parts.last == 'generator');
+    final isRoot =
+        !(parts.length >= 2 &&
+            parts[parts.length - 2] == 'tool' &&
+            parts.last == 'generator');
 
     if (isRoot) {
       Directory.current = Directory(p.join('tool', 'generator'));
@@ -37,10 +38,7 @@ void main() {
       );
 
       expect(
-        await validateSkills(
-          config: config,
-          customRules: [LastModifiedRule()],
-        ),
+        await validateSkills(config: config, customRules: [LastModifiedRule()]),
         isTrue,
       );
     } finally {

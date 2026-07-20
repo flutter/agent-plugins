@@ -36,7 +36,7 @@ When evaluating the impact of pull requests on downstream repositories, check ag
 - **Primary Consumer Location**: Root skill sets or tooling harnesses.
 - **Tooling Engine**: `dart pub get` and `dart test`
 
-### 6. `kevmoo/dart-best-practices`
-- **Repository URL**: [kevmoo/dart-best-practices](https://github.com/kevmoo/dart-best-practices)
-- **Primary Consumer Location**: Root tooling verification tests.
+### 6. `kevmoo/dash_skills`
+- **Repository URL**: [kevmoo/dash_skills](https://github.com/kevmoo/dash_skills)
+- **Primary Consumer Location**: `tool/`
 - **Tooling Engine**: `dart pub get` and `dart test`
