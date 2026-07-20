@@ -2,8 +2,11 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:io';
+
 import 'package:dart_skills_lint/dart_skills_lint.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import 'custom_skill_rules/last_modified_rule.dart';
@@ -15,19 +18,33 @@ void main() {
       printOnFailure('${record.level.name}: ${record.message}');
     });
 
+    final originalDir = Directory.current;
+    final parts = p.split(originalDir.path);
+    final isRoot =
+        !(parts.length >= 2 &&
+            parts[parts.length - 2] == 'tool' &&
+            parts.last == 'generator');
+
+    if (isRoot) {
+      Directory.current = Directory(p.join('tool', 'generator'));
+    }
+
     try {
+      final config = await ConfigParser.loadConfig();
       expect(
-        await validateSkills(
-          skillDirPaths: ['../../skills'],
-          resolvedRules: {
-            'check-relative-paths': AnalysisSeverity.error,
-            'check-absolute-paths': AnalysisSeverity.error,
-          },
-          customRules: [LastModifiedRule()],
-        ),
+        config.directoryConfigs,
+        isNotEmpty,
+        reason: 'Configuration directoryConfigs should not be empty.',
+      );
+
+      expect(
+        await validateSkills(config: config, customRules: [LastModifiedRule()]),
         isTrue,
       );
     } finally {
+      if (isRoot) {
+        Directory.current = originalDir;
+      }
       await subscription.cancel();
     }
   });

@@ -94,6 +94,11 @@ test('Validate Repository Skills', () async {
   final Configuration config = await ConfigParser.loadConfig(
     path: path.join(repoRoot.path, 'path', 'to', _configFileName),
   );
+  expect(
+    config.directoryConfigs,
+    isNotEmpty,
+    reason: 'Configuration directoryConfigs should not be empty.',
+  );
   final bool isValid = await validateSkills(
     skillDirPaths: [skillsDirectory], // Explicit absolute targeting
     config: config,

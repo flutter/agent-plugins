@@ -1,0 +1,6 @@
+dart_skills_lint:
+  rules:
+    check-relative-paths: error
+    check-absolute-paths: error
+  directories:
+    - path: "../../skills"
