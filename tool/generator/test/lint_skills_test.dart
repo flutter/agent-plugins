@@ -19,11 +19,11 @@ void main() {
     });
 
     try {
-      final String packageDir = Directory.current.path.endsWith('generator')
+      final packageDir = Directory.current.path.endsWith('generator')
           ? Directory.current.path
           : p.join(Directory.current.path, 'tool', 'generator');
-      final String configPath = p.join(packageDir, 'dart_skills_lint.yaml');
-      final String skillsDir = p.normalize(p.join(packageDir, '..', '..', 'skills'));
+      final configPath = p.join(packageDir, 'dart_skills_lint.yaml');
+      final skillsDir = p.normalize(p.join(packageDir, '..', '..', 'skills'));
 
       final config = await ConfigParser.loadConfig(path: configPath);
       expect(
