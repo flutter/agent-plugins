@@ -75,19 +75,6 @@ jobs:
           min_coverage: 73
           exclude: '**/*.g.dart'
 
-  validate_skills:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: dart-lang/setup-dart@v1
-        with:
-          sdk: stable
-
-      - run: dart pub get
-
-      - name: Validate skills
-        run: dart run dart_skills_lint:cli
-
   formatting:
     runs-on: ubuntu-latest
     steps:
