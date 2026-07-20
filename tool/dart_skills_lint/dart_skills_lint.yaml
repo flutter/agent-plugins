@@ -35,4 +35,7 @@ dart_skills_lint:
     - path: ".agents/skills/definition-of-done"
       rules:
         prevent-skills-sh-publishing: error
+    - path: ".agents/skills/run-evals"
+      rules:
+        prevent-skills-sh-publishing: error
 
