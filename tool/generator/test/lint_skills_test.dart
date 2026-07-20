@@ -2,11 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:io';
-
 import 'package:dart_skills_lint/dart_skills_lint.dart';
 import 'package:logging/logging.dart';
-import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import 'custom_skill_rules/last_modified_rule.dart';
@@ -19,13 +16,7 @@ void main() {
     });
 
     try {
-      final packageDir = Directory.current.path.endsWith('generator')
-          ? Directory.current.path
-          : p.join(Directory.current.path, 'tool', 'generator');
-      final configPath = p.join(packageDir, 'dart_skills_lint.yaml');
-      final skillsDir = p.normalize(p.join(packageDir, '..', '..', 'skills'));
-
-      final config = await ConfigParser.loadConfig(path: configPath);
+      final config = await ConfigParser.loadConfig();
       expect(
         config.directoryConfigs,
         isNotEmpty,
@@ -34,7 +25,6 @@ void main() {
 
       expect(
         await validateSkills(
-          skillDirPaths: [skillsDir],
           config: config,
           customRules: [LastModifiedRule()],
         ),
