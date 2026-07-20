@@ -20,6 +20,11 @@ void main() {
       // Load configuration from the default file (dart_skills_lint.yaml)
       // to mirror what is configured in the repository.
       final Configuration config = await ConfigParser.loadConfig();
+      expect(
+        config.directoryConfigs,
+        isNotEmpty,
+        reason: 'Configuration directoryConfigs should not be empty.',
+      );
 
       final bool isValid = await validateSkills(config: config);
       expect(isValid, isTrue, reason: 'Skills validation failed. See above for details.');

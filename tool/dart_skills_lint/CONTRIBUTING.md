@@ -58,6 +58,11 @@ void main() {
     // share configuration. Pass `customRules: [...]` to inject any
     // custom SkillRule implementations.
     final config = await ConfigParser.loadConfig();
+    expect(
+      config.directoryConfigs,
+      isNotEmpty,
+      reason: 'Configuration directoryConfigs should not be empty.',
+    );
     await validateSkills(config: config);
   });
 }

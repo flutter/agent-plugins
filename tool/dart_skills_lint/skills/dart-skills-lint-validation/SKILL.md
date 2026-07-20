@@ -93,6 +93,11 @@ import 'package:test/test.dart';
 void main() {
   test('skills pass with deprecated-skill custom rule', () async {
     final config = await ConfigParser.loadConfig();
+    expect(
+      config.directoryConfigs,
+      isNotEmpty,
+      reason: 'Configuration directoryConfigs should not be empty.',
+    );
     await validateSkills(
       config: config,
       customRules: [DeprecatedSkillRule()],
