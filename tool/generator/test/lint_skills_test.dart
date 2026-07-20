@@ -16,13 +16,10 @@ void main() {
     });
 
     try {
+      final config = await ConfigParser.loadConfig();
       expect(
         await validateSkills(
-          skillDirPaths: ['../../skills'],
-          resolvedRules: {
-            'check-relative-paths': AnalysisSeverity.error,
-            'check-absolute-paths': AnalysisSeverity.error,
-          },
+          config: config,
           customRules: [LastModifiedRule()],
         ),
         isTrue,
