@@ -6,6 +6,7 @@ import 'dart:io';
 
 import 'package:dart_skills_lint/dart_skills_lint.dart';
 import 'package:logging/logging.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import 'custom_skill_rules/last_modified_rule.dart';
@@ -18,9 +19,13 @@ void main() {
     });
 
     final originalDir = Directory.current;
-    final isRoot = !originalDir.path.endsWith('tool/generator');
+    final parts = p.split(originalDir.path);
+    final isRoot = !(parts.length >= 2 &&
+        parts[parts.length - 2] == 'tool' &&
+        parts.last == 'generator');
+
     if (isRoot) {
-      Directory.current = Directory('tool/generator');
+      Directory.current = Directory(p.join('tool', 'generator'));
     }
 
     try {
