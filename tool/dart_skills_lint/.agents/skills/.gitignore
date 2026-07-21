@@ -3,6 +3,7 @@
 *.log
 
 # Un-ignore specific checked-in skills
+!contributor-pr-description/
 !add-dart-lint-validation-rule/
 !check-downstream-consumers/
 !dart-skills-lint-integration/
