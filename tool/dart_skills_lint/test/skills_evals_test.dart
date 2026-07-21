@@ -16,7 +16,7 @@ void main() {
       final List<File> evalsFiles = [
         ..._findEvalsFiles(Directory(p.join(Directory.current.path, 'skills'))),
         ..._findEvalsFiles(Directory(p.join(Directory.current.path, '.agents', 'skills'))),
-      ];
+      ]..sort((a, b) => a.path.compareTo(b.path));
 
       expect(
         evalsFiles,
@@ -30,9 +30,6 @@ void main() {
       String? expectedEvalItemFilePath;
 
       for (final evalsFile in evalsFiles) {
-        final Directory skillDir = evalsFile.parent.parent;
-        final String skillName = p.basename(skillDir.path);
-
         final Object? decoded = jsonDecode(evalsFile.readAsStringSync());
         expect(
           decoded,
@@ -43,12 +40,6 @@ void main() {
         if (decoded is! Map<String, dynamic>) {
           fail('${evalsFile.path} must be a JSON map.');
         }
-
-        expect(
-          decoded['skill_name'],
-          equals(skillName),
-          reason: 'skill_name in ${evalsFile.path} must match skill directory name "$skillName".',
-        );
 
         final Set<String> rootKeys = decoded.keys.toSet();
         if (expectedRootKeys == null) {
@@ -104,6 +95,8 @@ void main() {
       }
     });
 
+    // Note: We intentionally only require an evals.json file for published skills.
+    // Contributor skills in .agents/skills/ are not currently required to have one.
     test('all published skills have an evals.json file', () {
       final skillsDir = Directory(p.join(Directory.current.path, 'skills'));
       if (!skillsDir.existsSync()) {

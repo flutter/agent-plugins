@@ -10,8 +10,9 @@
       "expected_output": "The agent orchestrates two subagents (baseline and with-skill) in branched workspaces, grades their git diffs and stdout, and outputs a markdown artifact.",
       "expectations": [
         "The agent successfully triggered subagents to run the test cases.",
-        "A markdown artifact containing the evaluation results was created.",
-        "The execution run leaves the parent working tree clean, with no rogue unstaged modifications to unrelated project files caused by subagents."
+        "There is an artifact with the results.",
+        "No files are modified in the skill folder after the eval is done running.",
+        "The evaluation artifact includes evals sourced from code_quality_rubric.json for a skill that produces code."
       ]
     },
     {
@@ -19,7 +20,9 @@
       "prompt": "Can you test the dart-add-unit-test skill and see if it passes its rubric?",
       "expected_output": "The agent identifies the target skill, spawns baseline and with-skill subagents, compares results, and writes an evaluation artifact.",
       "expectations": [
-        "The execution run leaves the parent working tree clean, with no rogue unstaged modifications to unrelated project files caused by subagents."
+        "There is an artifact with the results.",
+        "No files are modified in the skill folder after the eval is done running.",
+        "The evaluation artifact includes evals sourced from code_quality_rubric.json for a skill that produces code."
       ]
     }
   ]

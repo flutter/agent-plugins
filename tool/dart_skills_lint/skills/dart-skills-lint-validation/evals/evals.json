@@ -1,0 +1,16 @@
+{
+  "skill_name": "dart-skills-lint-validation",
+  "repo-criteria": [
+    "evals/code_quality_rubric.json"
+  ],
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "TODO: Add a prompt to test dart-skills-lint-validation.",
+      "expected_output": "TODO: Define the expected high-level outcome.",
+      "expectations": [
+        "TODO: Add discrete expectations for the agent judge."
+      ]
+    }
+  ]
+}

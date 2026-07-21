@@ -1,6 +1,6 @@
 # Skill Evaluations (Evals) Framework
 
-This directory defines the architecture, rubrics, and instructions for evaluating AI agent skills authored and maintained in this repository using an LLM Agent as Judge.
+Architecture, rubrics, and instructions for evaluating AI agent skills authored and maintained in this repository using an LLM Agent as Judge.
 
 ## Core Principles & Architecture
 
@@ -40,7 +40,7 @@ When authoring or updating `evals.json`:
 Run the unit test that checks all `evals.json` files for structural consistency across the repository:
 
 ```bash
-dart test test/published_skills_evals_test.dart
+dart test test/skills_evals_test.dart
 ```
 
 ### 2. Running Evals via Agent Orchestration
@@ -79,7 +79,7 @@ Once you are done, do not commit. Just send me a message with the `git diff` of 
 When preparing to grade execution outputs, the orchestrator or grader agent must resolve the `repo-criteria` section from `evals.json`:
 
 1. **Parse `repo-criteria`**: Read the array of file paths defined under `"repo-criteria"` in `evals.json` (e.g., `["evals/code_quality_rubric.json"]`).
-2. **Load Referenced Rubrics**: Open each referenced JSON file relative to the repository root and extract its `expectations` list under `evaluations`.
+2. **Load Referenced Rubrics**: Open each referenced JSON file relative to the `tool/dart_skills_lint/` directory and extract its `expectations` list under `evaluations`.
 3. **Combine Expectations**: Concatenate the universal expectations from `repo-criteria` with the skill-specific `expectations` from `evals.json` to build the full grading payload.
 
 #### Agent Judge Grading
