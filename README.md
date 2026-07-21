@@ -51,6 +51,19 @@ Install the Dart and Flutter plugin:
 codex plugin add dart-flutter@dart-flutter
 ```
 
+### Cursor Plugin
+
+You can test this plugin locally by copying it to your Cursor plugins directory.
+
+1. Copy the repository directory to your local Cursor plugins folder:
+
+```bash
+mkdir -p ~/.cursor/plugins/local
+cp -r /path/to/flutter/agent-plugins ~/.cursor/plugins/local/dart-flutter
+```
+
+2. Restart Cursor. The editor will automatically discover and load the skills under skills/ and configure the MCP server defined in .mcp.json.
+
 ## Updating Plugins
 
 To update, run the following command:
