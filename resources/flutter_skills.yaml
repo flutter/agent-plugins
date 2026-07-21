@@ -4,7 +4,8 @@
 
 # This is the configuration file for the skill generator.
 # To generate skills, use the following command (from the `tool` directory):
-# dart run skills generate-skill --config ../resources/flutter_skills.yaml --output ../skills
+# dart run skills generate-skill --skill [skill-name]
+# Make sure you have already set up GEMINI_API_KEY in your path.
 - name: flutter-add-integration-test
   description: Configures Flutter Driver for app interaction and converts MCP
     actions into permanent integration tests. Use when adding integration
@@ -432,3 +433,57 @@
     - https://docs.flutter.dev/cookbook/networking/update-data
     - https://docs.flutter.dev/data-and-backend/serialization
     - https://docs.flutter.dev/data-and-backend/serialization/json
+- name: flutter-ios-uiscene-root-vc-migration
+  description: Migrates iOS Flutter plugins from fetching the root view controller
+    via UIApplication.shared.delegate.window.rootViewController to using
+    registrar.viewController.
+  examplePrompt: "Migrate the iOS plugin from accessing rootViewController via UIApplication delegate to using registrar.viewController"
+  instructions: |
+    1. **Identify Legacy Root View Controller Pattern:**
+        * Locate usages of direct app-delegate window root view controller access:
+            * Swift: `let vc = UIApplication.shared.delegate?.window??.rootViewController`
+            * Objective-C: `UIViewController *vc = [UIApplication sharedApplication].delegate.window.rootViewController;`
+
+    2. **Migrate Plugin Implementation to Use Registrar:**
+        * Update the plugin class to save the `FlutterPluginRegistrar` during registration and retrieve the active view controller via `registrar.viewController`.
+        * **Swift:**
+          ```swift
+          public class FooPlugin: NSObject, FlutterPlugin {
+            private let registrar: FlutterPluginRegistrar
+
+            public static func register(with registrar: FlutterPluginRegistrar) {
+              let instance = FooPlugin(registrar: registrar)
+              // ...
+            }
+
+            func accessVC() {
+              registrar.viewController?.present(...)
+            }
+          }
+          ```
+        * **Objective-C:**
+          Declare a private property in a class extension in the implementation (`.m`) file:
+          ```objc
+          @interface FooPlugin ()
+          @property(nonatomic) NSObject<FlutterPluginRegistrar> *registrar;
+          @end
+
+          @implementation FooPlugin
+
+          + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar> *)registrar {
+            FooPlugin *plugin = [[FooPlugin alloc] initWithRegistrar:registrar];
+            // ...
+          }
+
+          - (void)accessVC {
+            [self.registrar.viewController presentViewController:... animated:YES completion:nil];
+          }
+
+          @end
+          ```
+
+    3. **Verification & Output Notice:**
+        * Include an explicit disclaimer stating that the migration was AI-generated and should be verified.
+        * Advise the user to build and run affected iOS targets to confirm the migration compiles and operates correctly.
+  resources:
+    - https://docs.flutter.dev/release/breaking-changes/uiscenedelegate
