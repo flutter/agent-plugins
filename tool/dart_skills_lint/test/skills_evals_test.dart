@@ -115,6 +115,88 @@ void main() {
         );
       }
     });
+
+    test('all rubric JSON files in evals/ share consistent structure and keys', () {
+      final Directory rubricsDir = Directory(p.join(Directory.current.path, 'evals'));
+      if (!rubricsDir.existsSync()) return;
+
+      final List<File> rubricFiles = rubricsDir
+          .listSync(recursive: false)
+          .whereType<File>()
+          .where((File f) => f.path.endsWith('.json'))
+          .toList()
+        ..sort((a, b) => a.path.compareTo(b.path));
+
+      if (rubricFiles.isEmpty) return;
+
+      Set<String>? expectedRootKeys;
+      String? expectedRootKeysFilePath;
+      Set<String>? expectedEvalItemKeys;
+      String? expectedEvalItemFilePath;
+
+      for (final rubricFile in rubricFiles) {
+        final Object? decoded = jsonDecode(rubricFile.readAsStringSync());
+        expect(
+          decoded,
+          isA<Map<String, dynamic>>(),
+          reason: '${rubricFile.path} must be a JSON map.',
+        );
+
+        if (decoded is! Map<String, dynamic>) {
+          fail('${rubricFile.path} must be a JSON map.');
+        }
+
+        final Set<String> rootKeys = decoded.keys.toSet();
+        if (expectedRootKeys == null) {
+          expectedRootKeys = rootKeys;
+          expectedRootKeysFilePath = rubricFile.path;
+        } else {
+          expect(
+            rootKeys,
+            equals(expectedRootKeys),
+            reason:
+                '${rubricFile.path} root keys do not match consistency pattern. '
+                'Expected keys to match the first processed file ($expectedRootKeysFilePath).',
+          );
+        }
+
+        final Object? evalsRaw = decoded['evaluations'];
+        expect(
+          evalsRaw,
+          isA<List<dynamic>>(),
+          reason: 'evaluations key in ${rubricFile.path} must be a List.',
+        );
+
+        if (evalsRaw is! List<dynamic>) {
+          fail('evaluations key in ${rubricFile.path} must be a List.');
+        }
+
+        for (final Object? evalItem in evalsRaw) {
+          expect(
+            evalItem,
+            isA<Map<String, dynamic>>(),
+            reason: 'Item in evaluations list in ${rubricFile.path} must be a JSON map.',
+          );
+          if (evalItem is! Map<String, dynamic>) {
+            fail('Item in evaluations list in ${rubricFile.path} must be a JSON map.');
+          }
+
+          final Set<String> itemKeys = evalItem.keys.toSet();
+          if (expectedEvalItemKeys == null) {
+            expectedEvalItemKeys = itemKeys;
+            expectedEvalItemFilePath = rubricFile.path;
+          } else {
+            expect(
+              itemKeys,
+              equals(expectedEvalItemKeys),
+              reason:
+                  'Evaluation item in ${rubricFile.path} keys do not match consistency pattern. '
+                  'Expected eval item keys to match the first processed file ($expectedEvalItemFilePath).',
+            );
+          }
+        }
+      }
+    });
   });
 }
 
