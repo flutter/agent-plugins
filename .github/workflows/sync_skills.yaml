@@ -14,14 +14,14 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout Flutter Skills (Destination)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Falls back to the default GITHUB_TOKEN if SYNC_PAT is not defined
           token: ${{ secrets.SYNC_PAT || github.token }}
           path: dest_repo
 
       - name: Checkout Dart Skills (Source)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: dart-lang/skills
           fetch-depth: 50
@@ -52,7 +52,7 @@ jobs:
 
       - name: Create Pull Request
         if: steps.sync_engine.outputs.changes_detected == 'true'
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.SYNC_PAT || github.token }}
           path: dest_repo
