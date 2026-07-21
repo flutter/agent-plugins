@@ -7,8 +7,6 @@ metadata:
 
 # Run Skill Evals
 
-Use this skill to run skill evaluations.
-
 1. **Read Framework**: Read `tool/dart_skills_lint/evals/README.md` for the exact subagent and grader prompts.
 2. **Locate Targets**: Find target `evals/evals.json` files inside `.agents/skills/` and/or `skills/`.
 3. **Orchestrate**: For each eval prompt, spawn two `bare-agent` subagents using `Workspace: branch`:
