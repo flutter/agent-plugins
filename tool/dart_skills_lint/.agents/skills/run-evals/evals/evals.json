@@ -1,40 +1,43 @@
 {
   "skill_name": "run-evals",
-  "repo-criteria": [
-    "evals/code_quality_rubric.json"
-  ],
   "evals": [
     {
       "id": 1,
       "prompt": "Run the evals for the definition-of-done skill.",
-      "expected_output": "The agent orchestrates a with-skill subagent in a branched workspace, grades its git diffs and stdout, and outputs a markdown artifact.",
-      "expectations": [
+      "expected_chat_output": "The agent orchestrates a with-skill subagent in a branched workspace, grades its git diffs and stdout, and outputs a markdown artifact.",
+      "expected_repo_state": [
         "The agent successfully triggered subagents to run the test cases.",
         "There is an artifact with the results.",
         "No files are modified in the skill folder after the eval is done running.",
         "The evaluation artifact includes evals sourced from code_quality_rubric.json for a skill that produces code."
-      ]
+      ],
+      "agent_config": "reidbaker-agent"
     },
     {
       "id": 2,
-      "prompt": "Can you test the dart-add-unit-test skill and see if it passes its rubric?",
-      "expected_output": "The agent identifies the target skill, spawns a with-skill subagent, grades the result, and writes an evaluation artifact.",
-      "expectations": [
+      "prompt": "Can you test the definition-of-done skill and see if it passes its rubric?",
+      "expected_chat_output": "The agent identifies the target skill, spawns a with-skill subagent, grades the result, and writes an evaluation artifact.",
+      "expected_repo_state": [
         "There is an artifact with the results.",
         "No files are modified in the skill folder after the eval is done running.",
         "The evaluation artifact includes evals sourced from code_quality_rubric.json for a skill that produces code."
-      ]
+      ],
+      "agent_config": "reidbaker-agent"
     },
     {
       "id": 3,
-      "prompt": "Run an A/B benchmark evaluation for the dart-add-unit-test skill, comparing it explicitly against a baseline without the skill.",
-      "expected_output": "The agent identifies the target skill, spawns both baseline and with-skill subagents, compares results, and writes a comprehensive evaluation artifact.",
-      "expectations": [
+      "prompt": "Run an A/B benchmark evaluation for the definition-of-done skill, comparing it explicitly against a baseline without the skill.",
+      "expected_chat_output": "The agent identifies the target skill, spawns both baseline and with-skill subagents, compares results, and writes a comprehensive evaluation artifact.",
+      "expected_repo_state": [
         "The agent successfully triggered both baseline and with-skill subagents.",
         "There is an artifact with the results.",
         "The evaluation artifact contains explicit sections for both the 'With-Skill Agent' and the 'Baseline Agent'.",
         "No files are modified in the skill folder after the eval is done running."
-      ]
+      ],
+      "agent_config": "reidbaker-agent"
     }
+  ],
+  "repo_criteria": [
+    "evals/code_quality_rubric.json"
   ]
 }
