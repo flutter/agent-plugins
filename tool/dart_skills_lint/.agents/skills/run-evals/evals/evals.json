@@ -8,7 +8,7 @@
       "expected_repo_state": [
         "The agent successfully triggered subagents to run the test cases.",
         "There is an artifact with the results.",
-        "No files are modified in the skill folder after the eval is done running.",
+        "No files are modified in the parent workspace after the eval is done running (all modifications must be confined to the isolated subagent worktree).",
         "The evaluation artifact includes evals sourced from code_quality_rubric.json for a skill that produces code."
       ],
       "agent_config": "reidbaker-agent"
@@ -19,7 +19,7 @@
       "expected_chat_output": "The agent identifies the target skill, spawns a with-skill subagent, grades the result, and writes an evaluation artifact.",
       "expected_repo_state": [
         "There is an artifact with the results.",
-        "No files are modified in the skill folder after the eval is done running.",
+        "No files are modified in the parent workspace after the eval is done running (all modifications must be confined to the isolated subagent worktree).",
         "The evaluation artifact includes evals sourced from code_quality_rubric.json for a skill that produces code."
       ],
       "agent_config": "reidbaker-agent"
@@ -32,7 +32,7 @@
         "The agent successfully triggered both baseline and with-skill subagents.",
         "There is an artifact with the results.",
         "The evaluation artifact contains explicit sections for both the 'With-Skill Agent' and the 'Baseline Agent'.",
-        "No files are modified in the skill folder after the eval is done running."
+        "No files are modified in the parent workspace after the eval is done running (all modifications must be confined to the isolated subagent worktree)."
       ],
       "agent_config": "reidbaker-agent"
     }
