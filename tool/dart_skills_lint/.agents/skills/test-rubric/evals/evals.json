@@ -1,0 +1,21 @@
+{
+  "skill_name": "test-rubric",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Grade the code in 'evals/test_data/bad_code/tmp/bad_script.dart' using the code_quality_rubric.json.",
+      "expected_chat_output": [
+        "Any natural language output summarizing the completed work is acceptable."
+      ],
+      "expected_repo_state": [
+        "The evaluation artifact explicitly flags a failure for directory placement hygiene.",
+        "The evaluation artifact explicitly flags a failure for effective Dart idioms.",
+        "The evaluation artifact explicitly flags a failure for cross platform compatibility."
+      ],
+      "agent_config": "reidbaker-agent"
+    }
+  ],
+  "repo_criteria": [
+    "evals/code_quality_rubric.json"
+  ]
+}
