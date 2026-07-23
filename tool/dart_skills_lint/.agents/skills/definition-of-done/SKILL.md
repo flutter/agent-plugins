@@ -28,7 +28,7 @@ You MUST include a text list of all mandatory verification steps in your final r
 - Use `[x] <Identifier>: <Explanation>` if the step was completed.
 - Use `[ ] <Identifier>: <Skipped explanation>` if the step was skipped or not applicable.
 
-CRITICAL: Do not just copy the step description text. You MUST use the exact short Identifier (e.g. `Format`, `Analysis`, `Metrics`, `Tests`, `Skills`, `Changelog`, `Temporal`, `Documentation`) followed by a colon and your short explanation.
+CRITICAL: Do not just copy the full step description text. You MUST use the exact bolded Identifier from the Mandatory Verification Steps list above, followed by a colon and your short explanation.
 
 Examples:
 - `[x] Format: dart format success.`
