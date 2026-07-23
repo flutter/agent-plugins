@@ -1,4 +1,7 @@
 {
+  "repo_criteria": [
+    "evals/code_quality_rubric.json"
+  ],
   "evals": [
     {
       "id": 1,
@@ -44,8 +47,5 @@
       ],
       "agent_config": "bare-agent"
     }
-  ],
-  "repo_criteria": [
-    "evals/code_quality_rubric.json"
   ]
 }
