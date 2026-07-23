@@ -4,7 +4,10 @@
     {
       "id": 1,
       "prompt": "Modify tool/dart_skills_lint/lib/src/levenshtein.dart to add a comment explaining how the algorithm calculates distance (e.g. tracking deletion, insertion, substitution cost), and make sure you finish the task completely.",
-      "expected_chat_output": "The file tool/dart_skills_lint/lib/src/levenshtein.dart has a new explanatory comment, code is formatted, analyzed cleanly, and contains no forbidden temporal terms.",
+      "expected_chat_output": [
+        "The agent confirms it added an explanatory comment about how edit distance is calculated to levenshtein.dart.",
+        "The agent outputs a text list of all definition-of-done rules in the format '[x] Identifier: Explanation' (if done) or '[ ] Identifier: Skipped explanation' (if skipped)."
+      ],
       "expected_repo_state": [
         "The levenshtein.dart file contains a new comment explaining how edit distance is calculated.",
         "The new comment does not contain any relative temporal words such as 'now', 'currently', 'new', 'old', or 'existing'.",

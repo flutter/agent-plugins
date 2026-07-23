@@ -4,7 +4,11 @@
     {
       "id": 1,
       "prompt": "Set up dart_skills_lint validation for the first time in our Dart project to lint skills located in .agents/skills.",
-      "expected_chat_output": "The project's pubspec.yaml is updated with dart_skills_lint under dev_dependencies using a git dependency pointing to tool/dart_skills_lint, a root dart_skills_lint.yaml file is created specifying .agents/skills, and recipes for CI integration are provided.",
+      "expected_chat_output": [
+        "The agent confirms it has updated pubspec.yaml with dart_skills_lint as a git dependency.",
+        "The agent states it has created a root dart_skills_lint.yaml configuration file.",
+        "The agent provides guidance or recipes for integrating the validation step into CI."
+      ],
       "expected_repo_state": [
         "dart_skills_lint is added under dev_dependencies in pubspec.yaml as a git dependency targeting https://github.com/flutter/agent-plugins.git with path tool/dart_skills_lint.",
         "The dart_skills_lint.yaml file is created at the repository root so both CLI and Dart test invocations share the configuration.",
@@ -21,7 +25,11 @@
     {
       "id": 2,
       "prompt": "A repository has pre-existing skill files in .agents/skills with lint violations. Set up dart_skills_lint without failing CI or modifying legacy skill files by generating a baseline ignore file.",
-      "expected_chat_output": "dart_skills_lint is added to pubspec.yaml dev_dependencies, a root dart_skills_lint.yaml configuration is created, and dart run dart_skills_lint:cli is executed with --generate-baseline to write violations to an ignore file without mutating legacy skill content.",
+      "expected_chat_output": [
+        "The agent confirms adding dart_skills_lint to pubspec.yaml and creating a root configuration file.",
+        "The agent states it executed the CLI with --generate-baseline.",
+        "The agent explicitly mentions that pre-existing violations were written to an ignore file and legacy skill content was not mutated."
+      ],
       "expected_repo_state": [
         "dart_skills_lint is configured under dev_dependencies in pubspec.yaml and dart_skills_lint.yaml is created at the repository root.",
         "Configures check-relative-paths: error in dart_skills_lint.yaml to enforce portable path references.",
@@ -35,7 +43,10 @@
     {
       "id": 3,
       "prompt": "Set up dart_skills_lint to validate agent skills in .agents/skills, while isolating the package dependency inside tool/pubspec.yaml instead of adding it to the root pubspec.yaml.",
-      "expected_chat_output": "The tool/ package's pubspec.yaml contains dart_skills_lint under dev_dependencies, while dart_skills_lint.yaml is placed at the repository root, ensuring the root closure is unpolluted and configuration remains centrally accessible.",
+      "expected_chat_output": [
+        "The agent states it added dart_skills_lint to the tool/ package's pubspec.yaml instead of the root.",
+        "The agent confirms it placed dart_skills_lint.yaml at the repository root."
+      ],
       "expected_repo_state": [
         "dart_skills_lint is added under dev_dependencies in tool/pubspec.yaml rather than the root pubspec.yaml.",
         "dart_skills_lint.yaml is created at the repository root directory rather than inside tool/ so both CLI and test invocations share the configuration.",

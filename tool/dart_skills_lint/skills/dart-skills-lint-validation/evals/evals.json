@@ -4,7 +4,10 @@
     {
       "id": 1,
       "prompt": "Run dart_skills_lint validation on `example/skills/invalid` with the `--check-absolute-paths` flag. The fixture points to `/tmp/this/does/not/exist.md`, which cannot be auto-fixed since it does not exist. First, create a dummy file at an absolute path (e.g., `/tmp/dummy.md`), update the link in `example/skills/invalid/SKILL.md` to point to it, and then run `--fix --dry-run` to preview the auto-fix. Finally, run `--fix` to apply the fix and verify that the link was automatically converted to a relative path.",
-      "expected_chat_output": "The agent explicitly enables the absolute paths rule, sets up a real absolute file target, previews the fix via dry-run, and automatically converts the link to a relative path via the CLI.",
+      "expected_chat_output": [
+        "The agent mentions it ran the linter with --fix --dry-run to preview changes.",
+        "The agent confirms it ran --fix and successfully converted the absolute path to a relative one."
+      ],
       "expected_repo_state": [
         "The agent updated the SKILL.md link to point to an absolute path that actually exists on disk.",
         "The agent ran the CLI with `--check-absolute-paths` and explicitly verified that a fixable path violation was found.",
@@ -16,7 +19,11 @@
     {
       "id": 2,
       "prompt": "Run dart_skills_lint validation on `example/skills/invalid` with `--disallowed-field` and `--check-absolute-paths` flags to surface all violations. Interpret the failures and manually fix all three violations (skill name mismatch, disallowed field, absolute path) without using the `--fix` flag. Ensure the final run is clean.",
-      "expected_chat_output": "The agent explicitly enables the extra rules, identifies all violations, applies manual corrections to each without auto-fixing, and ensures a clean run.",
+      "expected_chat_output": [
+        "The agent confirms it ran the linter with the extra flags and identified the three violations.",
+        "The agent explicitly states it manually fixed the skill name mismatch, disallowed field, and absolute path violations.",
+        "The agent confirms the final validation run was clean."
+      ],
       "expected_repo_state": [
         "The agent executes the linter with the required flags to surface all violations.",
         "The agent manually edits the skill files to fix the invalid skill name violation.",
@@ -29,7 +36,10 @@
     {
       "id": 3,
       "prompt": "Author a custom dart_skills_lint rule named `RequireInternalMetadataRule` that verifies if a skill's metadata contains `internal: true`. Wire it up into a new test file `test/custom_rule_test.dart`.",
-      "expected_chat_output": "The agent writes a custom SkillRule and integrates it into a new unit test.",
+      "expected_chat_output": [
+        "The agent states it authored the custom RequireInternalMetadataRule.",
+        "The agent confirms it wired the new rule up into a new test file test/custom_rule_test.dart."
+      ],
       "expected_repo_state": [
         "The agent created a class extending `SkillRule`.",
         "The agent implemented the `name` and `severity` overrides.",
