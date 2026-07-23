@@ -79,9 +79,10 @@ void _verifyStructuralConsistency(List<File> files, String itemsKey) {
 
   for (final file in files) {
     final Object? decoded = jsonDecode(file.readAsStringSync());
-    expect(decoded, isA<Map<String, dynamic>>(), reason: '${file.path} must be a JSON map.');
-
-    final decodedMap = decoded! as Map<String, dynamic>;
+    final Map<String, dynamic> decodedMap = switch (decoded) {
+      final Map<String, dynamic> map => map,
+      _ => fail('${file.path} must be a JSON map.'),
+    };
     final Set<String> rootKeys = decodedMap.keys.toSet();
     if (expectedRootKeys == null) {
       expectedRootKeys = rootKeys;
@@ -97,17 +98,15 @@ void _verifyStructuralConsistency(List<File> files, String itemsKey) {
     }
 
     final Object? itemsRaw = decodedMap[itemsKey];
-    expect(itemsRaw, isA<List<dynamic>>(), reason: '$itemsKey key in ${file.path} must be a List.');
-
-    final itemsList = itemsRaw! as List<dynamic>;
+    final List<dynamic> itemsList = switch (itemsRaw) {
+      final List<dynamic> list => list,
+      _ => fail('$itemsKey key in ${file.path} must be a List.'),
+    };
     for (final Object? item in itemsList) {
-      expect(
-        item,
-        isA<Map<String, dynamic>>(),
-        reason: 'Item in $itemsKey list in ${file.path} must be a JSON map.',
-      );
-
-      final itemMap = item! as Map<String, dynamic>;
+      final Map<String, dynamic> itemMap = switch (item) {
+        final Map<String, dynamic> map => map,
+        _ => fail('Item in $itemsKey list in ${file.path} must be a JSON map.'),
+      };
       final Set<String> itemKeys = itemMap.keys.toSet();
       if (expectedItemKeys == null) {
         expectedItemKeys = itemKeys;
