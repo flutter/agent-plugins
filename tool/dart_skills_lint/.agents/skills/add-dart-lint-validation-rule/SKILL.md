@@ -183,7 +183,7 @@ If the rule interacts with CLI flags or configuration files, add a test in `test
 When a new rule is introduced, verify that you synchronize sibling markdown files!
 
 1.  **`README.md`:**
-    *   Add your flag under the **Flags** section (under **Usage**) so users know it exists. 
+    *   Add your flag under the **Flags** section (under **Usage**) so users know it exists.
     *   **CRITICAL FORMATTING:** You MUST use the exact format `- \`--[no-]<rule-name>\`: <brief description>. (Disabled by default if applicable)`.
     *   **CRITICAL NAMING:** Ensure the flag string matches the `ruleName` EXACTLY. For example, if the `ruleName` is `file-existence`, the flag MUST be documented as `--[no-]file-existence` (do NOT hallucinate a `check-` prefix like `--[no-]check-file-existence`). Do NOT add empty bullet points.
 2.  **`RULES.md`:**
