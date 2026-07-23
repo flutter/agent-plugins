@@ -3,7 +3,7 @@
 # BSD-style license that can be found in the LICENSE file.
 
 # This is the configuration file for the skill generator.
-# To generate skills, use the following command (from the `tool` directory):
+# To generate skills, use the following command (from repo's root directory):
 # dart run skills generate-skill --skill [skill-name]
 # Make sure you have already set up GEMINI_API_KEY in your path.
 - name: flutter-add-integration-test
@@ -433,18 +433,21 @@
     - https://docs.flutter.dev/cookbook/networking/update-data
     - https://docs.flutter.dev/data-and-backend/serialization
     - https://docs.flutter.dev/data-and-backend/serialization/json
-- name: flutter-ios-uiscene-root-vc-migration
+- name: flutter-ios-adopt-registrar-view-controller-api
   description: Migrates iOS Flutter plugins from fetching the root view controller
-    via UIApplication.shared.delegate.window.rootViewController to using
-    registrar.viewController.
-  examplePrompt: "Migrate the iOS plugin from accessing rootViewController via UIApplication delegate to using registrar.viewController"
+    via `UIApplication.shared.delegate.window.rootViewController` to using
+    `registrar.viewController` API.
+  examplePrompt: "Adopt registrar.viewController API in iOS"
   instructions: |
-    1. **Identify Legacy Root View Controller Pattern:**
+    1. **Verify Scope:**
+        * This skill applies exclusively to a Flutter plugin's iOS implementation. Do not apply it to application code, such as standalone Flutter apps or example projects (e.g., `example/ios`).
+
+    2. **Identify Legacy Root View Controller Pattern:**
         * Locate usages of direct app-delegate window root view controller access:
             * Swift: `let vc = UIApplication.shared.delegate?.window??.rootViewController`
             * Objective-C: `UIViewController *vc = [UIApplication sharedApplication].delegate.window.rootViewController;`
 
-    2. **Migrate Plugin Implementation to Use Registrar:**
+    3. **Migrate Plugin Implementation to Use Registrar:**
         * Update the plugin class to save the `FlutterPluginRegistrar` during registration and retrieve the active view controller via `registrar.viewController`.
         * **Swift:**
           ```swift
@@ -482,8 +485,8 @@
           @end
           ```
 
-    3. **Verification & Output Notice:**
-        * Include an explicit disclaimer stating that the migration was AI-generated and should be verified.
-        * Advise the user to build and run affected iOS targets to confirm the migration compiles and operates correctly.
+    4. **Verification & Output Notice:**
+        * After completing the code modifications:
+            * Include a explicit disclaimer stating that the migration was AI-generated and should be verified.
   resources:
-    - https://docs.flutter.dev/release/breaking-changes/uiscenedelegate
+    - https://api.flutter.dev/ios-embedder/protocol_flutter_plugin_registrar-p.html#a732bebcd9fcfe9f9f74ea695848d7ea7
