@@ -178,6 +178,28 @@
     - https://docs.flutter.dev/resources/architectural-overview
     - https://docs.flutter.dev/resources/faq
     - https://docs.flutter.dev/ui/layout/tutorial
+- name: flutter-bloc-cubit-feature
+  description: Scaffold or update Flutter features using flutter_bloc and
+    cubit/bloc state management with a feature-first layered structure. Use when
+    creating a new feature, deciding between Cubit and Bloc, adding Freezed
+    states, wiring repositories, or adding tests for Bloc/Cubit logic.
+  examplePrompt: "Create a new feature with flutter_bloc cubit and a layered folder structure"
+  instructions: |
+    1.  **Inspect the existing project.** Identify feature folder conventions, DI style, routing package, error/result wrappers, and test framework before generating code.
+    2.  **Choose Cubit or Bloc.** Use Cubit for linear command-style flows. Use Bloc for event-heavy, debounced, subscription, or stream-heavy flows.
+    3.  **Create the feature folders.** Place models and repositories in `data`, Bloc/Cubit state logic in `logic`, and screens/widgets in `ui`.
+    4.  **Implement state with Freezed when available.** Include explicit `initial`, `loading`, `loaded`, and `error` states.
+    5.  **Wire repository calls.** Inject repositories through constructors. Map result wrappers into success, error, and transition states.
+    6.  **Keep rendering and side effects separate.** Use `BlocBuilder` for rendering and `BlocListener` or `BlocConsumer` for navigation, snackbars, and one-shot effects.
+    7.  **Register dependencies.** Register API services, repositories as lazy singletons, and feature Cubits/Blocs as factories unless they own shared runtime state.
+    8.  **Add routing scope.** Use route-level `BlocProvider` or `MultiBlocProvider`. Use `BlocProvider.value(...)` only to continue an existing flow.
+    9.  **Add tests.** Test emitted state sequences, repository interactions, pagination behavior, and ownership-sensitive decisions.
+    10. **Run generators and tests.** Run `dart run build_runner build --delete-conflicting-outputs` after changing Freezed/JSON annotations, then run `flutter test`.
+  resources:
+    - https://pub.dev/packages/flutter_bloc
+    - https://bloclibrary.dev
+    - https://pub.dev/packages/freezed
+    - https://pub.dev/packages/mocktail
 - name: flutter-build-responsive-layout
   description: Use `LayoutBuilder`, `MediaQuery`, or `Expanded/Flexible` to
     create a layout that adapts to different screen sizes. Use when you need the
