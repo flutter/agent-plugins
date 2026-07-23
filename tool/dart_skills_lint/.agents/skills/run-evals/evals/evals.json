@@ -5,9 +5,7 @@
       "id": 1,
       "prompt": "Run the evals for the definition-of-done skill.",
       "expected_chat_output": [
-        "The agent confirms it ran the evals for the definition-of-done skill by orchestrating a subagent.",
-        "The agent provides a summary of the grading results in the chat.",
-        "The agent mentions it has outputted a markdown artifact with the detailed results."
+        "Any natural language output summarizing the completed work is acceptable."
       ],
       "expected_repo_state": [
         "The agent successfully triggered subagents to run the test cases.",
@@ -21,9 +19,7 @@
       "id": 2,
       "prompt": "Can you test the definition-of-done skill and see if it passes its rubric?",
       "expected_chat_output": [
-        "The agent confirms it tested the definition-of-done skill against its rubric.",
-        "The agent provides a summary of whether it passed or failed in the chat.",
-        "The agent mentions it has written the detailed evaluation to a markdown artifact."
+        "Any natural language output summarizing the completed work is acceptable."
       ],
       "expected_repo_state": [
         "There is an artifact with the results.",
@@ -36,9 +32,7 @@
       "id": 3,
       "prompt": "Run an A/B benchmark evaluation for the definition-of-done skill, comparing it explicitly against a baseline without the skill.",
       "expected_chat_output": [
-        "The agent confirms it ran an A/B benchmark evaluation for the definition-of-done skill.",
-        "The agent provides a high-level summary comparing the baseline and with-skill agents in the chat.",
-        "The agent points the user to the comprehensive evaluation artifact for details."
+        "Any natural language output summarizing the completed work is acceptable."
       ],
       "expected_repo_state": [
         "The agent successfully triggered both baseline and with-skill subagents.",

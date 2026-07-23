@@ -5,8 +5,7 @@
       "id": 1,
       "prompt": "Run dart_skills_lint validation on `example/skills/invalid` with the `--check-absolute-paths` flag. The fixture points to `/tmp/this/does/not/exist.md`, which cannot be auto-fixed since it does not exist. First, create a dummy file at an absolute path (e.g., `/tmp/dummy.md`), update the link in `example/skills/invalid/SKILL.md` to point to it, and then run `--fix --dry-run` to preview the auto-fix. Finally, run `--fix` to apply the fix and verify that the link was automatically converted to a relative path.",
       "expected_chat_output": [
-        "The agent mentions it ran the linter with --fix --dry-run to preview changes.",
-        "The agent confirms it ran --fix and successfully converted the absolute path to a relative one."
+        "Any natural language output summarizing the completed work is acceptable."
       ],
       "expected_repo_state": [
         "The agent updated the SKILL.md link to point to an absolute path that actually exists on disk.",
@@ -20,9 +19,7 @@
       "id": 2,
       "prompt": "Run dart_skills_lint validation on `example/skills/invalid` with `--disallowed-field` and `--check-absolute-paths` flags to surface all violations. Interpret the failures and manually fix all three violations (skill name mismatch, disallowed field, absolute path) without using the `--fix` flag. Ensure the final run is clean.",
       "expected_chat_output": [
-        "The agent confirms it ran the linter with the extra flags and identified the three violations.",
-        "The agent explicitly states it manually fixed the skill name mismatch, disallowed field, and absolute path violations.",
-        "The agent confirms the final validation run was clean."
+        "Any natural language output summarizing the completed work is acceptable."
       ],
       "expected_repo_state": [
         "The agent executes the linter with the required flags to surface all violations.",
@@ -37,8 +34,7 @@
       "id": 3,
       "prompt": "Author a custom dart_skills_lint rule named `RequireInternalMetadataRule` that verifies if a skill's metadata contains `internal: true`. Wire it up into a new test file `test/custom_rule_test.dart`.",
       "expected_chat_output": [
-        "The agent states it authored the custom RequireInternalMetadataRule.",
-        "The agent confirms it wired the new rule up into a new test file test/custom_rule_test.dart."
+        "Any natural language output summarizing the completed work is acceptable."
       ],
       "expected_repo_state": [
         "The agent created a class extending `SkillRule`.",

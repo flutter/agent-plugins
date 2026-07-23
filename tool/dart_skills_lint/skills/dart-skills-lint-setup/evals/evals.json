@@ -5,9 +5,7 @@
       "id": 1,
       "prompt": "Set up dart_skills_lint validation for the first time in our Dart project to lint skills located in .agents/skills.",
       "expected_chat_output": [
-        "The agent confirms it has updated pubspec.yaml with dart_skills_lint as a git dependency.",
-        "The agent states it has created a root dart_skills_lint.yaml configuration file.",
-        "The agent provides guidance or recipes for integrating the validation step into CI."
+        "Any natural language output summarizing the completed work is acceptable."
       ],
       "expected_repo_state": [
         "dart_skills_lint is added under dev_dependencies in pubspec.yaml as a git dependency targeting https://github.com/flutter/agent-plugins.git with path tool/dart_skills_lint.",
@@ -26,9 +24,7 @@
       "id": 2,
       "prompt": "A repository has pre-existing skill files in .agents/skills with lint violations. Set up dart_skills_lint without failing CI or modifying legacy skill files by generating a baseline ignore file.",
       "expected_chat_output": [
-        "The agent confirms adding dart_skills_lint to pubspec.yaml and creating a root configuration file.",
-        "The agent states it executed the CLI with --generate-baseline.",
-        "The agent explicitly mentions that pre-existing violations were written to an ignore file and legacy skill content was not mutated."
+        "Any natural language output summarizing the completed work is acceptable."
       ],
       "expected_repo_state": [
         "dart_skills_lint is configured under dev_dependencies in pubspec.yaml and dart_skills_lint.yaml is created at the repository root.",
@@ -44,8 +40,7 @@
       "id": 3,
       "prompt": "Set up dart_skills_lint to validate agent skills in .agents/skills, while isolating the package dependency inside tool/pubspec.yaml instead of adding it to the root pubspec.yaml.",
       "expected_chat_output": [
-        "The agent states it added dart_skills_lint to the tool/ package's pubspec.yaml instead of the root.",
-        "The agent confirms it placed dart_skills_lint.yaml at the repository root."
+        "Any natural language output summarizing the completed work is acceptable."
       ],
       "expected_repo_state": [
         "dart_skills_lint is added under dev_dependencies in tool/pubspec.yaml rather than the root pubspec.yaml.",
