@@ -1,5 +1,7 @@
 {
-  "skill_name": "test-rubric",
+  "repo_criteria": [
+    "evals/code_quality_rubric.json"
+  ],
   "evals": [
     {
       "id": 1,
@@ -25,8 +27,5 @@
       ],
       "agent_config": "reidbaker-agent"
     }
-  ],
-  "repo_criteria": [
-    "evals/code_quality_rubric.json"
   ]
 }
