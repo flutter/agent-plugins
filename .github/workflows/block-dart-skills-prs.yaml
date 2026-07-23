@@ -1,0 +1,52 @@
+name: Block Upstream Skill Modifications
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    paths:
+      # Triggers if any file inside folders prefixed with "dart-" is modified
+      - 'skills/dart-**'
+
+jobs:
+  prevent-modifications:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    # Skip the block check ONLY if the PR is originating from the sync branch on the main repository.
+    if: |
+      github.event.pull_request.head.repo.full_name != github.repository ||
+      github.event.pull_request.head.ref != 'automation/sync-dart-skills'
+    steps:
+      - name: Fail Action and Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            // Retrieve comments to avoid duplicate spam
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: prNumber,
+            });
+
+            const botCommentIdentifier = "⚠️ **DO NOT modify these files!**";
+            const alreadyCommented = comments.some(comment => comment.body.includes(botCommentIdentifier));
+
+            if (!alreadyCommented) {
+              const message = `⚠️ **DO NOT modify these files!**\n\n` +
+                              `The files within \`skills/dart-*\` are **automatically synchronized** from the upstream [dart-lang/skills](https://github.com/dart-lang/skills) repository.\n\n` +
+                              `Please close this Pull Request and submit your changes to the [upstream repository](https://github.com/dart-lang/skills) instead. Once merged upstream, your updates will be automatically brought over here.`;
+              
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: prNumber,
+                body: message
+              });
+            }
+            
+            // Fail the workflow to block the PR from merging
+            core.setFailed("Direct changes to synced Dart skills are prohibited in this repository.");
