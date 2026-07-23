@@ -183,7 +183,9 @@ If the rule interacts with CLI flags or configuration files, add a test in `test
 When a new rule is introduced, verify that you synchronize sibling markdown files!
 
 1.  **`README.md`:**
-    *   Add your flag under the **Usage** and **Flags** sections so users know it exists.
+    *   Add your flag under the **Flags** section (under **Usage**) so users know it exists.
+    *   **CRITICAL FORMATTING:** You MUST use the exact format `- \`--[no-]<rule-name>\`: <brief description>. (Disabled by default if applicable)`.
+    *   **CRITICAL NAMING:** Ensure the flag string matches the `ruleName` EXACTLY. For example, if the `ruleName` is `file-existence`, the flag MUST be documented as `--[no-]file-existence` (do NOT hallucinate a `check-` prefix like `--[no-]check-file-existence`). Do NOT add empty bullet points.
 2.  **`RULES.md`:**
     *   Add a new entry for your rule documenting its default severity, fixability, what it checks, diagnostic shape, auto-fix behavior, and how to disable it. This is strictly required by the `rules_md_consistency_test.dart` test.
 3.  **`documentation/knowledge/SPECIFICATION.md`:**
@@ -196,7 +198,7 @@ When a new rule is introduced, verify that you synchronize sibling markdown file
 - [ ] Rule class created in `lib/src/rules/`.
 - [ ] Rule registered in `lib/src/rule_registry.dart`.
 - [ ] Unit tests added in `test/` using in-memory `SkillContext`.
-- [ ] Usage listed in `README.md`.
+- [ ] **CRITICAL**: Usage flag correctly documented in `README.md` under Flags (ensure flag string matches `ruleName` EXACTLY and format is correct).
 - [ ] Rule documented in `RULES.md`.
 - [ ] Schema documented in `documentation/knowledge/SPECIFICATION.md` (if applicable).
 - [ ] Run `dart format .` to format code.
