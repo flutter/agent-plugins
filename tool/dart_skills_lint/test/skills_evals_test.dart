@@ -22,6 +22,7 @@ void main() {
       final List<File> evalsFiles = [
         ..._findEvalsFiles(Directory(p.join(packageRoot, 'skills'))),
         ..._findEvalsFiles(Directory(p.join(packageRoot, '.agents', 'skills'))),
+        ..._findEvalsFiles(Directory(p.join(packageRoot, 'evals'))),
       ]..sort((a, b) => a.path.compareTo(b.path));
 
       expect(
@@ -74,7 +75,7 @@ void main() {
           rubricsDir
               .listSync()
               .whereType<File>()
-              .where((File f) => f.path.endsWith('.json'))
+              .where((File f) => f.path.endsWith('.json') && !f.path.endsWith('_evals.json'))
               .toList()
             ..sort((a, b) => a.path.compareTo(b.path));
 
@@ -144,9 +145,8 @@ List<File> _findEvalsFiles(Directory baseDir) {
   if (!baseDir.existsSync()) {
     return [];
   }
-  return baseDir
-      .listSync(recursive: true)
-      .whereType<File>()
-      .where((File f) => p.basename(f.path) == 'evals.json')
-      .toList();
+  return baseDir.listSync(recursive: true).whereType<File>().where((File f) {
+    final String name = p.basename(f.path);
+    return name == 'evals.json' || name.endsWith('_evals.json');
+  }).toList();
 }
