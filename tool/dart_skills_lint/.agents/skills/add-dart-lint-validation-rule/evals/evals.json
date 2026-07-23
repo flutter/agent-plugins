@@ -1,10 +1,14 @@
 {
-  "skill_name": "add-dart-lint-validation-rule",
+  "repo_criteria": [
+    "evals/code_quality_rubric.json"
+  ],
   "evals": [
     {
       "id": 1,
       "prompt": "Author a custom dart_skills_lint rule named `RequireSpecificMetadataRule` that verifies if a skill's metadata contains a `required_version` field. Wire it up into a new test file `test/require_specific_metadata_rule_test.dart` using an in-memory SkillContext.",
-      "expected_chat_output": "The agent identifies the skill, spawns a with-skill subagent, and successfully implements the rule.",
+      "expected_chat_output": [
+        "The agent identifies the skill, spawns a with-skill subagent, and successfully implements the rule."
+      ],
       "expected_repo_state": [
         "The agent successfully authored `RequireSpecificMetadataRule` extending `SkillRule` in `lib/src/rules/require_specific_metadata_rule.dart`.",
         "The rule was properly added to `RuleRegistry.allChecks` and the `createRule` switch statement in `lib/src/rule_registry.dart`.",
@@ -19,7 +23,9 @@
     {
       "id": 2,
       "prompt": "Create a new rule `FileExistenceRule` that ensures a specific supplementary file `info.txt` exists alongside `SKILL.md`. Make sure this rule is disabled by default. Write tests using the temporary directory approach.",
-      "expected_chat_output": "The agent creates the rule and physical directory tests.",
+      "expected_chat_output": [
+        "The agent creates the rule and physical directory tests."
+      ],
       "expected_repo_state": [
         "The `FileExistenceRule` class was successfully generated extending `SkillRule` in `lib/src/rules/file_existence_rule.dart`.",
         "Included correctly in `RuleRegistry.allChecks` as `disabled` in `lib/src/rule_registry.dart`.",
@@ -30,8 +36,5 @@
       ],
       "agent_config": "reidbaker-agent"
     }
-  ],
-  "repo_criteria": [
-    "evals/code_quality_rubric.json"
   ]
 }
