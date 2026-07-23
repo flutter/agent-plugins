@@ -1,6 +1,8 @@
 ---
 name: test-rubric
 description: A dummy skill solely for running meta-evaluations against the code quality rubric. only call this skill when instructed.
+metadata:
+  internal: true
 ---
 # Test Rubric
 

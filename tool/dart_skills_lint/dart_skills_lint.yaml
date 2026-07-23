@@ -38,7 +38,7 @@ dart_skills_lint:
     - path: ".agents/skills/run-evals"
       rules:
         prevent-skills-sh-publishing: error
-    - path: ".agents/skills/contributor-pr-description"
+    - path: ".agents/skills/test-rubric"
       rules:
         prevent-skills-sh-publishing: error
 
