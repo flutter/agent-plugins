@@ -1,0 +1,35 @@
+{
+  "evals": [
+    {
+      "id": "compilation_and_health",
+      "expected_repo_state": [
+        "The generated code compiles with zero syntax errors.",
+        "Static analysis passes cleanly ('dart analyze --fatal-infos' returns zero errors or warnings).",
+        "Existing and newly added unit, widget, or integration tests execute and pass successfully."
+      ]
+    },
+    {
+      "id": "effective_dart_and_idioms",
+      "expected_repo_state": [
+        "Follows Effective Dart style guidelines as enforced by standard 'core' and 'recommended' linter rules.",
+        "Leverages Dart 3 idioms such as switch expressions and exhaustive pattern matching when conditional logic branches on algebraic types.",
+        "Avoids anti-patterns such as unnecessary dynamic types, raw Strings instead of string interpolation, or unhandled Futures."
+      ]
+    },
+    {
+      "id": "cross_platform_compatibility",
+      "expected_repo_state": [
+        "File paths and CLI path parameters use platform-agnostic formatters (package:path or forward slashes '/').",
+        "CLI commands and shell invocation scripts use cross-platform compatible syntax.",
+        "Avoids hardcoded platform-specific environment paths (such as C:\\ or /usr/local/bin directly)."
+      ]
+    },
+    {
+      "id": "directory_and_placement_hygiene",
+      "expected_repo_state": [
+        "Source code must be placed in 'lib/', tests in 'test/', and executable scripts in 'bin/' or 'tool/'.",
+        "No temporary scratch files or orphaned directories are left behind after execution."
+      ]
+    }
+  ]
+}

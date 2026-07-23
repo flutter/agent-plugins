@@ -8,6 +8,7 @@
 !check-downstream-consumers/
 !dart-skills-lint-integration/
 !definition-of-done/
+!run-evals/
 
 # Keep essential configuration and docs
 !.gitignore
