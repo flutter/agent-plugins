@@ -4,6 +4,7 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
@@ -12,10 +13,16 @@ void main() {
   group('Evals structure consistency', () {
     // Ensures all evals.json files dynamically share the exact same JSON schema.
     // Keys are not hardcoded to ensure enforcement remains schema-agnostic and flexible.
-    test('all evals.json files across skills share consistent structure and keys', () {
+    test('all evals.json files across skills share consistent structure and keys', () async {
+      final Uri? packageUri = await Isolate.resolvePackageUri(
+        Uri.parse('package:dart_skills_lint/'),
+      );
+      final String packageRoot = packageUri!.resolve('..').toFilePath();
+
       final List<File> evalsFiles = [
-        ..._findEvalsFiles(Directory(p.join(Directory.current.path, 'skills'))),
-        ..._findEvalsFiles(Directory(p.join(Directory.current.path, '.agents', 'skills'))),
+        ..._findEvalsFiles(Directory(p.join(packageRoot, 'skills'))),
+        ..._findEvalsFiles(Directory(p.join(packageRoot, '.agents', 'skills'))),
+        ..._findEvalsFiles(Directory(p.join(packageRoot, 'evals'))),
       ]..sort((a, b) => a.path.compareTo(b.path));
 
       expect(
@@ -29,8 +36,13 @@ void main() {
 
     // Note: We intentionally only require an evals.json file for published skills.
     // Contributor skills in .agents/skills/ are not currently required to have one.
-    test('all published skills have an evals.json file', () {
-      final skillsDir = Directory(p.join(Directory.current.path, 'skills'));
+    test('all published skills have an evals.json file', () async {
+      final Uri? packageUri = await Isolate.resolvePackageUri(
+        Uri.parse('package:dart_skills_lint/'),
+      );
+      final String packageRoot = packageUri!.resolve('..').toFilePath();
+
+      final skillsDir = Directory(p.join(packageRoot, 'skills'));
       if (!skillsDir.existsSync()) {
         return;
       }
@@ -48,8 +60,13 @@ void main() {
       }
     });
 
-    test('all rubric JSON files in evals/ share consistent structure and keys', () {
-      final rubricsDir = Directory(p.join(Directory.current.path, 'evals'));
+    test('all rubric JSON files in evals/ share consistent structure and keys', () async {
+      final Uri? packageUri = await Isolate.resolvePackageUri(
+        Uri.parse('package:dart_skills_lint/'),
+      );
+      final String packageRoot = packageUri!.resolve('..').toFilePath();
+
+      final rubricsDir = Directory(p.join(packageRoot, 'evals'));
       if (!rubricsDir.existsSync()) {
         return;
       }
@@ -58,7 +75,7 @@ void main() {
           rubricsDir
               .listSync()
               .whereType<File>()
-              .where((File f) => f.path.endsWith('.json'))
+              .where((File f) => f.path.endsWith('.json') && !f.path.endsWith('_evals.json'))
               .toList()
             ..sort((a, b) => a.path.compareTo(b.path));
 
@@ -128,9 +145,8 @@ List<File> _findEvalsFiles(Directory baseDir) {
   if (!baseDir.existsSync()) {
     return [];
   }
-  return baseDir
-      .listSync(recursive: true)
-      .whereType<File>()
-      .where((File f) => p.basename(f.path) == 'evals.json')
-      .toList();
+  return baseDir.listSync(recursive: true).whereType<File>().where((File f) {
+    final String name = p.basename(f.path);
+    return name == 'evals.json' || name.endsWith('_evals.json');
+  }).toList();
 }
