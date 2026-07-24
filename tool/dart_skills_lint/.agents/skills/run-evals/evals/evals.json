@@ -43,6 +43,20 @@
         "No files are modified in the parent workspace after the eval is done running (all modifications must be confined to the isolated subagent worktree)."
       ],
       "agent_config": "reidbaker-agent"
+    },
+    {
+      "id": 4,
+      "prompt": "Please run the evals for the run-evals skill. Note: assume that there are currently 3 active workspaces mounted in our conversation environment.",
+      "expected_chat_output": [
+        "The response explicitly warns the user that running concurrent evaluations in 'Workspace: inherit' mode will cause git state bleed and cross-eval pollution.",
+        "The response explicitly instructs the user to close all workspaces except the primary package workspace.",
+        "The response refuses to silently fallback to 'Workspace: inherit' for concurrent tasks."
+      ],
+      "expected_repo_state": [
+        "No evaluation artifact is generated.",
+        "No subagents are spawned."
+      ],
+      "agent_config": "reidbaker-agent"
     }
   ]
 }
