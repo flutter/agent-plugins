@@ -62,7 +62,7 @@ public class FooPlugin: NSObject, FlutterPlugin {
 **Modern (Preferred):**
 ```swift
 public class FooPlugin: NSObject, FlutterPlugin {
-  private let registrar: FlutterPluginRegistrar
+  private weak var registrar: FlutterPluginRegistrar?
 
   // 1. Initialize with registrar
   init(registrar: FlutterPluginRegistrar) {
@@ -78,7 +78,7 @@ public class FooPlugin: NSObject, FlutterPlugin {
 
   func accessVC() {
     // 3. Access view controller via registrar
-    registrar.viewController?.present(...)
+    registrar?.viewController?.present(...)
   }
 }
 ```
