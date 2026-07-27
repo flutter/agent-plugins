@@ -12,7 +12,8 @@
       "expected_repo_state": [
         "The evaluation artifact explicitly flags a failure for directory placement hygiene.",
         "The evaluation artifact explicitly flags a failure for effective Dart idioms.",
-        "The evaluation artifact explicitly flags a failure for cross platform compatibility."
+        "The evaluation artifact explicitly flags a failure for cross platform compatibility.",
+        "The evaluation artifact explicitly flags a failure for lint cheating."
       ],
       "agent_config": "reidbaker-agent"
     },

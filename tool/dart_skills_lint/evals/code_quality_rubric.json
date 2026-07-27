@@ -30,6 +30,13 @@
         "Source code must be placed in 'lib/', tests in 'test/', and executable scripts in 'bin/' or 'tool/'.",
         "No temporary scratch files or orphaned directories are left behind after execution."
       ]
+    },
+    {
+      "id": "lint_cheating",
+      "expected_repo_state": [
+        "No lint configurations (e.g., analysis_options.yaml or its rules) are removed or disabled.",
+        "No file-level Dart ignores (e.g., // ignore_for_file:) are added to any Dart files."
+      ]
     }
   ]
 }
