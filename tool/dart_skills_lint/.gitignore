@@ -14,14 +14,15 @@ build/
 # OS files
 .DS_Store
 
-# Local Agent Configurations (Machine specific)
-.agent.md
-
 # You might want to ignore pubspec.lock if this is a library package
 # pubspec.lock
 
-# Logs
+# Logs and local agent tool directories
 .agents/*.log
+/.claude/
+
+# Build and test coverage artifacts
+coverage/
 
 # Dynamic evaluation workspace directories (convention derived from the skill-creator skill: https://github.com/anthropics/skills/blob/main/skills/skill-creator/SKILL.md)
 # (e.g. definition-of-done-workspace/ containing outputs, transcripts, timing, and grading JSONs)

@@ -65,15 +65,15 @@ Validation ensures that a skill directory and its `SKILL.md` file adhere to the 
 - **Trailing Whitespace**: Lines in `SKILL.md` should not have trailing whitespace. Exactly 2 spaces at the end of a line are allowed to support Markdown hard line breaks, per the [CommonMark Spec](https://spec.commonmark.org/0.31.2/#hard-line-breaks).
 - **Path Constraints**: **Inline** Markdown links must not use absolute paths to enforce portability. Can optionally be configured to check that relative paths point to valid, existing files (disabled by default). *Note: Validation only applies to inline Markdown links; HTML and reference-style links are not supported.*
 
-### 5.2 Scripts & Tools
+## 5. Scripts & Tools
 - Scripts in the `scripts/` directory should be self-documenting and provide clear error messages.
 
-### 5.3 Versioning
+## 6. Versioning
 - Use the `metadata` field in `SKILL.md` to track versions:
   ```yaml
   metadata:
     version: "1.0.0"
   ```
 
-## 6. Best Practices
+## 7. Best Practices
 - **Avoid Deep Nesting:** Keep the directory structure as flat as possible. References should ideally be only one level deep from the root.

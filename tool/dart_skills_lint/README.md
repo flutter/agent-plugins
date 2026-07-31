@@ -44,7 +44,7 @@ still work and are unchanged.
 Add to your `pubspec.yaml`:
 ```yaml
 dev_dependencies:
-  dart_skills_lint: ^0.4.0
+  dart_skills_lint: ^0.5.0
 ```
 
 Then:
@@ -96,7 +96,7 @@ and verify its SHA256 against the release's `SHA256SUMS` asset.
 
 ```bash
 TARGET="linux-x64"     # or: macos-arm64, macos-x64, linux-arm64
-VERSION="0.4.0"
+VERSION="0.5.0"
 BASE="https://github.com/flutter/agent-plugins/releases/download/dart_skills_lint-v${VERSION}"
 curl -fsSLO "${BASE}/dart_skills_lint-${TARGET}.tar.gz"
 curl -fsSLO "${BASE}/SHA256SUMS"
@@ -285,10 +285,10 @@ skill for first-time wiring, then the
 skill to run the linter and resolve any failures.
 
 > Set up dart_skills_lint in this project. Use the skill at
-> `tool/dart_skills_lint/skills/dart-skills-lint-setup/SKILL.md`
+> `skills/dart-skills-lint-setup/SKILL.md`
 > to add it as a dev_dependency, create the configuration file,
 > and wire it into CI. Then use the skill at
-> `tool/dart_skills_lint/skills/dart-skills-lint-validation/SKILL.md`
+> `skills/dart-skills-lint-validation/SKILL.md`
 > to run the linter and resolve any failures.
 
 ## Contributing

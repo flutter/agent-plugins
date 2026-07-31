@@ -18,15 +18,11 @@ see the [`Recipes` section of the README](../../README.md#recipes).
 
 ## Steps
 
-1. **Add `dart_skills_lint` as a `dev_dependency`.** Prefer a git
-   dependency (the package isn't on pub.dev yet):
+1. **Add `dart_skills_lint` as a `dev_dependency`.**
 
    ```yaml
    dev_dependencies:
-     dart_skills_lint:
-       git:
-         url: https://github.com/flutter/agent-plugins.git
-         path: tool/dart_skills_lint
+     dart_skills_lint: ^0.5.0
    ```
 
    **Isolate the dependency** in a `tool/` package when you can,

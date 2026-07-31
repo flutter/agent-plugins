@@ -10,8 +10,8 @@ The codebase is organized into standard Dart package layers, separating CLI hand
 The `entry_point.dart` file serves as the command-line interface. 
 - **Argument Parsing:** Uses standard `package:args` to parse input flags (`--skills-directory`, `--generate-baseline`, rules toggles, etc.).
 - **Workspace Discovery:** Resolves target folders by searching standard locations (e.g., `.agents/skills`, `.claude/skills`) or parsing user arguments.
-- **Ignore System Integration:** Handlers for `dart_skills_lint_ignore.json` (baseline files) to filter out known failures without failing the build.
-- **Log Management:** Consumes validation reports and standardizes format for terminal display (stouts vs stderr).
+- **Ignore System Integration:** Handlers for baseline ignore files (via `--ignore-file` or `dart_skills_lint.yaml`) to filter out known failures without failing the build.
+- **Log Management:** Consumes validation reports and standardizes format for terminal display (stdout vs stderr).
 
 ### ⚙️ 2. Configuration Parser (`lib/src/config_parser.dart`)
 - Loads user-defined custom settings from `dart_skills_lint.yaml` if it exists.
@@ -23,10 +23,10 @@ The core motor of the package.
 - Delegates to sub-routines for checking:
   - **Directory structure:** Correct place and flat tree constraints.
   - **Field constraints:** Descriptions vs name match.
-  - **Relational properties:** Verifies relative links resolve correctly on disc.
+  - **Relational properties:** Verifies relative links resolve correctly on disk.
 - Outputs `ValidationResult` objects wrapping aggregates of `ValidationError`.
 
-### 📜 4. Predefined Rules templates (`lib/src/rules.dart`)
+### 📜 4. Predefined Rules templates (`lib/src/rule_registry.dart` and `lib/src/rules/`)
 Contains global definitions for standard checks. Uses standard types (`CheckType`) allowing toggling and severity states.
 
 ### 📦 5. Core Data Models (`lib/src/models/`)
@@ -50,7 +50,7 @@ graph TD
     Validation --> ParseFront[YAML Frontmatter Parsing]
     ParseFront --> RuleChecks[Run Field + Path Checks]
     RuleChecks --> ResultAggregate[Compile ValidationError List]
-    ResultAggregate --> IgnoreFilter[Apply dart_skills_lint_ignore.json filters]
+    ResultAggregate --> IgnoreFilter[Apply baseline ignore file filters]
     IgnoreFilter --> LogOutput[Print to console & Set exitCode]
     LogOutput --> Next{Next Dir?}
     Next -- Yes --> DirLoop
