@@ -18,7 +18,7 @@ jobs:
       github.event.pull_request.head.ref != 'automation/sync-dart-skills'
     steps:
       - name: Fail Action and Comment on PR
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const prNumber = context.payload.pull_request.number;
