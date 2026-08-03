@@ -88,63 +88,16 @@ class Validator {
   /// Scans the directory for `SKILL.md`, parses its YAML metadata, and validates
   /// constraints like name format and field lengths using registered rules.
   Future<ValidationResult> validate(Directory dir) async {
-    final validationErrors = <ValidationError>[];
     final skillMdFile = File(p.join(dir.path, _skillFileName));
     final bool skillMdExists = dir.existsSync() && skillMdFile.existsSync();
 
-    var content = '';
-    YamlMap? parsedYaml;
-    String? yamlParsingError;
-
-    if (skillMdExists) {
-      try {
-        content = await skillMdFile.readAsString();
-      } on FileSystemException catch (e) {
-        validationErrors.add(
-          ValidationError(
-            ruleId: skillFileInaccessible,
-            file: skillMdFile.path,
-            message: 'Failed to read $_skillFileName: $e',
-            severity: _getSeverity(skillFileInaccessible, AnalysisSeverity.error),
-          ),
-        );
-        return ValidationResult(validationErrors: validationErrors);
-      } catch (e) {
-        validationErrors.add(
-          ValidationError(
-            ruleId: unexpectedError,
-            file: skillMdFile.path,
-            message: 'Unexpected error reading $_skillFileName: $e',
-            severity: _getSeverity(unexpectedError, AnalysisSeverity.error),
-          ),
-        );
-        return ValidationResult(validationErrors: validationErrors);
-      }
-
-      try {
-        final RegExpMatch? match = SkillContext.skillStartRegex.firstMatch(content);
-        if (match != null) {
-          final String yamlStr = match.group(1)!;
-          final Object? doc = loadYaml(yamlStr);
-          if (doc is YamlMap) {
-            parsedYaml = doc;
-          } else {
-            yamlParsingError = 'YAML frontmatter is not a map';
-          }
-        } else {
-          yamlParsingError = 'Missing YAML metadata in $_skillFileName';
-        }
-      } catch (e) {
-        yamlParsingError = 'Failed to parse YAML: $e';
-      }
+    final fatalErrors = <ValidationError>[];
+    final SkillContext? context = await _buildContext(dir, skillMdFile, skillMdExists, fatalErrors);
+    if (context == null) {
+      return ValidationResult(validationErrors: fatalErrors);
     }
 
-    final context = SkillContext(
-      directory: dir,
-      rawContent: content,
-      parsedYaml: parsedYaml,
-      yamlParsingError: yamlParsingError,
-    );
+    final validationErrors = <ValidationError>[];
 
     for (final SkillRule rule in _rules) {
       // If SKILL.md or the directory does not exist or is inaccessible, running content validation rules
@@ -154,17 +107,87 @@ class Validator {
         continue;
       }
       final List<ValidationError> errors = await rule.validate(context);
-      for (final error in errors) {
-        if (error.severity != rule.severity) {
-          _log.warning(
-            'Rule "${rule.name}" used severity ${error.severity} instead of defined ${rule.severity}.',
-          );
-        }
-      }
+      _checkSeverityWarnings(rule, errors);
       validationErrors.addAll(errors);
     }
 
     return ValidationResult(validationErrors: validationErrors, context: context);
+  }
+
+  /// Reads the skill file content and parses its YAML frontmatter to build a [SkillContext].
+  ///
+  /// Appends any disk-read exception to [fatalErrors] and returns `null` if
+  /// [skillMdFile] cannot be read from disk.
+  Future<SkillContext?> _buildContext(
+    Directory dir,
+    File skillMdFile,
+    bool skillMdExists,
+    List<ValidationError> fatalErrors,
+  ) async {
+    if (!skillMdExists) {
+      return SkillContext(directory: dir, rawContent: '');
+    }
+
+    final String content;
+    try {
+      content = await skillMdFile.readAsString();
+    } on FileSystemException catch (e) {
+      fatalErrors.add(
+        ValidationError(
+          ruleId: skillFileInaccessible,
+          file: skillMdFile.path,
+          message: 'Failed to read $_skillFileName: $e',
+          severity: _getSeverity(skillFileInaccessible, AnalysisSeverity.error),
+        ),
+      );
+      return null;
+    } catch (e) {
+      fatalErrors.add(
+        ValidationError(
+          ruleId: unexpectedError,
+          file: skillMdFile.path,
+          message: 'Unexpected error reading $_skillFileName: $e',
+          severity: _getSeverity(unexpectedError, AnalysisSeverity.error),
+        ),
+      );
+      return null;
+    }
+
+    YamlMap? parsedYaml;
+    String? yamlParsingError;
+    try {
+      final RegExpMatch? match = SkillContext.skillStartRegex.firstMatch(content);
+      if (match == null) {
+        yamlParsingError = 'Missing YAML metadata in $_skillFileName';
+      } else {
+        final String yamlStr = match.group(1)!;
+        final Object? doc = loadYaml(yamlStr);
+        if (doc is YamlMap) {
+          parsedYaml = doc;
+        } else {
+          yamlParsingError = 'YAML frontmatter is not a map';
+        }
+      }
+    } catch (e) {
+      yamlParsingError = 'Failed to parse YAML: $e';
+    }
+
+    return SkillContext(
+      directory: dir,
+      rawContent: content,
+      parsedYaml: parsedYaml,
+      yamlParsingError: yamlParsingError,
+    );
+  }
+
+  void _checkSeverityWarnings(SkillRule rule, List<ValidationError> errors) {
+    for (final error in errors) {
+      if (error.severity != rule.severity) {
+        _log.warning(
+          'Rule "${rule.name}" used severity ${error.severity} instead of defined ${rule.severity}.',
+        );
+      }
+    }
   }
 
   /// Compiles the final list of active rules for the validator.

@@ -107,7 +107,7 @@ class ConfigParser {
     }
   }
 
-  /// Parses the baseline rules configuration under the top-level `rules` key.
+  /// Parses the project-wide default rule configurations from the top-level `rules` map.
   ///
   /// The settings parsed here serve as the global defaults that apply to all
   /// validated skills in the project. Any target-specific settings defined
@@ -128,7 +128,7 @@ class ConfigParser {
     return const {};
   }
 
-  /// Parses a map of rules to their respective severity and parameter configurations.
+  /// Iterates a YAML rules map and converts each entry into a [RuleConfigPatch].
   ///
   /// Validates that parameter keys and value types match their definitions in the registry,
   /// appending any validation errors to [parsingErrors] labeled by [contextLabel].
@@ -147,120 +147,178 @@ class ConfigParser {
       final checkMatches = RuleRegistry.allChecks.where((c) => c.name == ruleName);
       final CheckType? check = checkMatches.isEmpty ? null : checkMatches.first;
 
-      if (value is YamlMap) {
-        final severity = value.containsKey(_severityKey)
-            ? _parseSeverity(value[_severityKey]?.toString() ?? '')
-            : null;
-
-        final parameters = <String, dynamic>{};
-        for (final paramKey in value.keys) {
-          final paramName = paramKey.toString();
-          if (paramName == _severityKey) {
-            continue;
-          }
-          parameters[paramName] = value[paramKey];
-        }
-
-        final customParams = parameters.isNotEmpty ? CustomRuleParameters(parameters) : null;
-        ruleConfigs[ruleName] = RuleConfigPatch(severity: severity, parameters: customParams);
-
-        if (customParams != null && check != null) {
-          final errors = check.validateParameters(customParams);
-          for (final error in errors) {
-            parsingErrors.add('$contextLabel: $error');
-          }
-        }
-      } else {
-        final severity = _parseSeverity(value?.toString() ?? '');
-        ruleConfigs[ruleName] = RuleConfigPatch(severity: severity);
-      }
+      ruleConfigs[ruleName] = _parseRuleConfigPatch(value, check, parsingErrors, contextLabel);
     }
 
     return ruleConfigs;
   }
 
-  /// Parses a list of targets (directories or individual skills) from the configuration.
-  /// Validates keys for each entry and resolves path-specific rule overrides.
-  /// Appends any parsing errors to `parsingErrors`.
+  /// Parses a single rule's configuration value into a [RuleConfigPatch].
   ///
-  /// Each entry is parsed defensively: a bad `path:` / `ignore_file:` /
-  /// `rules:` type emits a parsingErrors entry naming the offending field
-  /// and the entry is skipped, but later entries in the same list
-  /// still parse normally.
+  /// Supports simple scalar severity declarations (e.g., `rule-name: error`) as
+  /// well as map declarations containing custom parameter overrides and severity
+  /// settings (e.g., `rule-name: { severity: error, param: value }`). Validates
+  /// any custom parameters against [check], appending schema validation errors
+  /// to [parsingErrors] labeled with [contextLabel].
+  static RuleConfigPatch _parseRuleConfigPatch(
+    Object? value,
+    CheckType? check,
+    List<String> parsingErrors,
+    String contextLabel,
+  ) {
+    if (value is! YamlMap) {
+      final severity = _parseSeverity(value?.toString() ?? '');
+      return RuleConfigPatch(severity: severity);
+    }
+
+    final severity = value.containsKey(_severityKey)
+        ? _parseSeverity(value[_severityKey]?.toString() ?? '')
+        : null;
+
+    final parameters = <String, dynamic>{};
+    for (final paramKey in value.keys) {
+      final paramName = paramKey.toString();
+      if (paramName != _severityKey) {
+        parameters[paramName] = value[paramKey];
+      }
+    }
+
+    final customParams = parameters.isNotEmpty ? CustomRuleParameters(parameters) : null;
+
+    if (customParams != null && check != null) {
+      final errors = check.validateParameters(customParams);
+      for (final error in errors) {
+        parsingErrors.add('$contextLabel: $error');
+      }
+    }
+
+    return RuleConfigPatch(severity: severity, parameters: customParams);
+  }
+
+  /// Iterates a top-level YAML target list (`directories` or `individual_skills`)
+  /// and parses each element into a [LintTargetConfig].
+  ///
+  /// Delegates validation of an individual list element to [_parseTargetEntry].
+  /// Returns an empty list if [configKey] is omitted or not a list.
   static List<LintTargetConfig> _parseConfigList(
     YamlMap toolConfig,
     String configKey,
     List<String> parsingErrors,
   ) {
+    if (!toolConfig.containsKey(configKey)) {
+      return const [];
+    }
+    final items = toolConfig[configKey];
+    if (items is! YamlList) {
+      return const [];
+    }
+
     final entryLabelCap = configKey == _directoriesKey
         ? 'Directory entry'
         : 'Individual skill entry';
     final entryLabelLower = configKey == _directoriesKey
         ? 'directory entry'
         : 'individual skill entry';
+
     final configs = <LintTargetConfig>[];
-    if (toolConfig.containsKey(configKey)) {
-      final items = toolConfig[configKey];
-      if (items is YamlList) {
-        for (final dir in items) {
-          if (dir is! YamlMap || !dir.containsKey(_pathKey)) {
-            continue;
-          }
-
-          final pathValue = dir[_pathKey];
-          if (pathValue is! String) {
-            parsingErrors.add(
-              '$entryLabelCap "$_pathKey" must be a string; got "$pathValue" '
-              '(${pathValue.runtimeType}). Skipping entry.',
-            );
-            continue;
-          }
-          final String path = pathValue;
-
-          for (final key in dir.keys) {
-            if (!_allowedDirectoryKeys.contains(key.toString())) {
-              parsingErrors.add('Unrecognized key "$key" in $entryLabelLower for "$path".');
-            }
-          }
-
-          Map<String, RuleConfigPatch> ruleConfigs = const {};
-          if (dir.containsKey(_rulesKey)) {
-            final localRules = dir[_rulesKey];
-            if (localRules is YamlMap) {
-              ruleConfigs = _parseRulesMap(
-                localRules,
-                parsingErrors,
-                '$entryLabelCap rules for "$path"',
-              );
-            } else {
-              parsingErrors.add(
-                '$entryLabelCap "$_rulesKey" for "$path" must be a map; '
-                'got "$localRules" (${localRules.runtimeType}). Ignoring local rules.',
-              );
-            }
-          }
-
-          String? ignoreFile;
-          if (dir.containsKey(_ignoreFileKey)) {
-            final ignoreFileValue = dir[_ignoreFileKey];
-            if (ignoreFileValue is String) {
-              ignoreFile = ignoreFileValue;
-            } else if (ignoreFileValue != null) {
-              parsingErrors.add(
-                '$entryLabelCap "$_ignoreFileKey" for "$path" must be a string; '
-                'got "$ignoreFileValue" (${ignoreFileValue.runtimeType}). '
-                'Falling back to the default ignore file.',
-              );
-            }
-          }
-
-          configs.add(
-            LintTargetConfig(path: path, ruleConfigs: ruleConfigs, ignoreFile: ignoreFile),
-          );
-        }
+    for (final dir in items) {
+      if (dir is! YamlMap || !dir.containsKey(_pathKey)) {
+        continue;
+      }
+      final config = _parseTargetEntry(dir, entryLabelCap, entryLabelLower, parsingErrors);
+      if (config != null) {
+        configs.add(config);
       }
     }
     return configs;
+  }
+
+  /// Parses a single dictionary element from a target list (`directories` or `individual_skills`).
+  ///
+  /// Validates the `path` string and checks for unrecognized keys. Delegates
+  /// parsing of sub-keys to [_parseLocalRulesForTarget] (`rules`) and
+  /// [_parseIgnoreFileForTarget] (`ignore_file`). Returns `null` if `path` is
+  /// invalid or missing.
+  static LintTargetConfig? _parseTargetEntry(
+    YamlMap dir,
+    String entryLabelCap,
+    String entryLabelLower,
+    List<String> parsingErrors,
+  ) {
+    final pathValue = dir[_pathKey];
+    if (pathValue is! String) {
+      parsingErrors.add(
+        '$entryLabelCap "$_pathKey" must be a string; got "$pathValue" '
+        '(${pathValue.runtimeType}). Skipping entry.',
+      );
+      return null;
+    }
+    final String path = pathValue;
+
+    for (final key in dir.keys) {
+      if (!_allowedDirectoryKeys.contains(key.toString())) {
+        parsingErrors.add('Unrecognized key "$key" in $entryLabelLower for "$path".');
+      }
+    }
+
+    final ruleConfigs = _parseLocalRulesForTarget(dir, path, entryLabelCap, parsingErrors);
+
+    final ignoreFile = _parseIgnoreFileForTarget(dir, path, entryLabelCap, parsingErrors);
+
+    return LintTargetConfig(path: path, ruleConfigs: ruleConfigs, ignoreFile: ignoreFile);
+  }
+
+  /// Parses path-specific rule overrides under a target entry's `rules` key.
+  ///
+  /// Unlike [_parseDefaultRules], which sets global baselines, configurations
+  /// parsed here apply only to skills within this specific target path.
+  /// Delegates to [_parseRulesMap].
+  static Map<String, RuleConfigPatch> _parseLocalRulesForTarget(
+    YamlMap dir,
+    String path,
+    String entryLabelCap,
+    List<String> parsingErrors,
+  ) {
+    if (!dir.containsKey(_rulesKey)) {
+      return const {};
+    }
+    final localRules = dir[_rulesKey];
+    if (localRules is YamlMap) {
+      return _parseRulesMap(localRules, parsingErrors, '$entryLabelCap rules for "$path"');
+    }
+    parsingErrors.add(
+      '$entryLabelCap "$_rulesKey" for "$path" must be a map; '
+      'got "$localRules" (${localRules.runtimeType}). Ignoring local rules.',
+    );
+    return const {};
+  }
+
+  /// Parses the custom ignore file path under a target entry's `ignore_file` key.
+  ///
+  /// Returns `null` if omitted. If present but not a string, appends a type
+  /// error to [parsingErrors] and returns `null` to fall back to the default
+  /// ignore file.
+  static String? _parseIgnoreFileForTarget(
+    YamlMap dir,
+    String path,
+    String entryLabelCap,
+    List<String> parsingErrors,
+  ) {
+    if (!dir.containsKey(_ignoreFileKey)) {
+      return null;
+    }
+    final ignoreFileValue = dir[_ignoreFileKey];
+    if (ignoreFileValue is String) {
+      return ignoreFileValue;
+    }
+    if (ignoreFileValue != null) {
+      parsingErrors.add(
+        '$entryLabelCap "$_ignoreFileKey" for "$path" must be a string; '
+        'got "$ignoreFileValue" (${ignoreFileValue.runtimeType}). '
+        'Falling back to the default ignore file.',
+      );
+    }
+    return null;
   }
 }
 

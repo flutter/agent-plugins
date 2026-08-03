@@ -93,129 +93,12 @@ void main() {
       }
     });
 
-    /// Simulates a packaged GitHub release asset by writing a dummy binary,
-    /// compressing it to a `.tar.gz` archive in the mock release directory,
-    /// and generating the corresponding `SHA256SUMS` checksum file.
-    ///
-    /// If [shouldCorruptHash] is true, the `SHA256SUMS` file will be written with
-    /// an invalid hash to test checksum verification failure paths.
-    Future<void> createMockRelease({
-      required String os,
-      required String arch,
-      required String binaryContent,
-      bool shouldCorruptHash = false,
-    }) async {
-      final target = '$os-$arch';
-      final binaryName = 'dart_skills_lint-$target';
-      final archiveName = 'dart_skills_lint-$target.tar.gz';
-
-      // Create dummy binary file
-      final dummyBin = File(p.join(tempDir.path, binaryName));
-      await dummyBin.writeAsString(binaryContent);
-      final ProcessResult chmodBinResult = await Process.run('chmod', ['+x', dummyBin.path]);
-      expect(
-        chmodBinResult.exitCode,
-        0,
-        reason: 'chmod failed for dummy binary: ${chmodBinResult.stderr}',
-      );
-
-      // Package it into tar.gz
-      final ProcessResult tarResult = await Process.run('tar', [
-        '-czf',
-        p.join(mockReleaseDir.path, archiveName),
-        '-C',
-        tempDir.path,
-        binaryName,
-      ]);
-      expect(tarResult.exitCode, 0, reason: 'tar packaging failed: ${tarResult.stderr}');
-
-      // Get SHA256 sum
-      var hash = '';
-      // TODO(reidbaker): Re-add CertUtil checksum verification for Windows hosts. https://github.com/flutter/agent-plugins/issues/164
-      final ProcessResult shaProcess = await Process.run('shasum', [
-        '-a',
-        '256',
-        p.join(mockReleaseDir.path, archiveName),
-      ]);
-      if (shaProcess.exitCode == 0) {
-        hash = shaProcess.stdout.toString().trim().split(' ')[0];
-      } else {
-        final ProcessResult sha256Process = await Process.run('sha256sum', [
-          p.join(mockReleaseDir.path, archiveName),
-        ]);
-        if (sha256Process.exitCode == 0) {
-          hash = sha256Process.stdout.toString().trim().split(' ')[0];
-        }
-      }
-
-      if (hash.isEmpty) {
-        throw StateError('Could not calculate SHA256 hash using shasum or sha256sum.');
-      }
-
-      final String finalHash = shouldCorruptHash ? _corruptedHash : hash;
-
-      final sha256sums = File(p.join(mockReleaseDir.path, 'SHA256SUMS'));
-      await sha256sums.writeAsString('$finalHash  $archiveName\n');
-    }
-
-    Future<void> runInstallScriptTest({
-      required String os,
-      required String arch,
-      required String mockUnameS,
-      required String mockUnameM,
-      required bool simulateLaunchFailure,
-      required int expectedExitCode,
-      required bool expectInstalled,
-    }) async {
-      const version = '0.4.0-test';
-      final binaryContent = simulateLaunchFailure
-          ? '#!/usr/bin/env bash\nexit 1\n'
-          : '#!/usr/bin/env bash\necho "mock-cli-help"\n';
-
-      await createMockRelease(os: os, arch: arch, binaryContent: binaryContent);
-
-      // TODO(reidbaker): Use Windows path separator (;) when running on Windows hosts. https://github.com/flutter/agent-plugins/issues/164
-      final newPath = '${mockBinDir.path}:${Platform.environment['PATH']}';
-      final String packageRoot = _getPackageRoot();
-      final String scriptPath = p.join(packageRoot, 'scripts', 'install.sh');
-
-      final TestProcess process = await TestProcess.start(
-        'bash',
-        [scriptPath],
-        environment: {
-          'PATH': newPath,
-          'MOCK_UNAME_S': mockUnameS,
-          'MOCK_UNAME_M': mockUnameM,
-          'MOCK_RELEASE_DIR': mockReleaseDir.path,
-          'INSTALL_DIR': installDir.path,
-          'VERSION': version,
-        },
-      );
-
-      await process.shouldExit(expectedExitCode);
-
-      final installedFile = File(p.join(installDir.path, 'dart_skills_lint'));
-      expect(installedFile.existsSync(), equals(expectInstalled));
-
-      if (expectInstalled && expectedExitCode == 0) {
-        if (simulateLaunchFailure) {
-          final List<String> stdout = await process.stdout.rest.toList();
-          expect(
-            stdout.any((line) => line.contains('launch check failed — likely Gatekeeper')),
-            isTrue,
-          );
-        } else {
-          final ProcessResult runResult = await Process.run(installedFile.path, ['--help']);
-          expect(runResult.stdout.toString().trim(), equals('mock-cli-help'));
-        }
-      } else if (expectedExitCode == 1 && simulateLaunchFailure) {
-        final List<String> stderr = await process.stderr.rest.toList();
-        expect(stderr.any((line) => line.contains('failed to launch')), isTrue);
-      }
-    }
-
     test('successful installation on macos-arm64', () async {
-      await runInstallScriptTest(
+      await _runInstallScriptTest(
+        tempDir: tempDir,
+        mockBinDir: mockBinDir,
+        mockReleaseDir: mockReleaseDir,
+        installDir: installDir,
         os: 'macos',
         arch: 'arm64',
         mockUnameS: 'Darwin',
@@ -227,7 +110,11 @@ void main() {
     });
 
     test('successful installation on linux-x64', () async {
-      await runInstallScriptTest(
+      await _runInstallScriptTest(
+        tempDir: tempDir,
+        mockBinDir: mockBinDir,
+        mockReleaseDir: mockReleaseDir,
+        installDir: installDir,
         os: 'linux',
         arch: 'x64',
         mockUnameS: 'Linux',
@@ -239,7 +126,11 @@ void main() {
     });
 
     test('fails on linux if installed binary fails launch check', () async {
-      await runInstallScriptTest(
+      await _runInstallScriptTest(
+        tempDir: tempDir,
+        mockBinDir: mockBinDir,
+        mockReleaseDir: mockReleaseDir,
+        installDir: installDir,
         os: 'linux',
         arch: 'x64',
         mockUnameS: 'Linux',
@@ -251,7 +142,11 @@ void main() {
     });
 
     test('succeeds on macos even if installed binary fails launch check', () async {
-      await runInstallScriptTest(
+      await _runInstallScriptTest(
+        tempDir: tempDir,
+        mockBinDir: mockBinDir,
+        mockReleaseDir: mockReleaseDir,
+        installDir: installDir,
         os: 'macos',
         arch: 'arm64',
         mockUnameS: 'Darwin',
@@ -264,7 +159,9 @@ void main() {
 
     test('fails if checksum mismatch', () async {
       const version = '0.4.0-test';
-      await createMockRelease(
+      await _createMockRelease(
+        tempDir: tempDir,
+        mockReleaseDir: mockReleaseDir,
         os: 'macos',
         arch: 'arm64',
         binaryContent: 'dummy',
@@ -458,4 +355,137 @@ String _getPackageRoot() {
     return subdir.path;
   }
   return currentPath;
+}
+
+/// Simulates a packaged GitHub release asset by writing a dummy binary,
+/// compressing it to a `.tar.gz` archive in [mockReleaseDir], and generating
+/// the corresponding `SHA256SUMS` checksum file.
+///
+/// If [shouldCorruptHash] is true, the `SHA256SUMS` file will be written with
+/// an invalid hash to test checksum verification failure paths.
+Future<void> _createMockRelease({
+  required Directory tempDir,
+  required Directory mockReleaseDir,
+  required String os,
+  required String arch,
+  required String binaryContent,
+  bool shouldCorruptHash = false,
+}) async {
+  final target = '$os-$arch';
+  final binaryName = 'dart_skills_lint-$target';
+  final archiveName = 'dart_skills_lint-$target.tar.gz';
+
+  // Create dummy binary file
+  final dummyBin = File(p.join(tempDir.path, binaryName));
+  await dummyBin.writeAsString(binaryContent);
+  final ProcessResult chmodBinResult = await Process.run('chmod', ['+x', dummyBin.path]);
+  expect(
+    chmodBinResult.exitCode,
+    0,
+    reason: 'chmod failed for dummy binary: ${chmodBinResult.stderr}',
+  );
+
+  // Package it into tar.gz
+  final ProcessResult tarResult = await Process.run('tar', [
+    '-czf',
+    p.join(mockReleaseDir.path, archiveName),
+    '-C',
+    tempDir.path,
+    binaryName,
+  ]);
+  expect(tarResult.exitCode, 0, reason: 'tar packaging failed: ${tarResult.stderr}');
+
+  // Get SHA256 sum
+  var hash = '';
+  // TODO(reidbaker): Re-add CertUtil checksum verification for Windows hosts. https://github.com/flutter/agent-plugins/issues/164
+  final ProcessResult shaProcess = await Process.run('shasum', [
+    '-a',
+    '256',
+    p.join(mockReleaseDir.path, archiveName),
+  ]);
+  if (shaProcess.exitCode == 0) {
+    hash = shaProcess.stdout.toString().trim().split(' ')[0];
+  } else {
+    final ProcessResult sha256Process = await Process.run('sha256sum', [
+      p.join(mockReleaseDir.path, archiveName),
+    ]);
+    if (sha256Process.exitCode == 0) {
+      hash = sha256Process.stdout.toString().trim().split(' ')[0];
+    }
+  }
+
+  if (hash.isEmpty) {
+    throw StateError('Could not calculate SHA256 hash using shasum or sha256sum.');
+  }
+
+  final String finalHash = shouldCorruptHash ? _corruptedHash : hash;
+
+  final sha256sums = File(p.join(mockReleaseDir.path, 'SHA256SUMS'));
+  await sha256sums.writeAsString('$finalHash  $archiveName\n');
+}
+
+Future<void> _runInstallScriptTest({
+  required Directory tempDir,
+  required Directory mockBinDir,
+  required Directory mockReleaseDir,
+  required Directory installDir,
+  required String os,
+  required String arch,
+  required String mockUnameS,
+  required String mockUnameM,
+  required bool simulateLaunchFailure,
+  required int expectedExitCode,
+  required bool expectInstalled,
+}) async {
+  const version = '0.4.0-test';
+  final binaryContent = simulateLaunchFailure
+      ? '#!/usr/bin/env bash\nexit 1\n'
+      : '#!/usr/bin/env bash\necho "mock-cli-help"\n';
+
+  await _createMockRelease(
+    tempDir: tempDir,
+    mockReleaseDir: mockReleaseDir,
+    os: os,
+    arch: arch,
+    binaryContent: binaryContent,
+  );
+
+  // TODO(reidbaker): Use Windows path separator (;) when running on Windows hosts. https://github.com/flutter/agent-plugins/issues/164
+  final newPath = '${mockBinDir.path}:${Platform.environment['PATH']}';
+  final String packageRoot = _getPackageRoot();
+  final String scriptPath = p.join(packageRoot, 'scripts', 'install.sh');
+
+  final TestProcess process = await TestProcess.start(
+    'bash',
+    [scriptPath],
+    environment: {
+      'PATH': newPath,
+      'MOCK_UNAME_S': mockUnameS,
+      'MOCK_UNAME_M': mockUnameM,
+      'MOCK_RELEASE_DIR': mockReleaseDir.path,
+      'INSTALL_DIR': installDir.path,
+      'VERSION': version,
+    },
+  );
+
+  await process.shouldExit(expectedExitCode);
+
+  final installedFile = File(p.join(installDir.path, 'dart_skills_lint'));
+  expect(installedFile.existsSync(), equals(expectInstalled));
+
+  if (expectInstalled && expectedExitCode == 0) {
+    if (simulateLaunchFailure) {
+      final List<String> stdout = await process.stdout.rest.toList();
+      expect(
+        stdout.any((line) => line.contains('launch check failed — likely Gatekeeper')),
+        isTrue,
+      );
+    } else {
+      final ProcessResult runResult = await Process.run(installedFile.path, ['--help']);
+      expect(runResult.stdout.toString().trim(), equals('mock-cli-help'));
+    }
+  } else if (expectedExitCode == 1 && simulateLaunchFailure) {
+    final List<String> stderr = await process.stderr.rest.toList();
+    expect(stderr.any((line) => line.contains('failed to launch')), isTrue);
+  }
 }

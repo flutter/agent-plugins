@@ -155,11 +155,11 @@ class ValidationSession {
     final String? localIgnoreFile = resolveIgnoreFile(normalizedSkillPath);
     final validator = Validator(ruleConfigs: resolvedConfigs, customRules: customRules);
 
-    final ({SkillsIgnores ignores, String ignorePath}) loaded = await _loadIgnores(
-      localIgnoreFile,
-      skillDir,
+    final String ignorePath = _resolveIgnorePath(localIgnoreFile, skillDir);
+    final SkillsIgnores ignores = await _loadIgnores(
+      ignorePath,
+      isCustomIgnoreFile: localIgnoreFile != null,
     );
-    final SkillsIgnores ignores = loaded.ignores;
     final String skillName = p.basename(skillDir.path);
     final List<IgnoreEntry> skillIgnores = ignores.skills[skillName] ?? [];
 
@@ -171,7 +171,7 @@ class ValidationSession {
     );
 
     if (generateBaseline) {
-      await _saveBaseline(loaded.ignorePath, ignores);
+      await _saveBaseline(ignorePath, ignores);
     } else {
       final String fullPath = p.absolute(skillDir.path);
       for (final ignore in skillIgnores) {
@@ -230,52 +230,93 @@ class ValidationSession {
     final Map<String, SkillsIgnores> loadedIgnoresCache = {};
 
     for (final entity in entities) {
-      if (entity is! Directory) {
-        continue;
-      }
-      if (p.basename(entity.path).startsWith('.')) {
+      if (entity is! Directory || p.basename(entity.path).startsWith('.')) {
         continue;
       }
 
-      final String normalizedSkillPath = p.normalize(entity.path);
-      final Map<String, RuleConfig> resolvedConfigs = resolveRuleConfigsForPath(
-        normalizedSkillPath,
+      final bool shouldContinue = await _processRootSkillEntity(
+        entity,
+        rootDir,
+        loadedIgnoresCache,
       );
-      final String? localIgnoreFile = resolveIgnoreFile(normalizedSkillPath);
-      final validator = Validator(ruleConfigs: resolvedConfigs, customRules: customRules);
-
-      final String ignorePath = localIgnoreFile != null
-          ? p.normalize(expandPath(localIgnoreFile))
-          : p.join(rootDir.path, defaultIgnoreFileName);
-
-      final SkillsIgnores ignores;
-      if (loadedIgnoresCache.containsKey(ignorePath)) {
-        ignores = loadedIgnoresCache[ignorePath]!;
-      } else {
-        final ({SkillsIgnores ignores, String ignorePath}) loaded = await _loadIgnores(
-          localIgnoreFile,
-          rootDir,
-        );
-        ignores = loaded.ignores;
-        loadedIgnoresCache[ignorePath] = ignores;
-      }
-
-      _anySkillsValidated = true;
-      final ValidationResult finalResult = await _runValidationWorkflow(
-        skillDir: entity,
-        validator: validator,
-        ignores: ignores,
-      );
-
-      if (!finalResult.isValid) {
-        _anyFailed = true;
-        if (fastFail) {
-          break;
-        }
+      if (!shouldContinue) {
+        break;
       }
     }
 
-    // Save baselines and report stale entries for each loaded ignore file
+    await _finalizeIgnoresForRoot(loadedIgnoresCache, rootDir);
+
+    return !(_anyFailed && fastFail);
+  }
+
+  /// Processes and validates a single skill directory ([entity]) located
+  /// immediately inside a skills root directory ([rootDir]).
+  ///
+  /// In this context, "root" refers to the container directory passed via
+  /// `--skills-directory` / `-d` (represented by [rootDir]), which holds one or
+  /// more child skill folders. [entity] is an individual skill folder within
+  /// that root container.
+  ///
+  /// Returns `true` if iteration over the remaining skills in [rootDir] should
+  /// continue, or `false` to abort early when [fastFail] is enabled and this
+  /// skill failed validation.
+  Future<bool> _processRootSkillEntity(
+    Directory entity,
+    Directory rootDir,
+    Map<String, SkillsIgnores> loadedIgnoresCache,
+  ) async {
+    final String normalizedSkillPath = p.normalize(entity.path);
+    final Map<String, RuleConfig> resolvedConfigs = resolveRuleConfigsForPath(normalizedSkillPath);
+    final String? localIgnoreFile = resolveIgnoreFile(normalizedSkillPath);
+    final validator = Validator(ruleConfigs: resolvedConfigs, customRules: customRules);
+
+    final SkillsIgnores ignores = await _getIgnoresForSkill(
+      localIgnoreFile,
+      normalizedSkillPath,
+      rootDir,
+      loadedIgnoresCache,
+    );
+
+    _anySkillsValidated = true;
+    final ValidationResult finalResult = await _runValidationWorkflow(
+      skillDir: entity,
+      validator: validator,
+      ignores: ignores,
+    );
+
+    if (!finalResult.isValid) {
+      _anyFailed = true;
+      if (fastFail) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  Future<SkillsIgnores> _getIgnoresForSkill(
+    String? localIgnoreFile,
+    String normalizedSkillPath,
+    Directory rootDir,
+    Map<String, SkillsIgnores> loadedIgnoresCache,
+  ) async {
+    final String ignorePath = _resolveIgnorePath(localIgnoreFile, rootDir);
+
+    if (loadedIgnoresCache.containsKey(ignorePath)) {
+      return loadedIgnoresCache[ignorePath]!;
+    }
+
+    final SkillsIgnores ignores = await _loadIgnores(
+      ignorePath,
+      isCustomIgnoreFile: localIgnoreFile != null,
+    );
+    loadedIgnoresCache[ignorePath] = ignores;
+    return ignores;
+  }
+
+  Future<void> _finalizeIgnoresForRoot(
+    Map<String, SkillsIgnores> loadedIgnoresCache,
+    Directory rootDir,
+  ) async {
     for (final MapEntry<String, SkillsIgnores> entry in loadedIgnoresCache.entries) {
       final String ignorePath = entry.key;
       final SkillsIgnores ignores = entry.value;
@@ -283,22 +324,24 @@ class ValidationSession {
       if (generateBaseline) {
         await _saveBaseline(ignorePath, ignores);
       } else {
-        for (final MapEntry<String, List<IgnoreEntry>> skillEntry in ignores.skills.entries) {
-          final String skillName = skillEntry.key;
-          for (final IgnoreEntry ignore in skillEntry.value) {
-            if (!ignore.used) {
-              final String fullPath = p.absolute(p.join(rootDir.path, skillName));
-              _log.info(
-                "Stale ignore entry found for rule '${ignore.ruleId}' in skill "
-                "'$skillName' at '$fullPath'. Consider removing it.",
-              );
-            }
-          }
+        _reportStaleIgnores(ignores, rootDir);
+      }
+    }
+  }
+
+  void _reportStaleIgnores(SkillsIgnores ignores, Directory rootDir) {
+    for (final MapEntry<String, List<IgnoreEntry>> skillEntry in ignores.skills.entries) {
+      final String skillName = skillEntry.key;
+      for (final IgnoreEntry ignore in skillEntry.value) {
+        if (!ignore.used) {
+          final String fullPath = p.absolute(p.join(rootDir.path, skillName));
+          _log.info(
+            "Stale ignore entry found for rule '${ignore.ruleId}' in skill "
+            "'$skillName' at '$fullPath'. Consider removing it.",
+          );
         }
       }
     }
-
-    return !(_anyFailed && fastFail);
   }
 
   /// If no skills were validated across the whole run, emit appropriate
@@ -393,32 +436,27 @@ class ValidationSession {
     return resolvedIgnoreFile;
   }
 
-  /// Loads the ignore JSON for a root, returning both the parsed
-  /// [SkillsIgnores] and the resolved on-disk path it came from (or where it
-  /// would be written).
-  ///
-  /// Returning the [SkillsIgnores] object (not just `.skills`) lets callers
-  /// mutate it in memory across all skills in a root and then save it once,
-  /// instead of doing a load+save round-trip per skill.
-  Future<({SkillsIgnores ignores, String ignorePath})> _loadIgnores(
-    String? localIgnoreFile,
-    Directory rootDir,
-  ) async {
-    final String ignorePath = localIgnoreFile != null
+  String _resolveIgnorePath(String? localIgnoreFile, Directory rootDir) {
+    return localIgnoreFile != null
         ? p.normalize(expandPath(localIgnoreFile))
         : p.join(rootDir.path, defaultIgnoreFileName);
+  }
 
+  /// Loads the ignore JSON from [ignorePath], returning the parsed [SkillsIgnores].
+  ///
+  /// If [isCustomIgnoreFile] is true and the file does not exist, generates an
+  /// empty baseline file on disk.
+  Future<SkillsIgnores> _loadIgnores(String ignorePath, {required bool isCustomIgnoreFile}) async {
     final file = File(ignorePath);
 
     if (file.existsSync()) {
       final storage = SkillsIgnoresStorage();
-      final SkillsIgnores ignores = await storage.load(ignorePath);
-      return (ignores: ignores, ignorePath: ignorePath);
+      return storage.load(ignorePath);
     }
 
     // If a custom ignore file was specified but not found, create an empty one
     // so the user can start adding ignores to it.
-    if (localIgnoreFile != null) {
+    if (isCustomIgnoreFile) {
       _log.warning('File not found generating-baseline');
       try {
         await file.writeAsString(jsonEncode({SkillsIgnores.skillsKey: <String, dynamic>{}}));
@@ -427,7 +465,7 @@ class ValidationSession {
       }
     }
 
-    return (ignores: SkillsIgnores(skills: {}), ignorePath: ignorePath);
+    return SkillsIgnores(skills: {});
   }
 
   void _applyIgnores(ValidationResult result, List<IgnoreEntry> ignores) {
@@ -517,57 +555,91 @@ class ValidationSession {
       return result;
     }
 
-    final String skillName = p.basename(skillDir.path);
     final skillMdFile = File(p.join(skillDir.path, SkillContext.skillFileName));
     if (!skillMdFile.existsSync()) {
       return result;
     }
 
+    final String fixedContent = await _runFixableRules(
+      context: context,
+      result: result,
+      validator: validator,
+    );
+
+    if (fixedContent == context.rawContent) {
+      return result;
+    }
+
+    return _handleFixResult(
+      skillDir: skillDir,
+      skillMdFile: skillMdFile,
+      originalContent: context.rawContent,
+      currentContent: fixedContent,
+      validator: validator,
+      skillIgnores: skillIgnores,
+      fallbackResult: result,
+    );
+  }
+
+  /// Runs all fixable rules against [context.rawContent] sequentially and
+  /// returns the resulting content string.
+  Future<String> _runFixableRules({
+    required SkillContext context,
+    required ValidationResult result,
+    required Validator validator,
+  }) async {
     String currentContent = context.rawContent;
-    final originalContent = currentContent;
-    var modified = false;
 
     for (final SkillRule rule in validator.rules) {
-      if (rule is FixableRule) {
-        final bool hasErrors = result.validationErrors.any(
-          (e) => e.ruleId == rule.name && !e.isIgnored,
+      if (rule is! FixableRule) {
+        continue;
+      }
+      final bool hasErrors = result.validationErrors.any(
+        (e) => e.ruleId == rule.name && !e.isIgnored,
+      );
+      if (!hasErrors) {
+        continue;
+      }
+
+      try {
+        final String newContent = await rule.fix(
+          SkillContext.skillFileName,
+          currentContent,
+          context.directory,
         );
-        if (hasErrors) {
-          try {
-            final String newContent = await rule.fix(
-              SkillContext.skillFileName,
-              currentContent,
-              context.directory,
-            );
-            if (newContent != currentContent) {
-              currentContent = newContent;
-              modified = true;
-            }
-          } catch (e) {
-            _log.severe("  Failed to apply fix for rule '${rule.name}': $e");
-          }
-        }
+        currentContent = newContent;
+      } catch (e) {
+        _log.severe("  Failed to apply fix for rule '${rule.name}': $e");
       }
     }
 
-    if (modified) {
-      if (fixApply) {
-        await skillMdFile.writeAsString(currentContent);
-        if (!quiet) {
-          _log.info('  Applied fixes for $skillName');
-        }
-        final ValidationResult newResult = await validator.validate(skillDir);
-        _applyIgnores(newResult, skillIgnores);
-        return newResult;
-      } else if (fix) {
-        if (!quiet) {
-          _log.info('  [Dry Run] Proposed changes for $skillName (SKILL.md):');
-          _printDiff(originalContent, currentContent);
-        }
-      }
-    }
+    return currentContent;
+  }
 
-    return result;
+  Future<ValidationResult> _handleFixResult({
+    required Directory skillDir,
+    required File skillMdFile,
+    required String originalContent,
+    required String currentContent,
+    required Validator validator,
+    required List<IgnoreEntry> skillIgnores,
+    required ValidationResult fallbackResult,
+  }) async {
+    final String skillName = p.basename(skillDir.path);
+    if (fixApply) {
+      await skillMdFile.writeAsString(currentContent);
+      if (!quiet) {
+        _log.info('  Applied fixes for $skillName');
+      }
+      final ValidationResult newResult = await validator.validate(skillDir);
+      _applyIgnores(newResult, skillIgnores);
+      return newResult;
+    }
+    if (fix && !quiet) {
+      _log.info('  [Dry Run] Proposed changes for $skillName (SKILL.md):');
+      _printDiff(originalContent, currentContent);
+    }
+    return fallbackResult;
   }
 
   /// Prints a simple line-by-line diff between [original] and [modified].

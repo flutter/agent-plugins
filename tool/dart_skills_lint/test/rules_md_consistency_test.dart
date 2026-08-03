@@ -64,20 +64,7 @@ void main() {
     });
 
     test('RULES.md "Default severity:" matches CheckType.defaultSeverity', () {
-      final List<String> mismatches = [];
-      for (final MapEntry<String, _DocRule> entry in docRules.entries) {
-        final String name = entry.key;
-        final CheckType? check = registryByName[name];
-        if (check == null) {
-          continue;
-        }
-        if (entry.value.defaultSeverity != check.defaultSeverity) {
-          mismatches.add(
-            '$name: RULES.md says ${entry.value.defaultSeverity.name}, '
-            'registry says ${check.defaultSeverity.name}',
-          );
-        }
-      }
+      final List<String> mismatches = _findSeverityMismatches(docRules, registryByName);
       expect(
         mismatches,
         isEmpty,
@@ -88,26 +75,7 @@ void main() {
     });
 
     test('RULES.md "Fixable:" matches whether the rule implements FixableRule', () {
-      final List<String> mismatches = [];
-      for (final MapEntry<String, _DocRule> entry in docRules.entries) {
-        final String name = entry.key;
-        final CheckType? check = registryByName[name];
-        if (check == null) {
-          continue;
-        }
-        final SkillRule? rule = RuleRegistry.createRule(name, check.defaultSeverity);
-        if (rule == null) {
-          mismatches.add('$name: RuleRegistry.createRule returned null');
-          continue;
-        }
-        final actuallyFixable = rule is FixableRule;
-        if (entry.value.fixable != actuallyFixable) {
-          mismatches.add(
-            '$name: RULES.md says fixable=${entry.value.fixable}, '
-            'class is FixableRule=$actuallyFixable',
-          );
-        }
-      }
+      final List<String> mismatches = _findFixableMismatches(docRules, registryByName);
       expect(
         mismatches,
         isEmpty,
@@ -117,6 +85,59 @@ void main() {
       );
     });
   });
+}
+
+/// Returns descriptive mismatch strings for rules whose documented
+/// `Default severity:` in `RULES.md` differs from [CheckType.defaultSeverity].
+List<String> _findSeverityMismatches(
+  Map<String, _DocRule> docRules,
+  Map<String, CheckType> registryByName,
+) {
+  final List<String> mismatches = [];
+  for (final MapEntry<String, _DocRule> entry in docRules.entries) {
+    final String name = entry.key;
+    final CheckType? check = registryByName[name];
+    if (check == null) {
+      continue;
+    }
+    if (entry.value.defaultSeverity != check.defaultSeverity) {
+      mismatches.add(
+        '$name: RULES.md says ${entry.value.defaultSeverity.name}, '
+        'registry says ${check.defaultSeverity.name}',
+      );
+    }
+  }
+  return mismatches;
+}
+
+/// Returns descriptive mismatch strings for rules whose documented
+/// `Fixable:` claim in `RULES.md` differs from whether the rule class
+/// implements [FixableRule].
+List<String> _findFixableMismatches(
+  Map<String, _DocRule> docRules,
+  Map<String, CheckType> registryByName,
+) {
+  final List<String> mismatches = [];
+  for (final MapEntry<String, _DocRule> entry in docRules.entries) {
+    final String name = entry.key;
+    final CheckType? check = registryByName[name];
+    if (check == null) {
+      continue;
+    }
+    final SkillRule? rule = RuleRegistry.createRule(name, check.defaultSeverity);
+    if (rule == null) {
+      mismatches.add('$name: RuleRegistry.createRule returned null');
+      continue;
+    }
+    final actuallyFixable = rule is FixableRule;
+    if (entry.value.fixable != actuallyFixable) {
+      mismatches.add(
+        '$name: RULES.md says fixable=${entry.value.fixable}, '
+        'class is FixableRule=$actuallyFixable',
+      );
+    }
+  }
+  return mismatches;
 }
 
 class _DocRule {
