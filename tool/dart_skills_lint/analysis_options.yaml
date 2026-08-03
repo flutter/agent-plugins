@@ -265,3 +265,37 @@ linter:
     - use_truncating_division
     - valid_regexps
     - void_checks
+
+dart_code_linter:
+  rules:
+    # Explicit typing
+    - avoid-dynamic
+    - avoid-unnecessary-type-assertions
+    - avoid-unnecessary-type-casts
+    - avoid-unrelated-type-assertions
+    - avoid-collection-methods-with-unrelated-types
+
+    # Predictable structure
+    - avoid-nested-conditional-expressions
+    - no-equal-then-else
+    - no-boolean-literal-compare
+    - no-empty-block
+    - avoid-redundant-async
+    - avoid-passing-async-when-sync-expected
+    # `late` for fields initialized in `setUp` is the idiomatic Dart test
+    # fixture pattern; enforce this rule on lib only.
+    - avoid-late-keyword:
+        exclude:
+          - test/**
+    - prefer-named-record-fields
+
+    # Clean up
+    - avoid-unused-parameters
+    - prefer-moving-to-variable
+    # Test files must be named `*_test.dart` for the test runner, and commonly
+    # hold several small fixture/mock classes, so they can never match this
+    # rule's "file name == first class name" convention. Enforce it on lib only.
+    - prefer-match-file-name:
+        exclude:
+          - test/**
+    - always-remove-listener
