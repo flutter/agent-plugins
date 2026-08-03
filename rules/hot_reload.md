@@ -5,6 +5,6 @@ description: Proactively connect to apps and hot reload
 ---
 
 Whenever you make edits to any Dart or Flutter files in this project:
-1. Proactively connect to the running application using the `dtd` tool and it's subcommands. Make sure to read the schema for this tool.
+1. Proactively connect to the running application using the `dtd` tool and its subcommands. Make sure to read the schema for this tool.
 2. Trigger a hot reload using the `hot_reload` tool to push the changes immediately.
 3. If no app is running, inform the user but do not let it stop you from completing the code edits.
