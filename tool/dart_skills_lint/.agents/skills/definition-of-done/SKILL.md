@@ -15,7 +15,7 @@ Before stating that a task is complete, you MUST execute and pass the following 
 
 1.  **Format**: Run `dart format .` to format files, or `dart format --output=none --set-exit-if-changed .` to check without modifying. Ensure all files are formatted correctly.
 2.  **Analysis**: Run `dart analyze --fatal-infos` and ensure there are zero issues (including info-level issues).
-3.  **Metrics**: Run `dart run cognitive_complexity --fail-threshold 48 lib` and ensure there are zero issues. This checks for cognitive complexity.
+3.  **Metrics**: Run `dart run cognitive_complexity --fail-threshold 48 lib test` and ensure there are zero issues. This checks for cognitive complexity.
 4.  **Tests**: Run `dart test` and ensure all tests pass successfully.
 5.  **Skills**: If any skill files were modified, run `dart run dart_skills_lint -d .agents/skills` to ensure they are valid.
 6.  **Changelog**: If the task introduces user-facing CLI flags, package API changes, bug fixes, or user-facing behavioral changes, update `CHANGELOG.md`.
