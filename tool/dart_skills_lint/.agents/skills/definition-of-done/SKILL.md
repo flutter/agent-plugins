@@ -15,10 +15,13 @@ Before stating that a task is complete, you MUST execute and pass the following 
 
 1.  **Format**: Run `dart format .` to format files, or `dart format --output=none --set-exit-if-changed .` to check without modifying. Ensure all files are formatted correctly.
 2.  **Analysis**: Run `dart analyze --fatal-infos` and ensure there are zero issues (including info-level issues).
-3.  **Metrics**: Run `dart run dart_code_linter:metrics analyze lib` and ensure there are zero issues. This checks for cyclomatic complexity and custom rules like file naming and redundant async.
+3.  **Metrics**: Run `dart run cognitive_complexity --fail-threshold 46 lib` and ensure there are zero issues. This checks for cognitive complexity.
 4.  **Tests**: Run `dart test` and ensure all tests pass successfully.
 5.  **Skills**: If any skill files were modified, run `dart run dart_skills_lint -d .agents/skills` to ensure they are valid.
-6.  **Changelog**: Ensure `CHANGELOG.md` is updated if the task includes user-facing features, bug fixes, or behavioral changes. Audit all entries against the *previously released version* (do not document changes to intermediate PR development code or new unreleased APIs as breaking changes).
+6.  **Changelog**: If the task introduces user-facing CLI flags, package API changes, bug fixes, or user-facing behavioral changes, update `CHANGELOG.md`.
+    - **Do NOT log internal chores**: Do not add entries for internal CI workflows, dev dependency updates/migrations, test refactoring, or repository infrastructure scripts.
+    - **Explicit N/A**: If the task is internal-only, leave `CHANGELOG.md` untouched and output `[x] Changelog: (N/A) <reason>`.
+    - Audit all entries against the *previously released version* (do not document changes to intermediate PR development code or new unreleased APIs as breaking changes).
 7.  **Temporal**: Ensure that code and code comments contain no relative temporal terms (e.g., 'now', 'currently', 'new', 'old', 'existing behavior').
 8.  **Documentation**: Ensure that any relevant documentation is updated.
 

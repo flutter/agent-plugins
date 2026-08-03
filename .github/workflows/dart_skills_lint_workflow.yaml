@@ -40,8 +40,8 @@ jobs:
 
       - run: dart analyze --fatal-infos
 
-      - name: Run cyclomatic complexity check
-        run: dart run dart_code_linter:metrics analyze lib test
+      - name: Run cognitive complexity check
+        run: dart run cognitive_complexity --fail-threshold 48 lib test
 
       - run: dart test
 
