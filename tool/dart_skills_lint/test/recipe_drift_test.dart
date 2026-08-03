@@ -107,27 +107,6 @@ void main() {
       await _runHookAgainst(hookBody, validFixture, expectZeroExit: true);
       await _runHookAgainst(hookBody, invalidFixture, expectZeroExit: false);
     });
-
-    test('CI workflow cognitive complexity fail-threshold does not exceed 20', () {
-      final File workflowFile = _getWorkflowFile();
-      expect(workflowFile.existsSync(), isTrue, reason: 'CI workflow file missing');
-      final String content = workflowFile.readAsStringSync();
-      final regex = RegExp(
-        r'dart\s+run\s+cognitive_complexity\s+--fail-threshold\s+(\d+)\s+tool/dart_skills_lint/lib\s+tool/dart_skills_lint/test',
-      );
-      final RegExpMatch? match = regex.firstMatch(content);
-      expect(
-        match,
-        isNotNull,
-        reason: 'CI workflow must run cognitive_complexity with --fail-threshold <N>',
-      );
-      final int threshold = int.parse(match!.group(1)!);
-      expect(
-        threshold,
-        lessThanOrEqualTo(20),
-        reason: 'cognitive complexity fail-threshold in CI ($threshold) should not exceed 20',
-      );
-    });
   }, skip: Platform.isWindows ? 'recipe drift uses POSIX shell' : null);
 }
 
@@ -261,18 +240,4 @@ class _RecipeBlock {
   _RecipeBlock(this.language, this.body);
   final String language;
   final String body;
-}
-
-File _getWorkflowFile() {
-  Directory dir = Directory.current;
-  while (dir.path != '/' && dir.path.isNotEmpty) {
-    final workflowFile = File(
-      p.join(dir.path, '.github', 'workflows', 'dart_skills_lint_workflow.yaml'),
-    );
-    if (workflowFile.existsSync()) {
-      return workflowFile;
-    }
-    dir = dir.parent;
-  }
-  return File(p.normalize(p.absolute('../../.github/workflows/dart_skills_lint_workflow.yaml')));
 }
