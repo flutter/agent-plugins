@@ -272,7 +272,6 @@ class ValidationSession {
 
     final SkillsIgnores ignores = await _getIgnoresForSkill(
       localIgnoreFile,
-      normalizedSkillPath,
       rootDir,
       loadedIgnoresCache,
     );
@@ -295,7 +294,6 @@ class ValidationSession {
 
   Future<SkillsIgnores> _getIgnoresForSkill(
     String? localIgnoreFile,
-    String normalizedSkillPath,
     Directory rootDir,
     Map<String, SkillsIgnores> loadedIgnoresCache,
   ) async {
