@@ -37,7 +37,8 @@ claude plugin install dart-flutter@dart-flutter
 ```bash
 claude plugin marketplace list
 ```
-\n### Codex Plugin
+
+### Codex Plugin
 
 Add the Dart and Flutter marketplace for Codex plugins:
 
