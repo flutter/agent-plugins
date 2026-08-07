@@ -432,3 +432,42 @@
     - https://docs.flutter.dev/cookbook/networking/update-data
     - https://docs.flutter.dev/data-and-backend/serialization
     - https://docs.flutter.dev/data-and-backend/serialization/json
+- name: flutter-app-runtime
+  description: Interacts with running Dart and Flutter applications via the
+    Dart MCP server to enable hot reload, hot restart, widget inspection, and
+    error fetching. Use when modifying UI widgets, debugging errors, inspecting
+    running apps, or proactively hot reloading whenever changes are made to
+    Flutter UI widgets.
+
+  instructions: |
+    This Skill enables zero-configuration interaction with running Dart and Flutter
+    applications. The Dart MCP server manages the underlying connection to the
+    application's VM service, allowing the agent to focus on high-level runtime
+    operations.
+
+    Pre-requisite:
+    The Dart and Flutter MCP server must be configured and active.
+
+    Core capabilities include:
+    - Hot Reload: Proactively trigger hot reloads to immediately push visual feedback for UI widget updates and simple logic changes.
+    - Hot Restart: Reset the app state for deep non-widget changes or clean resets.
+    - Widget Inspection: Query tree structures and identify UI hierarchy names.
+    - Error Fetching: Retrieve live runtime exceptions and trace pointers live.
+
+    Decision workflow:
+    1. Identify Targets: Use the `dtd` tool (via `listDtdUris` / `listConnectedApps`) to discover and connect
+       to running application instances in the current workspace. If no app is running,
+       inform the user but do not let it stop you from completing code edits.
+    2. Verify Connection: Use `dtd` or `vm_service` to ensure the required `appUri`
+       is active and matches the project's workspace. Re-sync via `dtd` if necessary.
+    3. Proactive Hot Reload & Ops: Whenever edits or changes are made to Flutter UI widgets
+       or Dart code, proactively trigger `hot_reload` across all targeted instances immediately
+       to maintain visual consistency. For diagnosis, query live logs with `get_runtime_errors`
+       first or inspect UI with `widget_inspector`. Use `hot_restart` to reset state across
+       all devices when debugging foundational logic.
+
+    Sample scenarios include proactive hot reloading after widget modifications,
+    autonomous bug fixing by fetching exceptions, inspecting and modifying UI using
+    the widget inspector, and multi-device synchronization for global changes like themes.
+  resources:
+    - https://docs.flutter.dev/ai/mcp-server
