@@ -1,0 +1,24 @@
+---
+description: Proactively connect to running Dart/Flutter apps and trigger hot reload using the flutter-app-runtime skill workflows upon editing .dart files.
+globs: "**/*.dart"
+---
+
+# Proactive Flutter Hot Reload Rule
+
+Whenever you edit or modify any `.dart` file in this project, adhere to the runtime management procedures in the `flutter-app-runtime` skill:
+
+1. **Refer to Skill**:
+   - Activate and follow the `flutter-app-runtime` skill workflows for Dart Tooling Daemon (`dtd`), hot reloading, hot restarting, and runtime error inspection.
+
+2. **Discover & Connect**:
+   - Discover active running application instances using the `dtd` tool (or `list_running_apps` / `vm_service`).
+
+3. **Trigger Hot Reload / Hot Restart**:
+   - Execute `hot_reload` immediately after making changes to UI widgets or simple methods.
+   - Execute `hot_restart` if fundamental logic, state initialization, or `main()` was modified.
+
+4. **Verify Runtime Stability**:
+   - Run `get_runtime_errors` via `dart-mcp-server` to confirm that the hot reload/restart did not introduce new exceptions.
+
+5. **Fallback Handling**:
+   - If no running app instance is connected via DTD, briefly inform the user, but do not let it stop you from completing the code edits.
