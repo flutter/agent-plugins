@@ -24,14 +24,14 @@
           },
           {
             "name": "dart-test-coverage",
-            "installedAt": "2026-08-18T17:27:49.438593Z",
-            "isInstalled": false,
+            "installedAt": "2026-08-18T17:36:39.025422Z",
+            "contentHash": "3o+cHW7PINj+cVkKQ/hj9g==",
             "path": "skills/dart-test-coverage"
           },
           {
             "name": "dart-modern-features",
-            "installedAt": "2026-08-18T17:27:49.438594Z",
-            "isInstalled": false,
+            "installedAt": "2026-08-18T17:36:39.026875Z",
+            "contentHash": "AnrNPoAjYf3jrPsLb2FHXA==",
             "path": "skills/dart-modern-features"
           },
           {
@@ -60,8 +60,8 @@
           },
           {
             "name": "dart-test-fundamentals",
-            "installedAt": "2026-08-18T17:27:49.443180Z",
-            "isInstalled": false,
+            "installedAt": "2026-08-18T17:36:39.028109Z",
+            "contentHash": "2HW6ObOpIuGZPyW7BMmXTA==",
             "path": "skills/dart-test-fundamentals"
           }
         ]
@@ -441,6 +441,130 @@
             "installedAt": "2026-08-18T17:27:53.864320Z",
             "isInstalled": false,
             "path": "skills/subagent-driven-development"
+          }
+        ]
+      },
+      "https://github.com/anthropics/skills.git": {
+        "skills": [
+          {
+            "name": "template",
+            "installedAt": "2026-08-18T17:36:41.168548Z",
+            "isInstalled": false,
+            "path": "template"
+          },
+          {
+            "name": "theme-factory",
+            "installedAt": "2026-08-18T17:36:41.168617Z",
+            "isInstalled": false,
+            "path": "skills/theme-factory"
+          },
+          {
+            "name": "doc-coauthoring",
+            "installedAt": "2026-08-18T17:36:41.168618Z",
+            "isInstalled": false,
+            "path": "skills/doc-coauthoring"
+          },
+          {
+            "name": "discernment-nudge",
+            "installedAt": "2026-08-18T17:36:41.168618Z",
+            "isInstalled": false,
+            "path": "skills/discernment-nudge"
+          },
+          {
+            "name": "claude-api",
+            "installedAt": "2026-08-18T17:36:41.168618Z",
+            "isInstalled": false,
+            "path": "skills/claude-api"
+          },
+          {
+            "name": "xlsx",
+            "installedAt": "2026-08-18T17:36:41.168619Z",
+            "isInstalled": false,
+            "path": "skills/xlsx"
+          },
+          {
+            "name": "pdf",
+            "installedAt": "2026-08-18T17:36:41.168619Z",
+            "isInstalled": false,
+            "path": "skills/pdf"
+          },
+          {
+            "name": "algorithmic-art",
+            "installedAt": "2026-08-18T17:36:41.168620Z",
+            "isInstalled": false,
+            "path": "skills/algorithmic-art"
+          },
+          {
+            "name": "internal-comms",
+            "installedAt": "2026-08-18T17:36:41.168620Z",
+            "isInstalled": false,
+            "path": "skills/internal-comms"
+          },
+          {
+            "name": "skill-creator",
+            "installedAt": "2026-08-18T17:36:41.186510Z",
+            "contentHash": "XmGQkLldYzV5whfkKaa4MA==",
+            "path": "skills/skill-creator"
+          },
+          {
+            "name": "canvas-design",
+            "installedAt": "2026-08-18T17:36:41.186631Z",
+            "isInstalled": false,
+            "path": "skills/canvas-design"
+          },
+          {
+            "name": "pptx",
+            "installedAt": "2026-08-18T17:36:41.186632Z",
+            "isInstalled": false,
+            "path": "skills/pptx"
+          },
+          {
+            "name": "slack-gif-creator",
+            "installedAt": "2026-08-18T17:36:41.186633Z",
+            "isInstalled": false,
+            "path": "skills/slack-gif-creator"
+          },
+          {
+            "name": "webapp-testing",
+            "installedAt": "2026-08-18T17:36:41.186634Z",
+            "isInstalled": false,
+            "path": "skills/webapp-testing"
+          },
+          {
+            "name": "frontend-design",
+            "installedAt": "2026-08-18T17:36:41.186634Z",
+            "isInstalled": false,
+            "path": "skills/frontend-design"
+          },
+          {
+            "name": "mcp-builder",
+            "installedAt": "2026-08-18T17:36:41.186635Z",
+            "isInstalled": false,
+            "path": "skills/mcp-builder"
+          },
+          {
+            "name": "brand-guidelines",
+            "installedAt": "2026-08-18T17:36:41.186636Z",
+            "isInstalled": false,
+            "path": "skills/brand-guidelines"
+          },
+          {
+            "name": "docx",
+            "installedAt": "2026-08-18T17:36:41.186636Z",
+            "isInstalled": false,
+            "path": "skills/docx"
+          },
+          {
+            "name": "academy-guide",
+            "installedAt": "2026-08-18T17:36:41.186637Z",
+            "isInstalled": false,
+            "path": "skills/academy-guide"
+          },
+          {
+            "name": "web-artifacts-builder",
+            "installedAt": "2026-08-18T17:36:41.186637Z",
+            "isInstalled": false,
+            "path": "skills/web-artifacts-builder"
           }
         ]
       }

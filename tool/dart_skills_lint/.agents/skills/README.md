@@ -18,7 +18,10 @@ skills add kevmoo/dash_skills \
   --skill dart-doc-validation \
   --skill dart-long-lines \
   --skill dart-matcher-best-practices \
+  --skill dart-modern-features \
   --skill dart-package-maintenance \
+  --skill dart-test-coverage \
+  --skill dart-test-fundamentals \
   --agent generic
 
 skills add dart-lang/skills \
@@ -32,6 +35,7 @@ skills add dart-lang/skills \
 # Productivity and Workflows
 skills add mattpocock/skills --skill grill-me --agent generic
 skills add obra/superpowers --skill test-driven-development --agent generic
+skills add anthropics/skills --skill skill-creator --agent generic
 ```
 
 ## Overview and Philosophy
