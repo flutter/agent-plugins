@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".agents/hooks/claude-post-tool-use",
+            "statusMessage": "flutter-app-runtime: mcp__dart__hot_reload"
+          }
+        ]
+      }
+    ]
+  }
+}
