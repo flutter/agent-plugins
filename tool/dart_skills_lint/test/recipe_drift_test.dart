@@ -16,16 +16,12 @@ import 'package:yaml/yaml.dart';
 /// broken pipeline. This test reads the README at test time and
 /// asserts each recipe is still well-formed.
 ///
-/// Three checks, deliberately small:
-/// 1. The README still has recipe code blocks with non-empty bodies.
-/// 2. The GitHub Actions YAML still parses and still wires up the
-///    expected setup-dart + install + invocation steps.
-/// 3. The pre-commit hook body actually runs end-to-end against the
-///    valid and invalid example fixtures and exits with the right code.
-///
-/// Everything that used to translate global CLI invocation lines into
-/// `dart bin/cli.dart` lines and replay them is gone — it was fragile
-/// and didn't catch anything the structural assertion above doesn't.
+/// Three checks:
+/// 1. The README has recipe code blocks with non-empty bodies.
+/// 2. The GitHub Actions YAML parses and wires up the expected
+///    setup-dart, install, and invocation steps.
+/// 3. The pre-commit hook body runs end-to-end against the valid and
+///    invalid example fixtures and exits with the expected codes.
 void main() {
   group('README Recipes drift', () {
     late _RecipeReader reader;
@@ -83,9 +79,14 @@ void main() {
         reason: 'workflow no longer installs dart_skills_lint',
       );
       expect(
-        runs.any((r) => r.contains('dart_skills_lint') && r.contains('--skills-directory')),
+        runs.any((r) => r.contains('dart_skills_lint --skills-directory')),
         isTrue,
         reason: 'workflow no longer runs the linter against a skills directory',
+      );
+      expect(
+        runs.any((r) => r.contains('dart pub global')),
+        isFalse,
+        reason: 'workflow still references legacy dart pub global commands',
       );
     });
 
@@ -96,8 +97,8 @@ void main() {
       // the linter's response to a known-good vs known-bad skill — all in
       // one place.
       final String hookBody = reader.preCommitHookBody.replaceAll(
-        'dart_skills_lint',
-        'dart "$cliPath"',
+        'dart_skills_lint --skills-directory',
+        'dart "$cliPath" --skills-directory',
       );
 
       await _runHookAgainst(hookBody, validFixture, expectZeroExit: true);

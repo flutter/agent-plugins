@@ -1,10 +1,5 @@
 # Agent Skills
 
-Skills in `.agents/skills` are managed by the `skills` package (`dart install skills@^1.0.0`).
+The skills located in `skills/` within this agent directory are locally maintained custom skills.
 
-To fetch or update managed skills, run:
-
-```bash
-skills get --all
-```
-Skills in `skills/` are locally managed.
+For external agent skills used during development of `dart_skills_lint`, see [`tool/dart_skills_lint/.agents/skills/README.md`](../../../tool/dart_skills_lint/.agents/skills/README.md).
