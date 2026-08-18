@@ -24,13 +24,19 @@ If `dart_skills_lint` is in `pubspec.yaml`:
 dart run dart_skills_lint:cli -d .agents/skills
 ```
 
-If it's installed globally with `dart pub global activate`:
+If it's installed globally with `dart install`:
+
+```bash
+dart_skills_lint -d .agents/skills
+```
+
+If it's activated globally with `dart pub global activate`:
 
 ```bash
 dart pub global run dart_skills_lint:cli -d .agents/skills
 ```
 
-Run `dart run dart_skills_lint:cli --help` for the full flag list
+Run `dart run dart_skills_lint:cli --help` (or `dart_skills_lint --help`) for the full flag list
 (skip the inline duplicate so it never goes stale).
 
 ## Workflow for a failing run

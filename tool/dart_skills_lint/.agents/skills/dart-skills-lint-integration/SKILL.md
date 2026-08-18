@@ -1,11 +1,12 @@
 ---
 name: dart-skills-lint-integration
 description: >
-  How to integrate, update, and configure the dart_skills_lint validation tool
-  within a repository. Make sure to use this skill whenever the user asks to
-  update dart_skills_lint, configure skills validation tests, fix skills linter
-  dependency drifts, verify repository state before editing, optimize
-  lint rules execution, or draft pull request submission commands.
+  How to roll, update, and integrate the dart_skills_lint dependency into repositories
+  (such as flutter/flutter). Use this skill when tasked with bumping dart_skills_lint
+  pinned commit refs in pubspec.yaml, configuring downstream test harnesses,
+  managing package hashes, and generating submission pull requests. Do NOT use
+  this skill for day-to-day skill validation or fixing skill markdown errors
+  (use dart-skills-lint-validation instead).
 metadata:
   internal: true
 ---

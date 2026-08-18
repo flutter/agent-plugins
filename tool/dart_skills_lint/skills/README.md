@@ -5,6 +5,6 @@ They are intended for users of the package to help them use it effectively.
 
 To install these skills into your IDE, you can use the [skills](https://pub.dev/packages/skills) package on pub:
 ```bash
-dart pub global activate skills
+dart install skills@^1.0.0
 skills get
 ```

@@ -4,27 +4,34 @@ This directory (`tool/dart_skills_lint/.agents/skills/`) contains skills and con
 
 ## Setup Instructions
 
-To set up this directory for development, you must install the remote skills using `npx`. These include general Dart development practices, testing fundamentals, and productivity tools that agents rely on.
+To set up this directory for development, you must install the remote skills using the Dart `skills` package (`dart install skills@^1.0.0`). These include general Dart development practices, testing fundamentals, and productivity tools that agents rely on.
 
 Run the following commands from the `tool/dart_skills_lint/` directory to fetch the dependencies:
 
 ```sh
-# Core Dart Skills
-npx skills install kevmoo/dash_skills/skills/dart-best-practices
-npx skills install kevmoo/dash_skills/skills/dart-doc-validation
-npx skills install kevmoo/dash_skills/skills/dart-long-lines
-npx skills install kevmoo/dash_skills/skills/dart-matcher-best-practices
-npx skills install kevmoo/dash_skills/skills/dart-package-maintenance
+# Ensure the skills CLI is globally installed (version 1.0.0 or higher)
+dart install skills@^1.0.0
 
-npx skills install dart-lang/skills/skills/dart-migrate-to-checks-package
-npx skills install dart-lang/skills/skills/dart-build-cli-app
-npx skills install dart-lang/skills/skills/dart-collect-coverage
-npx skills install dart-lang/skills/skills/dart-add-unit-test
-npx skills install dart-lang/skills/skills/dart-use-pattern-matching
+# Core Dart Skills
+skills add kevmoo/dash_skills \
+  --skill dart-best-practices \
+  --skill dart-doc-validation \
+  --skill dart-long-lines \
+  --skill dart-matcher-best-practices \
+  --skill dart-package-maintenance \
+  --agent generic
+
+skills add dart-lang/skills \
+  --skill dart-migrate-to-checks-package \
+  --skill dart-build-cli-app \
+  --skill dart-collect-coverage \
+  --skill dart-add-unit-test \
+  --skill dart-use-pattern-matching \
+  --agent generic
 
 # Productivity and Workflows
-npx skills install mattpocock/skills/skills/productivity/grill-me
-npx skills install obra/superpowers/skills/test-driven-development
+skills add mattpocock/skills --skill grill-me --agent generic
+skills add obra/superpowers --skill test-driven-development --agent generic
 ```
 
 ## Overview and Philosophy
@@ -36,9 +43,9 @@ npx skills install obra/superpowers/skills/test-driven-development
 
 When adding new external skills to this directory, follow these guidelines:
 
-1. Use `npx skills install` to pull them from upstream.
+1. Use `skills add <repo> --skill <name> --agent generic` to pull them from upstream.
 2. Add the generated skill folder name to `.gitignore` inside this directory (`.agents/skills/.gitignore`) to prevent checking third-party content into version control.
-3. Commit the updated `skills-lock.json` file located in `tool/dart_skills_lint/` to track dependency versions across the team.
+3. Commit the updated configuration file located at `.config/dart_skills/skills_config.json` to track dependency versions across the team.
 
 ## Running Evaluations (Evals)
 
@@ -78,7 +85,7 @@ We use the Anthropic static evaluation viewer to inspect the runs and grades:
 
 1.  Download and install the `skill-creator` tool (which contains the viewer scripts) into the ignored `.agents/skills/` directory:
     ```sh
-    npx skills add anthropics/skills --skill skill-creator --yes
+    skills add anthropics/skills --skill skill-creator --agent generic
     ```
 2.  Run the python review generator script pointing to the skill workspace:
     ```sh

@@ -1,10 +1,10 @@
 # Agent Skills
 
-Skills in `.agents/skills` are managed by `npx skills`.
+Skills in `.agents/skills` are managed by the `skills` package (`dart install skills@^1.0.0`).
 
-To fetch the skills defined in `skills-lock.json`, run:
+To fetch or update managed skills, run:
 
 ```bash
-npx skills experimental_install
+skills get --all
 ```
 Skills in `skills/` are locally managed.

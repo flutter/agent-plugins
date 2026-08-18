@@ -1,3 +1,8 @@
+## 0.5.1
+
+- Migrated developer setup, integration recipes, and documentation to use `dart install skills@^1.0.0` and `dart install dart_skills_lint`.
+- Removed legacy npm-based tooling artifacts (`.npmrc` and `skills-lock.json`).
+
 ## 0.5.0
 
 - Added support for rule-specific custom parameters in `dart_skills_lint.yaml`, allowing rules to be configured with parameter maps (e.g. passing exclusions, thresholds, length limits, etc.).

@@ -1,0 +1,449 @@
+{
+  "version": 2,
+  "installations": {
+    "generic": {
+      "https://github.com/kevmoo/dash_skills.git": {
+        "skills": [
+          {
+            "name": "dart-long-lines",
+            "installedAt": "2026-08-18T14:33:19.060646Z",
+            "contentHash": "0Ow+sE4/e0GP4e0lgVpI9Q==",
+            "path": "skills/dart-long-lines"
+          },
+          {
+            "name": "dart-doc-validation",
+            "installedAt": "2026-08-18T14:33:19.061898Z",
+            "contentHash": "n2IqfdFOc9Gvr6Hc+ncRbA==",
+            "path": "skills/dart-doc-validation"
+          },
+          {
+            "name": "dart-multiline-strings",
+            "installedAt": "2026-08-18T14:33:19.061914Z",
+            "isInstalled": false,
+            "path": "skills/dart-multiline-strings"
+          },
+          {
+            "name": "dart-test-coverage",
+            "installedAt": "2026-08-18T14:33:19.061917Z",
+            "isInstalled": false,
+            "path": "skills/dart-test-coverage"
+          },
+          {
+            "name": "dart-modern-features",
+            "installedAt": "2026-08-18T14:33:19.061918Z",
+            "isInstalled": false,
+            "path": "skills/dart-modern-features"
+          },
+          {
+            "name": "profile-dart-code",
+            "installedAt": "2026-08-18T14:33:19.061919Z",
+            "isInstalled": false,
+            "path": "skills/profile-dart-code"
+          },
+          {
+            "name": "dart-matcher-best-practices",
+            "installedAt": "2026-08-18T14:33:19.062911Z",
+            "contentHash": "gj8wmAmQa/OoLAkNFUjhdw==",
+            "path": "skills/dart-matcher-best-practices"
+          },
+          {
+            "name": "dart-best-practices",
+            "installedAt": "2026-08-18T14:33:19.064090Z",
+            "contentHash": "xQp+0QhvcC1FKY6hf/YUIQ==",
+            "path": "skills/dart-best-practices"
+          },
+          {
+            "name": "dart-package-maintenance",
+            "installedAt": "2026-08-18T14:33:19.065084Z",
+            "contentHash": "0H+7OSgyv3E0/rjt8kwlEQ==",
+            "path": "skills/dart-package-maintenance"
+          },
+          {
+            "name": "dart-test-fundamentals",
+            "installedAt": "2026-08-18T14:33:19.065098Z",
+            "isInstalled": false,
+            "path": "skills/dart-test-fundamentals"
+          }
+        ]
+      },
+      "https://github.com/dart-lang/skills.git": {
+        "skills": [
+          {
+            "name": "dart-use-pattern-matching",
+            "installedAt": "2026-08-18T14:33:20.469919Z",
+            "contentHash": "dt0YV4d0VH2QK8z8puzumQ==",
+            "path": "skills/dart-use-pattern-matching"
+          },
+          {
+            "name": "dart-generate-test-mocks",
+            "installedAt": "2026-08-18T14:33:20.470077Z",
+            "isInstalled": false,
+            "path": "skills/dart-generate-test-mocks"
+          },
+          {
+            "name": "dart-use-ffigen",
+            "installedAt": "2026-08-18T14:33:20.470080Z",
+            "isInstalled": false,
+            "path": "skills/dart-use-ffigen"
+          },
+          {
+            "name": "dart-resolve-package-conflicts",
+            "installedAt": "2026-08-18T14:33:20.470080Z",
+            "isInstalled": false,
+            "path": "skills/dart-resolve-package-conflicts"
+          },
+          {
+            "name": "dart-collect-coverage",
+            "installedAt": "2026-08-18T14:33:20.471717Z",
+            "contentHash": "B9/qZ2V7FxeX+MIy1Pc2iA==",
+            "path": "skills/dart-collect-coverage"
+          },
+          {
+            "name": "dart-use-primary-constructors",
+            "installedAt": "2026-08-18T14:33:20.471731Z",
+            "isInstalled": false,
+            "path": "skills/dart-use-primary-constructors"
+          },
+          {
+            "name": "dart-setup-ffi-assets",
+            "installedAt": "2026-08-18T14:33:20.471732Z",
+            "isInstalled": false,
+            "path": "skills/dart-setup-ffi-assets"
+          },
+          {
+            "name": "dart-migrate-to-checks-package",
+            "installedAt": "2026-08-18T14:33:20.473404Z",
+            "contentHash": "qnEkEh/eW/JmKpsNQ80yRQ==",
+            "path": "skills/dart-migrate-to-checks-package"
+          },
+          {
+            "name": "dart-fix-runtime-errors",
+            "installedAt": "2026-08-18T14:33:20.473420Z",
+            "isInstalled": false,
+            "path": "skills/dart-fix-runtime-errors"
+          },
+          {
+            "name": "dart-add-unit-test",
+            "installedAt": "2026-08-18T14:33:20.474913Z",
+            "contentHash": "BTBQcGE2w7XxaizcWbHAmQ==",
+            "path": "skills/dart-add-unit-test"
+          },
+          {
+            "name": "dart-run-static-analysis",
+            "installedAt": "2026-08-18T14:33:20.474932Z",
+            "isInstalled": false,
+            "path": "skills/dart-run-static-analysis"
+          },
+          {
+            "name": "dart-build-cli-app",
+            "installedAt": "2026-08-18T14:33:20.477141Z",
+            "contentHash": "V+mcu5FkZPIidSf7qP02dQ==",
+            "path": "skills/dart-build-cli-app"
+          }
+        ]
+      },
+      "https://github.com/mattpocock/skills.git": {
+        "skills": [
+          {
+            "name": "setup-pre-commit",
+            "installedAt": "2026-08-18T14:33:21.920387Z",
+            "isInstalled": false,
+            "path": "skills/misc/setup-pre-commit"
+          },
+          {
+            "name": "git-guardrails-claude-code",
+            "installedAt": "2026-08-18T14:33:21.920471Z",
+            "isInstalled": false,
+            "path": "skills/misc/git-guardrails-claude-code"
+          },
+          {
+            "name": "scaffold-exercises",
+            "installedAt": "2026-08-18T14:33:21.920473Z",
+            "isInstalled": false,
+            "path": "skills/misc/scaffold-exercises"
+          },
+          {
+            "name": "migrate-to-shoehorn",
+            "installedAt": "2026-08-18T14:33:21.920474Z",
+            "isInstalled": false,
+            "path": "skills/misc/migrate-to-shoehorn"
+          },
+          {
+            "name": "setup-ts-deep-modules",
+            "installedAt": "2026-08-18T14:33:21.920474Z",
+            "isInstalled": false,
+            "path": "skills/in-progress/setup-ts-deep-modules"
+          },
+          {
+            "name": "loop-me",
+            "installedAt": "2026-08-18T14:33:21.920475Z",
+            "isInstalled": false,
+            "path": "skills/in-progress/loop-me"
+          },
+          {
+            "name": "writing-fragments",
+            "installedAt": "2026-08-18T14:33:21.920475Z",
+            "isInstalled": false,
+            "path": "skills/in-progress/writing-fragments"
+          },
+          {
+            "name": "writing-shape",
+            "installedAt": "2026-08-18T14:33:21.920476Z",
+            "isInstalled": false,
+            "path": "skills/in-progress/writing-shape"
+          },
+          {
+            "name": "claude-handoff",
+            "installedAt": "2026-08-18T14:33:21.920476Z",
+            "isInstalled": false,
+            "path": "skills/in-progress/claude-handoff"
+          },
+          {
+            "name": "writing-beats",
+            "installedAt": "2026-08-18T14:33:21.920476Z",
+            "isInstalled": false,
+            "path": "skills/in-progress/writing-beats"
+          },
+          {
+            "name": "research",
+            "installedAt": "2026-08-18T14:33:21.920477Z",
+            "isInstalled": false,
+            "path": "skills/engineering/research"
+          },
+          {
+            "name": "domain-modeling",
+            "installedAt": "2026-08-18T14:33:21.920477Z",
+            "isInstalled": false,
+            "path": "skills/engineering/domain-modeling"
+          },
+          {
+            "name": "wayfinder",
+            "installedAt": "2026-08-18T14:33:21.920478Z",
+            "isInstalled": false,
+            "path": "skills/engineering/wayfinder"
+          },
+          {
+            "name": "setup-matt-pocock-skills",
+            "installedAt": "2026-08-18T14:33:21.920478Z",
+            "isInstalled": false,
+            "path": "skills/engineering/setup-matt-pocock-skills"
+          },
+          {
+            "name": "diagnosing-bugs",
+            "installedAt": "2026-08-18T14:33:21.920479Z",
+            "isInstalled": false,
+            "path": "skills/engineering/diagnosing-bugs"
+          },
+          {
+            "name": "code-review",
+            "installedAt": "2026-08-18T14:33:21.920479Z",
+            "isInstalled": false,
+            "path": "skills/engineering/code-review"
+          },
+          {
+            "name": "to-tickets",
+            "installedAt": "2026-08-18T14:33:21.920480Z",
+            "isInstalled": false,
+            "path": "skills/engineering/to-tickets"
+          },
+          {
+            "name": "ask-matt",
+            "installedAt": "2026-08-18T14:33:21.920480Z",
+            "isInstalled": false,
+            "path": "skills/engineering/ask-matt"
+          },
+          {
+            "name": "wizard",
+            "installedAt": "2026-08-18T14:33:21.920480Z",
+            "isInstalled": false,
+            "path": "skills/engineering/wizard"
+          },
+          {
+            "name": "improve-codebase-architecture",
+            "installedAt": "2026-08-18T14:33:21.920481Z",
+            "isInstalled": false,
+            "path": "skills/engineering/improve-codebase-architecture"
+          },
+          {
+            "name": "to-spec",
+            "installedAt": "2026-08-18T14:33:21.920481Z",
+            "isInstalled": false,
+            "path": "skills/engineering/to-spec"
+          },
+          {
+            "name": "codebase-design",
+            "installedAt": "2026-08-18T14:33:21.920482Z",
+            "isInstalled": false,
+            "path": "skills/engineering/codebase-design"
+          },
+          {
+            "name": "triage",
+            "installedAt": "2026-08-18T14:33:21.920482Z",
+            "isInstalled": false,
+            "path": "skills/engineering/triage"
+          },
+          {
+            "name": "prototype",
+            "installedAt": "2026-08-18T14:33:21.920482Z",
+            "isInstalled": false,
+            "path": "skills/engineering/prototype"
+          },
+          {
+            "name": "resolving-merge-conflicts",
+            "installedAt": "2026-08-18T14:33:21.920483Z",
+            "isInstalled": false,
+            "path": "skills/engineering/resolving-merge-conflicts"
+          },
+          {
+            "name": "grill-with-docs",
+            "installedAt": "2026-08-18T14:33:21.920483Z",
+            "isInstalled": false,
+            "path": "skills/engineering/grill-with-docs"
+          },
+          {
+            "name": "implement",
+            "installedAt": "2026-08-18T14:33:21.920484Z",
+            "isInstalled": false,
+            "path": "skills/engineering/implement"
+          },
+          {
+            "name": "tdd",
+            "installedAt": "2026-08-18T14:33:21.920484Z",
+            "isInstalled": false,
+            "path": "skills/engineering/tdd"
+          },
+          {
+            "name": "writing-for-agents",
+            "installedAt": "2026-08-18T14:33:21.920485Z",
+            "isInstalled": false,
+            "path": "skills/productivity/writing-for-agents"
+          },
+          {
+            "name": "wait-what",
+            "installedAt": "2026-08-18T14:33:21.920485Z",
+            "isInstalled": false,
+            "path": "skills/productivity/wait-what"
+          },
+          {
+            "name": "handoff",
+            "installedAt": "2026-08-18T14:33:21.920486Z",
+            "isInstalled": false,
+            "path": "skills/productivity/handoff"
+          },
+          {
+            "name": "to-questionnaire",
+            "installedAt": "2026-08-18T14:33:21.920486Z",
+            "isInstalled": false,
+            "path": "skills/productivity/to-questionnaire"
+          },
+          {
+            "name": "teach",
+            "installedAt": "2026-08-18T14:33:21.920486Z",
+            "isInstalled": false,
+            "path": "skills/productivity/teach"
+          },
+          {
+            "name": "grill-me",
+            "installedAt": "2026-08-18T14:33:21.922933Z",
+            "contentHash": "UyaCrrVTk67EppsVYI30/g==",
+            "path": "skills/productivity/grill-me"
+          },
+          {
+            "name": "grilling",
+            "installedAt": "2026-08-18T14:33:21.923034Z",
+            "isInstalled": false,
+            "path": "skills/productivity/grilling"
+          }
+        ]
+      },
+      "https://github.com/obra/superpowers.git": {
+        "skills": [
+          {
+            "name": "using-git-worktrees",
+            "installedAt": "2026-08-18T14:33:23.451862Z",
+            "isInstalled": false,
+            "path": "skills/using-git-worktrees"
+          },
+          {
+            "name": "test-driven-development",
+            "installedAt": "2026-08-18T14:33:23.454235Z",
+            "contentHash": "PCdssGu3iJFLGNY7FvIIYA==",
+            "path": "skills/test-driven-development"
+          },
+          {
+            "name": "systematic-debugging",
+            "installedAt": "2026-08-18T14:33:23.454308Z",
+            "isInstalled": false,
+            "path": "skills/systematic-debugging"
+          },
+          {
+            "name": "using-superpowers",
+            "installedAt": "2026-08-18T14:33:23.454309Z",
+            "isInstalled": false,
+            "path": "skills/using-superpowers"
+          },
+          {
+            "name": "dispatching-parallel-agents",
+            "installedAt": "2026-08-18T14:33:23.454310Z",
+            "isInstalled": false,
+            "path": "skills/dispatching-parallel-agents"
+          },
+          {
+            "name": "executing-plans",
+            "installedAt": "2026-08-18T14:33:23.454310Z",
+            "isInstalled": false,
+            "path": "skills/executing-plans"
+          },
+          {
+            "name": "finishing-a-development-branch",
+            "installedAt": "2026-08-18T14:33:23.454310Z",
+            "isInstalled": false,
+            "path": "skills/finishing-a-development-branch"
+          },
+          {
+            "name": "brainstorming",
+            "installedAt": "2026-08-18T14:33:23.454311Z",
+            "isInstalled": false,
+            "path": "skills/brainstorming"
+          },
+          {
+            "name": "writing-plans",
+            "installedAt": "2026-08-18T14:33:23.454311Z",
+            "isInstalled": false,
+            "path": "skills/writing-plans"
+          },
+          {
+            "name": "requesting-code-review",
+            "installedAt": "2026-08-18T14:33:23.454312Z",
+            "isInstalled": false,
+            "path": "skills/requesting-code-review"
+          },
+          {
+            "name": "receiving-code-review",
+            "installedAt": "2026-08-18T14:33:23.454312Z",
+            "isInstalled": false,
+            "path": "skills/receiving-code-review"
+          },
+          {
+            "name": "writing-skills",
+            "installedAt": "2026-08-18T14:33:23.454314Z",
+            "isInstalled": false,
+            "path": "skills/writing-skills"
+          },
+          {
+            "name": "verification-before-completion",
+            "installedAt": "2026-08-18T14:33:23.454314Z",
+            "isInstalled": false,
+            "path": "skills/verification-before-completion"
+          },
+          {
+            "name": "subagent-driven-development",
+            "installedAt": "2026-08-18T14:33:23.454315Z",
+            "isInstalled": false,
+            "path": "skills/subagent-driven-development"
+          }
+        ]
+      }
+    }
+  }
+}

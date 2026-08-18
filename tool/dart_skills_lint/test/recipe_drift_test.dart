@@ -23,7 +23,7 @@ import 'package:yaml/yaml.dart';
 /// 3. The pre-commit hook body actually runs end-to-end against the
 ///    valid and invalid example fixtures and exits with the right code.
 ///
-/// Everything that used to translate `dart pub global run` lines into
+/// Everything that used to translate global CLI invocation lines into
 /// `dart bin/cli.dart` lines and replay them is gone — it was fragile
 /// and didn't catch anything the structural assertion above doesn't.
 void main() {
