@@ -78,16 +78,12 @@ void main() {
 
       final List<String> runs = reader.stepsRunning(steps);
       expect(
-        runs.any((r) => r.contains('dart pub global activate dart_skills_lint')),
+        runs.any((r) => r.contains('dart install dart_skills_lint')),
         isTrue,
         reason: 'workflow no longer installs dart_skills_lint',
       );
       expect(
-        runs.any(
-          (r) =>
-              r.contains('dart pub global run dart_skills_lint') &&
-              r.contains('--skills-directory'),
-        ),
+        runs.any((r) => r.contains('dart_skills_lint') && r.contains('--skills-directory')),
         isTrue,
         reason: 'workflow no longer runs the linter against a skills directory',
       );
@@ -95,12 +91,12 @@ void main() {
 
     test('pre-commit hook body exits 0 on a valid fixture, non-zero on an invalid one', () async {
       // Run the actual hook (rewritten to call bin/cli.dart instead of a
-      // globally-activated linter) against both example fixtures. This
+      // globally-installed linter) against both example fixtures. This
       // catches drift in the hook's exec line, exit-code propagation, and
       // the linter's response to a known-good vs known-bad skill — all in
       // one place.
       final String hookBody = reader.preCommitHookBody.replaceAll(
-        'dart pub global run dart_skills_lint',
+        'dart_skills_lint',
         'dart "$cliPath"',
       );
 

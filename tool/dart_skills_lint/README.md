@@ -52,11 +52,11 @@ Then:
 dart pub get
 ```
 
-#### Globally activated
+#### Globally installed
 
 For multiple projects without per-project pubspec entries:
 ```bash
-dart pub global activate dart_skills_lint
+dart install dart_skills_lint
 ```
 
 ### 2. `install.sh` — Linux + macOS, no Dart required
@@ -234,26 +234,26 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dart-lang/setup-dart@v1
-      - run: dart pub global activate dart_skills_lint
-      - run: dart pub global run dart_skills_lint --skills-directory ./.claude/skills
+      - run: dart install dart_skills_lint
+      - run: dart_skills_lint --skills-directory ./.claude/skills
 ```
 
 To validate a single skill directory instead, swap the last step:
 
 ```yaml
-      - run: dart pub global run dart_skills_lint --skill ./.claude/skills/my-skill
+      - run: dart_skills_lint --skill ./.claude/skills/my-skill
 ```
 
 ### Recipe: Dart-native pre-commit hook
 
 A pre-commit hook that calls into the linter directly — no Husky, no
 Python `pre-commit` framework, just Dart and the existing
-`dart pub global` tooling.
+`dart install` tooling.
 
-Activate the linter once per machine:
+Install the linter globally once per machine:
 
 ```bash
-dart pub global activate dart_skills_lint
+dart install dart_skills_lint
 ```
 
 Then install the hook into the repository (run from the repo root):
@@ -264,7 +264,7 @@ cat > .git/hooks/pre-commit <<'HOOK'
 set -e
 # Lint every skill under .claude/skills before each commit.
 # Add --skill arguments for other locations as needed.
-exec dart pub global run dart_skills_lint --skills-directory ./.claude/skills --quiet
+exec dart_skills_lint --skills-directory ./.claude/skills --quiet
 HOOK
 chmod +x .git/hooks/pre-commit
 ```
