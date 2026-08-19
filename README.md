@@ -10,67 +10,7 @@ You can also install the [Dart skills](https://github.com/dart-lang/skills) for 
 
 ## Installation
 
-To install the plugins into your project, run the following command. 
-The `--agent universal` flag puts them in the standard `.agents/skills` 
-folder that most agents use.
-
-```bash
-npx skills@1.5.17 add flutter/agent-plugins --skill '*' --agent universal --yes
-```
-
-### Claude Code Plugin
-
-1. Add the marketplace for Claude Code plugins:
-
-```bash
-claude plugin marketplace add flutter/agent-plugins
-```
-
-2. Install the Claude plugin for Dart and Flutter:
-
-```bash
-claude plugin install dart-flutter@dart-flutter
-```
-
-3. Verify the installation:
-
-```bash
-claude plugin marketplace list
-```
-### Codex Plugin
-
-Add the Dart and Flutter marketplace for Codex plugins:
-
-```bash
-codex plugin marketplace add flutter/agent-plugins
-```
-
-Install the Dart and Flutter plugin:
-
-```bash
-codex plugin add dart-flutter@dart-flutter
-```
-
-### Cursor Plugin
-
-You can test this plugin locally by copying it to your Cursor plugins directory.
-
-1. Copy the repository directory to your local Cursor plugins folder:
-
-```bash
-mkdir -p ~/.cursor/plugins/local
-cp -r /path/to/flutter/agent-plugins ~/.cursor/plugins/local/dart-flutter
-```
-
-2. Restart Cursor. The editor will automatically discover and load the skills under skills/ and configure the MCP server defined in .mcp.json.
-
-## Updating Plugins
-
-To update, run the following command:
-
-```bash
-npx skills@1.5.17 update
-```
+Look at the [Installation Guide](https://docs.flutter.dev/ai/get-started) for detailed instructions on how to install the plugins for your preferred agent.
 
 ## Available Skills
 
