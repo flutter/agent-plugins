@@ -10,7 +10,7 @@ You can also install the [Dart skills](https://github.com/dart-lang/skills) for 
 
 ## Installation
 
-Look at the [Installation Guide](https://docs.flutter.dev/ai/get-started) for detailed instructions on how to install the plugins for your preferred agent.
+Look at the [Get started developing with AI](https://docs.flutter.dev/ai/get-started) for detailed instructions on how to install the plugins for your preferred agent.
 
 ## Available Skills
 
