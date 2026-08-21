@@ -6,4 +6,3 @@ environment:
 
 workspace:
   - tool/generator
-  - tool/dart_skills_lint

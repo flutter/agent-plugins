@@ -7,11 +7,17 @@ on:
   pull_request:
     paths:
       - '.github/workflows/skills_tool.yaml'
+      - 'pubspec.yaml'
+      - 'resources/**'
+      - 'skills/**'
       - 'tool/generator/**'
   push:
     branches: [ main ]
     paths:
       - '.github/workflows/skills_tool.yaml'
+      - 'pubspec.yaml'
+      - 'resources/**'
+      - 'skills/**'
       - 'tool/generator/**'
   schedule:
     - cron: '0 0 * * 0' # weekly
