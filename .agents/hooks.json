@@ -16,5 +16,26 @@
         "timeout": 90
       }
     ]
+  },
+  "flutter-app-runtime": {
+    "PostToolUse": [
+      {
+        "matcher": "write_to_file|replace_file_content|multi_replace_file_content",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "hooks/flag-dart-edit",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "hooks/flutter-app-runtime",
+        "timeout": 10
+      }
+    ]
   }
 }

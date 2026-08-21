@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# flutter-app-runtime: PostToolUse handler (Claude Code).
+#
+# Fires after Edit or Write tool calls.
+# Checks stdin for .dart file edits and outputs hookSpecificOutput with additionalContext.
+
+set -uo pipefail
+INPUT="$(cat 2>/dev/null || true)"
+
+if printf '%s' "$INPUT" | grep -Eq '"file_path"[^,]*[.]dart'; then
+  echo '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"Dart source changed. Use the flutter-app-runtime skill to push this to the running app: hot_reload for widget/UI or simple logic changes. If no app is running, say so and continue."}}'
+fi
+exit 0

@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# flutter-app-runtime: PostToolUse handler (Antigravity).
+#
+# PostToolUse (per Antigravity hooks documentation):
+#   Fires after a tool completes. The `matcher` field is a regular expression
+#   matched against the tool name (here: the file-writing tools).
+#   Input (stdin, camelCase JSON):
+#     toolCall  - object; the executed tool call, with `name` and `args`
+#     stepIdx   - integer; 0-based index of the completed step
+#     error     - string, optional; runtime error if the call failed, else empty
+#     plus common fields: conversationId, workspacePaths, transcriptPath,
+#     artifactDirectoryPath, modelName
+#   Output (stdout): an empty JSON object `{}` -- PostToolUse has NO field for
+#   injecting context back into the conversation.
+#
+# Because of that last point, this handler cannot deliver the reminder itself.
+# It only records that a .dart file was touched; the PreInvocation handler
+# reads the flag and does the actual injection before the next model call.
+
+set -uo pipefail
+INPUT="$(cat 2>/dev/null || true)"
+
+CONV="$(printf '%s' "$INPUT" \
+  | grep -o '"conversationId"[[:space:]]*:[[:space:]]*"[^"]*"' \
+  | sed 's/.*"\([^"]*\)"$/\1/')"
+TEMP_DIR="${TMPDIR:-${TEMP:-${TMP:-/tmp}}}"
+FLAG="${TEMP_DIR}/flutter-app-runtime.${CONV:-default}.pending"
+
+if printf '%s' "$INPUT" | grep -Eq '"(TargetFile|AbsolutePath)"[^,]*[.]dart'; then
+  : > "$FLAG" 2>/dev/null || true
+fi
+
+echo '{}'
+exit 0

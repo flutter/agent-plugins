@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# flutter-app-runtime: PreInvocation handler (Antigravity).
+#
+# PreInvocation (per Antigravity hooks documentation):
+#   Fires before the model is called. There is no matcher -- the event key
+#   holds a flat list of handlers, and any matcher would be ignored.
+#   Input (stdin, camelCase JSON):
+#     invocationNum   - integer; 0-indexed sequence number of this model
+#                       invocation (the first invocation is 0)
+#     initialNumSteps - integer; number of steps currently in the trajectory
+#     plus common fields: conversationId, workspacePaths, transcriptPath,
+#     artifactDirectoryPath, modelName
+#   Output (stdout):
+#     injectSteps - optional array of steps injected into the conversation
+#                   trajectory before the model is called. Each step carries
+#                   one of: `toolCall` (a tool call to execute), `userMessage`
+#                   (a message from the user), or `ephemeralMessage` (a
+#                   transient system message -- what this hook uses).
+#
+# This is the injection point: if a .dart file was edited since the last model
+# call, inject a one-shot reminder pointing the agent at the
+# flutter-app-runtime skill.
+
+set -uo pipefail
+INPUT="$(cat 2>/dev/null || true)"
+
+CONV="$(printf '%s' "$INPUT" \
+  | grep -o '"conversationId"[[:space:]]*:[[:space:]]*"[^"]*"' \
+  | sed 's/.*"\([^"]*\)"$/\1/')"
+FLAG="${TMPDIR:-/tmp}/flutter-app-runtime.${CONV:-default}.pending"
+
+if [ -f "$FLAG" ]; then
+  rm -f "$FLAG" 2>/dev/null || true
+  echo '{"injectSteps":[{"ephemeralMessage":"Dart source changed. Use the flutter-app-runtime skill to push this to the running app: hot_reload for widget/UI or simple logic changes. If no app is running, say so and continue."}]}'
+else
+  echo '{"injectSteps":[]}'
+fi
+exit 0
