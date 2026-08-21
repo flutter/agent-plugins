@@ -1,4 +1,4 @@
-import 'package:dart_skills_lint/dart_skills_lint.dart';
+import 'package:skills_lint/skills_lint.dart';
 
 class LastModifiedRule extends SkillRule {
   static const _metadataKey = 'metadata';

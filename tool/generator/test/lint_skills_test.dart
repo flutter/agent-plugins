@@ -4,9 +4,9 @@
 
 import 'dart:io';
 
-import 'package:dart_skills_lint/dart_skills_lint.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
+import 'package:skills_lint/skills_lint.dart';
 import 'package:test/test.dart';
 
 import 'custom_skill_rules/last_modified_rule.dart';

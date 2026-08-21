@@ -25,8 +25,11 @@ dependencies:
 dev_dependencies:
   build_verify: ^3.1.0
   coverage: ^1.15.0
-  dart_skills_lint:
-    path: ../dart_skills_lint
   lints: ^6.0.0
+  skills_lint:
+    git:
+      url: https://github.com/google/skills_lint.dart.git
+      path: packages/skills_lint
+      ref: e6e695e1550f81342fe5acd4dbe65040b5aa44c3
   test: ^1.25.6
 
