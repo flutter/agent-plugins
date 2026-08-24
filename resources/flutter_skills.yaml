@@ -438,6 +438,7 @@
     error fetching. Use when modifying UI widgets, debugging errors, inspecting
     running apps, or proactively hot reloading whenever changes are made to
     Flutter UI widgets.
+  examplePrompt: "Change the background color to red"
 
   instructions: |
     This Skill enables zero-configuration interaction with running Dart and Flutter

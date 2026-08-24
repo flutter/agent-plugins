@@ -60,7 +60,7 @@ When tasked with fixing layout issues (e.g., RenderFlex overflow) or runtime exc
 
 To drive a running Flutter app (take screenshots, tap buttons, enter text), the app must be instrumented with `flutter_driver`.
 
-- [ ] 1. Verify `flutter_driver` is in `pubspec.yaml`. If not, run `flutter pub add "flutter_driver:{sdk: flutter}"`.
+- [ ] 1. Verify `flutter_driver` is in `pubspec.yaml`. If not, run `flutter pub add flutter_driver --sdk=flutter`.
 - [ ] 2. Ensure the app's `main()` function conditionally enables the driver extension:
   ```dart
   import 'package:flutter_driver/driver_extension.dart';
@@ -93,11 +93,11 @@ To drive a running Flutter app (take screenshots, tap buttons, enter text), the 
 
 ### Scenario: Proactive Hot Reloading
 
-**Input:** "Change the primary button color to blue and increase the padding to 16."
+**Input:** "Change the background color to red"
 
 **Execution Steps:**
-1. Locate the target `ElevatedButton` or `Container` in the Dart code.
-2. Update `style: ElevatedButton.styleFrom(backgroundColor: Colors.blue)` and `padding: EdgeInsets.all(16)`.
+1. Locate the target background widget (e.g., `Scaffold`, `Container`) in the Dart code.
+2. Update `backgroundColor: Colors.red` or `color: Colors.red`.
 3. Save the file.
 4. Immediately execute `hot_reload` using the active `appUri`.
 5. Confirm successful reload via tool output.
