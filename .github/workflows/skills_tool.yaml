@@ -15,7 +15,6 @@ on:
     paths:
       - '.github/workflows/skills_tool.yaml'
       - 'pubspec.yaml'
-      - 'resources/**'
       - 'skills/**'
       - 'tool/generator/**'
   schedule:
