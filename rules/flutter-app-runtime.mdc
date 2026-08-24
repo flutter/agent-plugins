@@ -1,5 +1,6 @@
 ---
-description: Proactively connect to running Dart/Flutter apps and trigger hot reload using the flutter-app-runtime skill workflows upon editing .dart files.
+description: Proactively connect to running Dart/Flutter apps and trigger hot reload or hot restart using the flutter-app-runtime skill workflows upon editing .dart files.
+trigger: glob
 globs: "**/*.dart"
 alwaysApply: false
 ---
@@ -16,7 +17,7 @@ Whenever you edit or modify any `.dart` file in this project, adhere to the runt
 
 3. **Trigger Hot Reload / Hot Restart**:
    - Execute `hot_reload` immediately after making changes to UI widgets or simple methods.
-   - Execute `hot_restart` if fundamental logic, state initialization, or `main()` was modified.
+   - Execute `hot_restart` if fundamental logic, stateful widgets or logic affecting variables that stateful widgets use, state initialization, or `main()` was modified.
 
 4. **Verify Runtime Stability**:
    - Run `get_runtime_errors` via `dart-mcp-server` to confirm that the hot reload/restart did not introduce new exceptions.
