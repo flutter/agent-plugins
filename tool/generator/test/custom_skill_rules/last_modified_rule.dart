@@ -14,7 +14,17 @@ class LastModifiedRule extends SkillRule {
   Future<List<ValidationError>> validate(SkillContext context) async {
     final errors = <ValidationError>[];
     final yaml = context.parsedYaml;
-    if (yaml == null) return errors;
+    if (yaml == null) {
+      errors.add(
+        ValidationError(
+          ruleId: name,
+          severity: severity,
+          file: 'SKILL.md',
+          message: 'Missing or malformed YAML frontmatter.',
+        ),
+      );
+      return errors;
+    }
 
     final Object? metadata = yaml[_metadataKey];
     if (metadata is! Map || !metadata.containsKey(_lastModifiedKey)) {

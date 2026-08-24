@@ -448,10 +448,6 @@ void main() {
         logs,
         contains(contains('Validation Failed: Skill name mismatch')),
       );
-      expect(
-        logs,
-        contains(contains('Validation Failed: Skill name mismatch')),
-      );
       // Description check was removed from the command
       expect(
         logs,

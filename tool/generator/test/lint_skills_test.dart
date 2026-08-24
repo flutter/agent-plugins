@@ -13,23 +13,45 @@ import 'custom_skill_rules/last_modified_rule.dart';
 
 void main() {
   test('Run skills linter', () async {
+    final lintErrors = <String>[];
     Logger.root.level = Level.ALL;
     final subscription = Logger.root.onRecord.listen((record) {
+      if (record.level >= Level.WARNING) {
+        lintErrors.add('${record.level.name}: ${record.message}');
+      }
       printOnFailure('${record.level.name}: ${record.message}');
     });
 
     final originalDir = Directory.current;
-    final parts = p.split(originalDir.path);
-    final isRoot =
-        !(parts.length >= 2 &&
-            parts[parts.length - 2] == 'tool' &&
-            parts.last == 'generator');
+    final isGenerator = originalDir.path.endsWith(p.join('tool', 'generator'));
+    final isRoot = File(
+      p.join(originalDir.path, 'tool', 'generator', 'skills_lint.yaml'),
+    ).existsSync();
 
-    if (isRoot) {
-      Directory.current = Directory(p.join('tool', 'generator'));
+    if (!isGenerator && isRoot) {
+      Directory.current = Directory(
+        p.join(originalDir.path, 'tool', 'generator'),
+      );
     }
 
     try {
+      final configFile = File('skills_lint.yaml');
+      expect(
+        configFile.existsSync(),
+        isTrue,
+        reason:
+            'skills_lint.yaml configuration file must exist in ${Directory.current.path}',
+      );
+
+      final skills = Directory(p.join('..', '..', 'skills'))
+          .listSync()
+          .whereType<Directory>();
+      expect(
+        skills,
+        isNotEmpty,
+        reason: 'Expected skills directory to contain skills.',
+      );
+
       final config = await ConfigParser.loadConfig();
       expect(
         config.directoryConfigs,
@@ -37,12 +59,18 @@ void main() {
         reason: 'Configuration directoryConfigs should not be empty.',
       );
 
+      final isValid = await validateSkills(
+        config: config,
+        customRules: [LastModifiedRule()],
+      );
       expect(
-        await validateSkills(config: config, customRules: [LastModifiedRule()]),
+        isValid,
         isTrue,
+        reason:
+            'Skills linting failed with the following issues:\n${lintErrors.join('\n')}',
       );
     } finally {
-      if (isRoot) {
+      if (!isGenerator && isRoot) {
         Directory.current = originalDir;
       }
       await subscription.cancel();
