@@ -43,9 +43,9 @@ void main() {
             'skills_lint.yaml configuration file must exist in ${Directory.current.path}',
       );
 
-      final skills = Directory(p.join('..', '..', 'skills'))
-          .listSync()
-          .whereType<Directory>();
+      final skills = Directory(
+        p.join('..', '..', 'skills'),
+      ).listSync().whereType<Directory>();
       expect(
         skills,
         isNotEmpty,
