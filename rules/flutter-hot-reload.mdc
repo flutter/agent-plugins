@@ -1,6 +1,5 @@
 ---
 description: Proactively connect to running Dart/Flutter apps and trigger hot reload or hot restart upon editing .dart files.
-trigger: glob
 globs: "**/*.dart"
 alwaysApply: false
 ---
@@ -17,5 +16,5 @@ Whenever you edit or modify any `.dart` file in this project:
    - Discover active running application instances using the `dtd` tool (or `list_running_apps` / `vm_service`).
 
 3. **Trigger Hot Reload / Hot Restart**:
-   - Execute `hot_reload` immediately after making changes to UI widgets or simple methods.
-   - Execute `hot_restart` if fundamental logic, stateful widgets or logic affecting variables that stateful widgets use, state initialization, or `main()` was modified.
+   - Execute `hot_reload` immediately after making changes to UI widgets (including `build` methods of stateful widgets) or simple methods.
+   - Execute `hot_restart` if fundamental logic, state initialization (e.g., `initState`), global/static state, or `main()` was modified.
