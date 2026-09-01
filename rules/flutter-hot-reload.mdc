@@ -1,6 +1,6 @@
 ---
 description: Proactively connect to running Dart/Flutter apps and trigger hot reload or hot restart upon editing .dart files under lib/.
-globs: "lib/**/*.dart"
+globs: "**/lib/**/*.dart"
 alwaysApply: false
 ---
 

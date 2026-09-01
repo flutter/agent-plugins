@@ -1,7 +1,7 @@
 ---
 description: Proactively connect to running Dart/Flutter apps and trigger hot reload or hot restart upon editing .dart files under lib/.
 trigger: glob
-globs: "lib/**/*.dart"
+globs: "**/lib/**/*.dart"
 ---
 
 # Proactive Flutter Hot Reload Rule
