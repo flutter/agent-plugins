@@ -1,6 +1,9 @@
 ---
 name: dart-write-documentation
 description: "Rules and formatting guidelines for writing Dart /// API documentation and doc comments. Use when documenting Dart code, writing doc comments for any Dart declaration (libraries, classes, methods, variables, etc.), or when instructed to follow the Effective Dart documentation guidelines."
+metadata:
+  model: models/gemini-3.1-pro-preview
+  last_modified: Mon, 24 Aug 2026 17:16:53 GMT
 ---
 
 # Writing Dart API Documentation
