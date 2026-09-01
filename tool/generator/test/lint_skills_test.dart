@@ -9,8 +9,6 @@ import 'package:path/path.dart' as p;
 import 'package:skills_lint/skills_lint.dart';
 import 'package:test/test.dart';
 
-import 'custom_skill_rules/last_modified_rule.dart';
-
 void main() {
   test('Run skills linter', () async {
     final lintErrors = <String>[];
@@ -59,10 +57,7 @@ void main() {
         reason: 'Configuration directoryConfigs should not be empty.',
       );
 
-      final isValid = await validateSkills(
-        config: config,
-        customRules: [LastModifiedRule()],
-      );
+      final isValid = await validateSkills(config: config);
       expect(
         isValid,
         isTrue,
