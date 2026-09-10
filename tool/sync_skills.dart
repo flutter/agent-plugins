@@ -18,7 +18,11 @@ void main(List<String> args) async {
   final hashFile =
       Platform.environment['SKILLS_HASH_FILE_PATH'] ??
       'tool/.dart_skills_githash';
-  const pluginFile = '.claude-plugin/plugin.json';
+  const pluginFiles = [
+    '.claude-plugin/plugin.json',
+    '.cursor-plugin/plugin.json',
+    '.codex-plugin/plugin.json',
+  ];
 
   // Verify source directory exists
   if (!await Directory(srcDir).exists()) {
@@ -153,33 +157,39 @@ void main(List<String> args) async {
     changesDetected = true;
   }
 
-  // 4. Update `.claude-plugin/plugin.json` version if changes were detected
+  // 4. Update plugin.json versions if changes were detected
   if (changesDetected) {
-    final pluginFileObj = File(pluginFile);
-    if (await pluginFileObj.exists()) {
-      print('📈 Bumping patch version in $pluginFile...');
-      try {
-        final content = await pluginFileObj.readAsString();
-        final Map<String, dynamic> data = jsonDecode(content);
+    for (final pluginFile in pluginFiles) {
+      final pluginFileObj = File(pluginFile);
+      if (await pluginFileObj.exists()) {
+        print('📈 Bumping patch version in $pluginFile...');
+        try {
+          final content = await pluginFileObj.readAsString();
+          final Map<String, dynamic> data = jsonDecode(content);
 
-        final versionStr = data['version'] as String? ?? '1.0.0';
-        final match = RegExp(r'^(\d+)\.(\d+)\.(\d+)').firstMatch(versionStr);
-        if (match != null) {
-          final major = match.group(1)!;
-          final minor = match.group(2)!;
-          final patch = int.parse(match.group(3)!) + 1;
-          data['version'] = '$major.$minor.$patch';
+          final versionStr = data['version'] as String? ?? '1.0.0';
+          final match = RegExp(r'^(\d+)\.(\d+)\.(\d+)').firstMatch(versionStr);
+          if (match != null) {
+            final major = match.group(1)!;
+            final minor = match.group(2)!;
+            final patch = int.parse(match.group(3)!) + 1;
+            data['version'] = '$major.$minor.$patch';
 
-          // Re-write back to json format with clean indentation and trailing newline
-          final encoder = const JsonEncoder.withIndent('  ');
-          await pluginFileObj.writeAsString('${encoder.convert(data)}\n');
-          print('✅ Version bumped successfully to: ${data['version']}');
+            // Re-write back to json format with clean indentation and trailing newline
+            final encoder = const JsonEncoder.withIndent('  ');
+            await pluginFileObj.writeAsString('${encoder.convert(data)}\n');
+            print(
+              '✅ Version bumped successfully in $pluginFile to: ${data['version']}',
+            );
+          }
+        } catch (e) {
+          print(
+            '⚠️ Failed parsing or writing plugin version for $pluginFile: $e',
+          );
         }
-      } catch (e) {
-        print('⚠️ Failed parsing or writing plugin version: $e');
+      } else {
+        print('⚠️ Warning: $pluginFile not found! Version was not bumped.');
       }
-    } else {
-      print('⚠️ Warning: $pluginFile not found! Version was not bumped.');
     }
   }
 
