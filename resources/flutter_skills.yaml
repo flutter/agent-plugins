@@ -432,3 +432,58 @@
     - https://docs.flutter.dev/cookbook/networking/update-data
     - https://docs.flutter.dev/data-and-backend/serialization
     - https://docs.flutter.dev/data-and-backend/serialization/json
+- name: flutter-convert-to-flutter
+  description: Migrate and convert native iOS (Swift, Objective-C) and Android (Kotlin,
+    Java) applications, architecture patterns, concurrency, UI components, and
+    subsystems to cross-platform Dart and Flutter. Use when converting native mobile
+    codebases or UI screens to Flutter, translating language features and idioms
+    to Dart 3, establishing platform channel or Pigeon interop, or modernizing mobile
+    architectures.
+  examplePrompt: "Convert this native Android and iOS mobile application code to idiomatic Flutter and Dart"
+  instructions: |
+    1.  **Analyze and Classify Native Components:**
+        *   Audit source files across iOS (Swift, Objective-C) and Android (Kotlin, Java) to categorize domain models, business logic, UI screens, and platform SDK dependencies.
+        *   Separate code candidates for a 100% pure Dart rewrite from hardware/OS-specific components requiring native bridges.
+
+    2.  **Consult Language-Specific References:**
+        *   For Android Java: refer to `reference/android.md`.
+        *   For Android Kotlin: refer to `reference/kotlin.md`.
+        *   For iOS Swift & SwiftUI: refer to `reference/swift.md`.
+        *   For iOS Objective-C: refer to `reference/objective-c.md`.
+
+    3.  **Convert Data Models and Logic to Dart 3:**
+        *   Convert native structs, POJOs, and classes into immutable Dart classes with `final` fields, `const` constructors, and `copyWith()` methods (or `package:freezed`).
+        *   Map state hierarchies and algebraic data types to Dart 3 `sealed class` hierarchies with exhaustive pattern matching.
+        *   Enforce sound null safety throughout.
+
+    4.  **Translate Concurrency to Dart Primitives:**
+        *   Replace GCD, Threads, Handlers, Coroutines, and completion blocks with `Future<T>`, `Stream<T>`, and `async`/`await`.
+        *   Dart code on the root isolate runs on the main UI thread; do not perform redundant main thread dispatching.
+        *   Offload CPU-bound tasks to `Isolate.run()`.
+
+    5.  **Build Declarative Flutter UI:**
+        *   Replace imperative ViewControllers, Activities, Fragments, Compose functions, and XML layouts with `StatelessWidget` and `StatefulWidget`.
+        *   Virtually recycle lists using `ListView.builder` or `GridView.builder`.
+
+    6.  **Implement Native Interoperability:**
+        *   Use `package:pigeon` for type-safe IPC across iOS (Swift/Obj-C) and Android (Kotlin/Java).
+        *   Use `package:ffigen` for in-process C/ObjC FFI or `package:jni` for Java/Kotlin.
+        *   Use `AndroidView` or `UiKitView` for embedded native UI views.
+
+    7.  **Verify and Test:**
+        *   Dispose all controllers, timers, and stream subscriptions in `State.dispose()`.
+        *   Verify zero errors with `dart analyze` and run automated unit/widget tests with `flutter test`.
+  resources:
+    - https://docs.flutter.dev/get-started/flutter-for/ios-devs
+    - https://docs.flutter.dev/get-started/flutter-for/android-devs
+    - https://docs.flutter.dev/get-started/fundamentals
+    - https://docs.flutter.dev/ui/layout
+    - https://docs.flutter.dev/data-and-backend/state-mgmt/intro
+    - https://docs.flutter.dev/platform-integration/ios
+    - https://docs.flutter.dev/platform-integration/android
+    - https://docs.flutter.dev/platform-integration/platform-channels
+    - https://dart.dev/language/patterns
+    - https://dart.dev/language/class-modifiers
+    - https://pub.dev/packages/pigeon
+    - https://pub.dev/packages/ffigen
+    - https://pub.dev/packages/jni
