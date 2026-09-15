@@ -1,7 +1,7 @@
 {
   "name": "dart-flutter",
   "displayName": "Dart and Flutter",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Official Claude plugin for Dart and Flutter that installs Flutter/Dart Skills and Dart MCP server for building natively compiled, visually stunning applications for mobile, web, desktop, and embedded devices from a single codebase",
   "author": {
     "name": "Dart and Flutter",
@@ -14,5 +14,16 @@
     "flutter",
     "dart",
     "mobile"
-  ]
+  ],
+  "mcpServers": {
+    "dart-mcp-server": {
+      "command": "dart",
+      "args": [
+        "mcp-server"
+      ],
+      "env": {
+        "AGENT_PLUGIN": "claude-code"
+      }
+    }
+  }
 }
