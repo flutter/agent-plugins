@@ -1,0 +1,68 @@
+name: Code Scanning
+permissions:
+  contents: read
+
+on:
+  # Scan on all PRs (against any branch) and on pushes to the main branch.
+  pull_request:
+    paths:
+      - '.github/workflows/code_scanning.yaml'
+      - 'pubspec.yaml'
+      - 'skills/**'
+      - 'tool/generator/**'
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/code_scanning.yaml'
+      - 'pubspec.yaml'
+      - 'skills/**'
+      - 'tool/generator/**'
+  schedule:
+    - cron: '0 0 * * 0' # weekly
+
+defaults:
+  run:
+    working-directory: tool/generator
+
+jobs:
+  sarif_scan:
+    name: skills_lint (SARIF)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dart-lang/setup-dart@65eb853c7ba17dde3be364c3d2858773e7144260 # v1.7.2
+        with:
+          sdk: stable
+
+      - run: dart pub get
+
+      # skills_lint reads tool/generator/skills_lint.yaml, which points at the
+      # repository's skills/ directory. It exits with code 1 if lint violations
+      # are found and 0 if clean. continue-on-error allows the workflow to
+      # proceed to upload the SARIF report to GitHub Code Scanning before
+      # failing the job.
+      - name: Generate SARIF report
+        id: lint
+        continue-on-error: true
+        run: dart run skills_lint --format=sarif > "${GITHUB_WORKSPACE}/skills-lint.sarif"
+
+      # Upload SARIF findings to GitHub Code Scanning. Skip upload if setup failed
+      # before lint generation ran, or on fork PRs where security-events: write is unavailable.
+      - name: Upload SARIF report to GitHub Code Scanning
+        if: ${{ !cancelled() && steps.lint.conclusion != 'skipped' && (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) }}
+        uses: github/codeql-action/upload-sarif@faaca9a8f6edddba5725ffe5adefdab6669a2eca # v3.38.0
+        with:
+          sarif_file: skills-lint.sarif
+          category: skills_lint
+
+      # Fail the job if skills_lint detected any lint violations or encountered an error.
+      - name: Check linter status
+        if: steps.lint.outcome != 'success'
+        run: |
+          echo "skills_lint detected lint violations or failed with an error."
+          exit 1
