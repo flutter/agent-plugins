@@ -4,13 +4,13 @@ description: >-
   Applies Dart 3 pattern matching, switch expressions, and destructuring
   idiomatically to validate data schemas, handle algebraic data types, and
   decompose control flow. Use when refactoring complex if-else chains,
-  parsing polymorphic JSON or API responses, destructuring Records or Maps, or
-  enforcing exhaustiveness on sealed classes. Don't use for simple boolean
-  conditions, single-variable type promotion (use `is`), or basic collection
-  filtering.
+  parsing polymorphic JSON or API responses, destructuring Lists, URI/path
+  segments, String.split() tokens, Records, or Maps, or enforcing exhaustiveness
+  on sealed classes. Don't use for simple boolean conditions, single-variable
+  type promotion (use `is`), or basic collection filtering.
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Sun, 06 Sep 2026 06:43:00 GMT
+  last_modified: Wed, 23 Sep 2026 22:10:00 GMT
 ---
 # Implementing Dart Patterns
 
@@ -27,6 +27,7 @@ metadata:
 Apply specific pattern types based on the data structure and desired outcome. Follow these conditional guidelines:
 
 *   **If validating and extracting from deserialized data (e.g., JSON):** Use Map, List, and Object patterns to validate schema structure and destructure properties in a single step.
+*   **If inspecting URL/path segments (`uri.pathSegments`, `p.split(path)`) or `String.split()` tokens:** Use List patterns with rest elements (`['api', 'comments', ...]`, `['assets', ...final rest]`, `[..., final parent, _]`) instead of manual `.length` checks, `.first`, `.skip(1)`, or `length - N` index arithmetic.
 *   **If handling polymorphic payloads or responses:** Use `switch` expressions over map discriminant keys to deserialize into `sealed` class hierarchies.
 *   **If handling multiple return values:** Use Record patterns to destructure fields directly into local variables.
 *   **If executing type-specific behavior (Algebraic Data Types):** Use Object patterns combined with `sealed` classes to ensure exhaustiveness.
@@ -147,10 +148,10 @@ Use standard boolean operators (`if (code >= 200 && code < 300)`) instead of `if
 ### Task Progress: Implementing Pattern Matching
 Copy this checklist to track progress when implementing complex pattern matching logic:
 
-- [ ] Identify the data structure being evaluated (JSON, Record, Class, Enum).
+- [ ] Identify the data structure being evaluated (JSON, List/Segments, Record, Class, Enum).
 - [ ] Select the appropriate switch construct (Expression for values, Statement for side-effects).
 - [ ] Define the required patterns (Object, Map, List, Record).
-- [ ] Extract required data using Variable patterns (`var x`, `:var y`).
+- [ ] Extract required data using Variable patterns (`var x`, `:var y`, `...final rest`).
 - [ ] Apply Guard clauses (`when condition`) for logic that cannot be expressed via patterns.
 - [ ] Handle unmatched cases using a Wildcard (`_`) or `default` clause (if not using a sealed class).
 - [ ] Run static analyzer for exhaustiveness and dead code (`dart analyze`).
@@ -188,6 +189,21 @@ Map patterns check for key existence (`containsKey`). If an optional JSON key
 might be omitted entirely from the payload (rather than explicitly passed as
 `'key': null`), destructure required keys via the pattern and extract optional
 fields directly from the matched submap.
+
+### List and Path Segment Destructuring
+Use `if-case` with list rest elements (`...final rest`) to validate prefixes and
+extract remaining elements without a 2-arm `_ => null` switch or manual `.first`
+and `.skip(1)` indexing.
+
+```dart
+String? resolveAllowedAssetSubpath(List<String> segments) {
+  if (segments case ['assets', ...final rest]
+      when rest.isNotEmpty && !rest.contains('..')) {
+    return rest.join('/');
+  }
+  return null;
+}
+```
 
 ### Algebraic Data Types (Sealed Classes)
 Use Object patterns with switch expressions to handle family types exhaustively.
