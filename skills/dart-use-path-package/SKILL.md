@@ -4,7 +4,7 @@ description: >-
   Cross-platform file and directory path manipulation, segment splitting, extension extraction, and context conversion using `package:path` and `package:file`. Use when writing, inspecting, joining, splitting, or refactoring file paths, directory names, or extensions, or replacing raw string path operations (`.split('/')`, `'$dir/$file'`, `.endsWith('.ext')`, `.replaceAll('\\', '/')`). Don't use for HTTP network URI routing, database query strings, or non-path string processing.
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Sun, 06 Sep 2026 07:14:00 GMT
+  last_modified: Wed, 23 Sep 2026 22:10:00 GMT
 ---
 
 # Safe Cross-Platform Path Manipulation in Dart
@@ -60,10 +60,14 @@ metadata:
   false positives on partial substring names (e.g. `barfoo/`).
 
 ### Root and Directory Prefixes
-* **Prefer**: `p.split(path).first == 'foo'` or `p.isWithin('foo', path)`
-* **Avoid**: `path.startsWith('foo/')`
-* **Why**: Fails on Windows separators and misses relative prefix variants such
-  as `./foo/`.
+* **Prefer**: `if (p.split(path) case ['foo', ...])` (or `case ['foo', ...final rest]` when extracting tail segments), or `p.isWithin('foo', path)`
+* **Avoid**: `path.startsWith('foo/')` or `p.split(path).first == 'foo'`
+* **Why**: String prefix matching fails on Windows separators (`foo\bar`). Calling
+  `p.split(path).first` throws a `StateError` on empty lists and requires
+  separate `.skip(1)` slicing, whereas list patterns safely check non-emptiness,
+  match multi-segment prefixes, and optionally bind `...final rest` in a single
+  step. When unnormalized relative prefixes like `./foo/bar` may appear, use
+  `p.isWithin('foo', path)` (or `p.split(p.normalize(path))`).
 
 ### File Extensions
 * **Prefer**: `p.extension(path) == '.wasm'`
@@ -188,7 +192,7 @@ String insertContentHash(String filename, String hash) {
 
 ### Path Refactoring Checklist
 - [ ] Replace string interpolation (`'$dir/$file'`) with `p.join(dir, file)`.
-- [ ] Replace `.contains('dir/')` and `.startsWith('dir/')` with `p.split(path)` segment checks or `p.isWithin(parent, child)`.
+- [ ] Replace `.contains('dir/')` and `.startsWith('dir/')` with `p.split(path)` list pattern checks (`case ['dir', ...final rest]`) or `p.isWithin(parent, child)`.
 - [ ] Replace `.replaceAll(r'\', '/')` with `p.posix.joinAll(p.split(path))` (or `p.url.joinAll`).
 - [ ] Replace `.endsWith('.ext')` on file paths with `p.extension(path) == '.ext'`.
 - [ ] Replace manual dot-index slicing with `p.withoutExtension(path)` and `p.extension(path, [level])`.
