@@ -432,3 +432,40 @@
     - https://docs.flutter.dev/cookbook/networking/update-data
     - https://docs.flutter.dev/data-and-backend/serialization
     - https://docs.flutter.dev/data-and-backend/serialization/json
+- name: flutter-app-runtime
+  description: "Interacts with running Dart and Flutter applications via Dart MCP server tools (widget_inspector, dtd, get_runtime_errors, hot_reload, hot_restart) to inspect live widget trees, diagnose layout clipping and runtime errors, and execute proactive hot reloads. Use when answering questions about the active screen, inspecting widget structure, styling, or colors, checking for runtime overflows, debugging errors, or modifying UI widgets in a running app."
+  examplePrompt: "Inspect the active widget tree to check for layout clipping and tell me the immediate parent of the counter text"
+  instructions: |
+    This Skill enables interaction with running Dart and Flutter applications via the
+    Dart MCP server and Dart Tooling Daemon (DTD).
+
+    Pre-requisite:
+    The Dart and Flutter MCP server must be configured and active.
+
+    Core capabilities include:
+    - Application Discovery: Discover active instances and connect via DTD (`dtd` tool).
+    - Widget Inspection: Query live widget hierarchies, determine immediate parent widgets, inspect rendered properties, styles, and colors (`widget_inspector`).
+    - Error & Layout Diagnostics: Retrieve live runtime exceptions, identify RenderFlex overflows, and detect layout clipping on the active screen (`get_runtime_errors`).
+    - Hot Reload & Hot Restart: Proactively push visual changes (`hot_reload`) or reset application state when modifying state initialization (`hot_restart`).
+
+    Decision workflow:
+    1. Identify Targets: Use the `dtd` tool (via `listDtdUris`, `connect`, and `listConnectedApps`)
+       to discover and connect to running application instances in the current workspace. If no app
+       is running, inform the user immediately and fall back to static source code analysis if answering
+       inspection questions, or proceed with code edits if modifying files.
+    2. Live UI & Hierarchy Inspection: When answering questions about current screen appearance,
+       widget styling, colors, or parent-child hierarchy, execute `widget_inspector` with `command: "get_widget_tree"`.
+       Use `summaryOnly: false` to inspect the exact immediate parent widget or complete framework tree
+       including intermediate styling and layout widgets (e.g., DefaultTextStyle, Semantics, Padding).
+       Use `summaryOnly: true` for high-level user-defined widget summaries.
+    3. Runtime Error & Layout Overflow Diagnosis: When asked about layout issues, clipping, or errors on the
+       current screen size, execute `get_runtime_errors` to check for active RenderFlex overflows or exceptions.
+       Use `widget_inspector` to evaluate constraints and render box geometry.
+    4. Proactive Hot Reload & State Reset: Whenever edits are made to Flutter UI widgets or Dart code,
+       proactively trigger `hot_reload` across all active instances to maintain visual consistency.
+       If modifying foundational state, `initState`, or `main()`, trigger `hot_restart`.
+       Always call `get_runtime_errors` following a reload to verify zero new exceptions.
+  resources:
+    - https://docs.flutter.dev/ai/mcp-server
+    - https://docs.flutter.dev/ai/get-started
+    - https://docs.flutter.dev/tools/hot-reload
