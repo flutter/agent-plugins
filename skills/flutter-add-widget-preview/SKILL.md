@@ -64,7 +64,7 @@ Follow the appropriate conditional workflow to launch and interact with the Widg
 **If using a supported IDE (Android Studio, IntelliJ, VS Code with Flutter 3.47+):**
 1. Launch the IDE. The Widget Previewer starts automatically.
 2. Open the "Flutter Widget Preview" tab in the sidebar.
-3. Toggle "Filter previews by selected file" at the bottom of the environment to toggle between showing only previews in the active file vs. project-wide previews.
+3. Toggle "Filter previews by selected file" at the bottom of the environment to switch between showing only previews in the active file vs. project-wide previews.
 
 **If using the Command Line:**
 1. Navigate to the Flutter project's root directory.
@@ -125,8 +125,9 @@ final class ThemedPreview extends Preview {
     };
 
     final builder = originalPreview.toBuilder();
+    final baseName = originalPreview.name ?? 'Preview';
     builder
-      ..name = '${originalPreview.name} [$themeVariant]'
+      ..name = '$baseName [$themeVariant]'
       ..theme = _themeBuilder;
 
     return builder.build();
@@ -144,7 +145,9 @@ final class CustomThemeData extends PreviewThemeData {
       data: ThemeData.from(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.teal,
-          brightness: brightness ?? MediaQuery.platformBrightnessOf(context),
+          brightness: brightness ??
+              MediaQuery.maybePlatformBrightnessOf(context) ??
+              Brightness.light,
         ),
       ),
       child: child,
