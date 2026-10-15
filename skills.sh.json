@@ -1,0 +1,73 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.json",
+  "notGrouped": "bottom",
+  "groups": [
+    {
+      "title": "UI & Layout",
+      "description": "Responsive Flutter layouts, constraint debugging, and app localization.",
+      "skills": [
+        "flutter-build-responsive-layout",
+        "flutter-fix-layout-issues",
+        "flutter-setup-localization"
+      ]
+    },
+    {
+      "title": "Architecture & Data",
+      "description": "Layered app architecture, declarative routing, HTTP networking, and JSON serialization.",
+      "skills": [
+        "flutter-apply-architecture-best-practices",
+        "flutter-setup-declarative-routing",
+        "flutter-use-http-package",
+        "flutter-implement-json-serialization"
+      ]
+    },
+    {
+      "title": "Testing & Previews",
+      "description": "Widget tests, Flutter Driver integration tests, and interactive widget previews.",
+      "skills": [
+        "flutter-add-widget-test",
+        "flutter-add-integration-test",
+        "flutter-add-widget-preview"
+      ]
+    },
+    {
+      "title": "Dart Language",
+      "description": "Modern Dart syntax, primary constructors, pattern matching, and API documentation.",
+      "skills": [
+        "dart-use-pattern-matching",
+        "dart-use-primary-constructors",
+        "dart-write-documentation",
+        "dart-use-doc-examples"
+      ]
+    },
+    {
+      "title": "Dart Testing",
+      "description": "Unit test authoring, mock generation, code coverage, and package:checks migrations.",
+      "skills": [
+        "dart-add-unit-test",
+        "dart-generate-test-mocks",
+        "dart-collect-coverage",
+        "dart-migrate-to-checks-package"
+      ]
+    },
+    {
+      "title": "Dart Analysis",
+      "description": "Static analysis, automated lint fixes, runtime error debugging, and dependency resolution.",
+      "skills": [
+        "dart-run-static-analysis",
+        "dart-fix-runtime-errors",
+        "dart-resolve-package-conflicts"
+      ]
+    },
+    {
+      "title": "Dart Interop",
+      "description": "Command-line app architecture, cross-platform paths, FFI bindings, and native assets.",
+      "skills": [
+        "dart-build-cli-app",
+        "dart-use-path-package",
+        "dart-use-ffigen",
+        "dart-setup-ffi-assets"
+      ]
+    }
+  ]
+}
