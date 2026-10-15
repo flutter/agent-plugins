@@ -10,34 +10,48 @@ import 'package:path/path.dart' as p;
 import 'package:skills_lint/skills_lint.dart';
 import 'package:test/test.dart';
 
+const String _expectedSkillsShSchema =
+    'https://skills.sh/schemas/skills.sh.json';
+
 void main() {
-  test('Validate skills.sh.json', () {
+  test('skills.sh.json and README.md match flutter-* skills in skills/', () {
     final currentPath = Directory.current.path;
     final repoRoot = currentPath.endsWith(p.join('tool', 'generator'))
         ? Directory.current.parent.parent
         : Directory.current;
+
+    // 1. Collect all local flutter-* skill directories in skills/ (excluding
+    // synced dart-* skills, which are canonical in dart-lang/skills).
     final skillsDir = Directory(p.join(repoRoot.path, 'skills'));
     expect(skillsDir.existsSync(), isTrue);
 
-    final actualSkills = skillsDir
+    final actualFlutterSkills = skillsDir
         .listSync()
         .whereType<Directory>()
         .map((d) => p.basename(d.path))
-        .where((name) => !name.startsWith('.'))
+        .where((name) => name.startsWith('flutter-'))
         .toSet();
-    expect(actualSkills, isNotEmpty);
+    expect(actualFlutterSkills, isNotEmpty);
 
+    // 2. Parse skills.sh.json and validate its local properties (this performs
+    // a string comparison against _expectedSkillsShSchema and makes no HTTP or
+    // network calls).
     final skillsShFile = File(p.join(repoRoot.path, 'skills.sh.json'));
     expect(skillsShFile.existsSync(), isTrue);
 
     final skillsShJson =
         jsonDecode(skillsShFile.readAsStringSync()) as Map<String, Object?>;
-    expect(
-      skillsShJson[r'$schema'],
-      'https://skills.sh/schemas/skills.sh.json',
-    );
-    expect(skillsShJson['notGrouped'], 'bottom');
+    expect(skillsShJson[r'$schema'], _expectedSkillsShSchema);
 
+    // Setting notGrouped to "bottom" pushes any skill not listed in "groups"
+    // (including previously deleted/renamed skill slugs retained in skills.sh
+    // install telemetry and synced dart-* copies) into an "Other skills"
+    // section at the bottom of the skills.sh repository page.
+    expect(skillsShJson['notGrouped'], 'bottom');
+    expect(skillsShJson.keys.last, 'notGrouped');
+
+    // 3. Verify each group has a 1-3 word title, a non-empty description, and
+    // unique skill identifiers that match actualFlutterSkills.
     final groups = (skillsShJson['groups'] as List<Object?>)
         .cast<Map<String, Object?>>();
     expect(groups, isNotEmpty);
@@ -69,17 +83,16 @@ void main() {
       }
     }
 
-    expect(groupedSkills, equals(actualSkills));
+    expect(groupedSkills, equals(actualFlutterSkills));
 
+    // 4. Verify the Available Skills table in README.md lists the exact same
+    // set of flutter-* skills.
     final readmeFile = File(p.join(repoRoot.path, 'README.md'));
     expect(readmeFile.existsSync(), isTrue);
     final readmeMatches = RegExp(
       r'\| \[([^\]]+)\]\(skills/\1/SKILL\.md\) \|',
     ).allMatches(readmeFile.readAsStringSync());
     final readmeSkills = readmeMatches.map((m) => m.group(1)!).toSet();
-    final actualFlutterSkills = actualSkills
-        .where((s) => s.startsWith('flutter-'))
-        .toSet();
     expect(readmeSkills, equals(actualFlutterSkills));
   });
 

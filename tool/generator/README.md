@@ -139,6 +139,16 @@ The default configuration file is located at `resources/flutter_skills.yaml`. It
     - ../packages/flutter/lib/src/widgets/layout.md
 ```
 
+### Adding, Renaming, or Deleting Skills
+
+When adding, renaming, or deleting a `flutter-*` skill in `skills/`:
+
+1.  **Update `README.md`**: Run `dart run skills update-readme` (or update the `Available Skills` table in the root `README.md`) so the table matches the `flutter-*` directories in `skills/`.
+2.  **Update `skills.sh.json`**: Add, rename, or remove the skill entry under `groups` in the root `skills.sh.json` file ([skills.sh documentation](https://www.skills.sh/docs/customize)).
+    *   Only `flutter-*` skills belong in `groups` (synced `dart-*` skills are canonical in `dart-lang/skills`).
+    *   Because `skills.sh` retains historical skill slugs from install telemetry after a skill is renamed or deleted in Git, `"notGrouped": "bottom"` at the end of `skills.sh.json` automatically demotes any retired skill slugs and ungrouped `dart-*` copies into an `Other skills` section at the bottom of the page.
+3.  **Verify**: Run `dart test` in `tool/generator` (`test/lint_skills_test.dart` verifies that `skills.sh.json` and `README.md` match the `flutter-*` directories in `skills/`).
+
 ## Development
 
 To run analysis, formatting, and tests, navigate to this directory (`tool/generator`) and run:

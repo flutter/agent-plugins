@@ -5,22 +5,8 @@ permissions:
 on:
   # Run CI on all PRs (against any branch) and on pushes to the main branch.
   pull_request:
-    paths:
-      - '.github/workflows/skills_tool.yaml'
-      - 'README.md'
-      - 'pubspec.yaml'
-      - 'skills.sh.json'
-      - 'skills/**'
-      - 'tool/generator/**'
   push:
     branches: [ main ]
-    paths:
-      - '.github/workflows/skills_tool.yaml'
-      - 'README.md'
-      - 'pubspec.yaml'
-      - 'skills.sh.json'
-      - 'skills/**'
-      - 'tool/generator/**'
   schedule:
     - cron: '0 0 * * 0' # weekly
 
