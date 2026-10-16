@@ -12,6 +12,43 @@ import 'package:test/test.dart';
 
 const String _expectedSkillsShSchema =
     'https://skills.sh/schemas/skills.sh.json';
+const int _maxGroupTitleLength = 30;
+
+void _validateGroupTitle(Object? title) {
+  expect(
+    title,
+    isA<String>()
+        .having((s) => s.trim(), 'trimmed title', isNotEmpty)
+        .having(
+          (s) => s.length,
+          'length',
+          lessThanOrEqualTo(_maxGroupTitleLength),
+        ),
+  );
+}
+
+void _validateGroupDescription(Object? description) {
+  expect(
+    description,
+    isA<String>().having((s) => s.trim(), 'trimmed description', isNotEmpty),
+  );
+}
+
+Set<String> _collectUniqueGroupedSkills(List<Map<String, Object?>> groups) {
+  final groupedSkills = <String>{};
+  for (final group in groups) {
+    final skills = (group['skills'] as List<Object?>).cast<String>();
+    expect(skills, isNotEmpty);
+    for (final skill in skills) {
+      expect(
+        groupedSkills.add(skill),
+        isTrue,
+        reason: 'Duplicate skill "$skill" in skills.sh.json',
+      );
+    }
+  }
+  return groupedSkills;
+}
 
 void main() {
   test('skills.sh.json and README.md match flutter-* skills in skills/', () {
@@ -43,46 +80,28 @@ void main() {
         jsonDecode(skillsShFile.readAsStringSync()) as Map<String, Object?>;
     expect(skillsShJson[r'$schema'], _expectedSkillsShSchema);
 
-    // Setting notGrouped to "bottom" pushes any skill not listed in "groups"
-    // (including previously deleted/renamed skill slugs retained in skills.sh
-    // install telemetry and synced dart-* copies) into an "Other skills"
-    // section at the bottom of the skills.sh repository page.
+    // Setting notGrouped to "bottom" instructs skills.sh to render any skill
+    // not listed in "groups" (including previously deleted/renamed skill slugs
+    // retained in skills.sh install telemetry and synced dart-* copies) under
+    // its built-in "Other skills" heading at the bottom of the repository page
+    // (the schema only accepts "top", "bottom", or "hidden", and does not
+    // support a custom label).
     expect(skillsShJson['notGrouped'], 'bottom');
     expect(skillsShJson.keys.last, 'notGrouped');
 
-    // 3. Verify each group has a 1-3 word title, a non-empty description, and
-    // unique skill identifiers that match actualFlutterSkills.
+    // 3. Validate each group's title, description, and unique skill
+    // identifiers, and ensure that all grouped skills exist as flutter-*
+    // directories in skills/ (without typos or missing skills).
     final groups = (skillsShJson['groups'] as List<Object?>)
         .cast<Map<String, Object?>>();
     expect(groups, isNotEmpty);
 
-    final groupedSkills = <String>{};
     for (final group in groups) {
-      final title = group['title'];
-      expect(
-        title,
-        isA<String>().having(
-          (s) =>
-              s.trim().isNotEmpty && s.trim().split(RegExp(r'\s+')).length <= 3,
-          '1-3 words',
-          isTrue,
-        ),
-      );
-      expect(
-        group['description'],
-        isA<String>().having((s) => s.isNotEmpty, 'non-empty', isTrue),
-      );
-      final skills = (group['skills'] as List<Object?>).cast<String>();
-      expect(skills, isNotEmpty);
-      for (final skill in skills) {
-        expect(
-          groupedSkills.add(skill),
-          isTrue,
-          reason: 'Duplicate skill "$skill" in skills.sh.json',
-        );
-      }
+      _validateGroupTitle(group['title']);
+      _validateGroupDescription(group['description']);
     }
 
+    final groupedSkills = _collectUniqueGroupedSkills(groups);
     expect(groupedSkills, equals(actualFlutterSkills));
 
     // 4. Verify the Available Skills table in README.md lists the exact same
