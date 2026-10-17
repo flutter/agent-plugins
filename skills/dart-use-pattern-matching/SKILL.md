@@ -10,7 +10,7 @@ description: >-
   type promotion (use `is`), or basic collection filtering.
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Wed, 23 Sep 2026 22:10:00 GMT
+  last_modified: Tue, 13 Oct 2026 19:45:00 GMT
 ---
 # Implementing Dart Patterns
 
@@ -30,6 +30,7 @@ Apply specific pattern types based on the data structure and desired outcome. Fo
 *   **If inspecting URL/path segments (`uri.pathSegments`, `p.split(path)`) or `String.split()` tokens:** Use List patterns with rest elements (`['api', 'comments', ...]`, `['assets', ...final rest]`, `[..., final parent, _]`) instead of manual `.length` checks, `.first`, `.skip(1)`, or `length - N` index arithmetic.
 *   **If handling polymorphic payloads or responses:** Use `switch` expressions over map discriminant keys to deserialize into `sealed` class hierarchies.
 *   **If handling multiple return values:** Use Record patterns to destructure fields directly into local variables.
+*   **If unpacking multiple fields from an object or `MapEntry`:** Use Object patterns (`final Spec(:field1, :field2!) = spec;`, `for (final MapEntry(:key, :value) in map.entries)`) when promoting nullable properties or unpacking 3+ fields used across multiple statements, rather than for single-call passthroughs.
 *   **If executing type-specific behavior (Algebraic Data Types):** Use Object patterns combined with `sealed` classes to ensure exhaustiveness.
 *   **If matching numeric ranges or conditions:** Use Relational (`>=`, `<=`) and Logical-and (`&&`) patterns within switch arms.
 *   **If multiple cases share logic:** Use Logical-or (`||`) patterns to share a single case body or guard clause.
@@ -137,8 +138,27 @@ Do not use `if-case` in loops or deserialization to filter elements if malformed
 *   Use `if (x is T)` instead of a `switch` statement with only 1 case and `default: break;`.
 *   Use standard conditional ternary operators (`condition ? a : b`) instead of `switch (condition) { true => a, false => b }`.
 
-### 5. Avoid Gratuitous Object Destructuring
-Use standard property access (`user.name`) rather than object pattern destructuring (`final User(:name) = user;`) when reading a single property on a known non-null instance.
+### 5. Use Object Destructuring for Multi-Field Unpacking, Not Single Properties or Passthroughs
+Use object or record destructuring when extracting 3+ fields used across multiple statements, iterating `MapEntry(:key, :value)` in `map.entries` loops, eliminating a single-use intermediate variable, or promoting nullable fields to local variables (`:field!` or `:field` with `!= null`). Keep standard property/element access (`config.field`) when:
+*   Reading a single property (`user.name`, or `final CpuCallFrame(:url, :line) = node.callFrame;` rather than nesting `ProfileNode(callFrame: ...)`).
+*   Unpacking only 1–2 fields in a short getter/method, or unpacking fields only to pass them straight into a single constructor or function call.
+*   Explicit local type annotations (`specify_nonobvious_local_variable_types`) require adding new library imports for marginal (1–2x) field reuse.
+*   A long class name with renamed getters wraps a 2-field unpack across 3+ lines.
+*   Any target variable is assigned to an outer-scoped variable (e.g., `db = res.$1;` before `finally` — `final (db, ...)` shadows outer `db`) or mixes `final` and mutable `var` locals.
+*   Reading `.first` and `.last` on a list that may have length 1 (`[first, ..., last]` requires `length >= 2`; do not replace with multi-branch `if-case`).
+
+*   **Prefer:**
+    ```dart
+    // ✅ Unpacks multiple fields and asserts non-nullability in one declaration
+    final RunSpec(:target, :device!, :verbose) = spec;
+    ```
+*   **Avoid:**
+    ```dart
+    // ❌ Repetitive multi-line property extraction
+    final target = spec.target;
+    final device = spec.device!;
+    final verbose = spec.verbose;
+    ```
 
 ### 6. Avoid `if-case` for Standalone Scalar Comparisons
 Use standard boolean operators (`if (code >= 200 && code < 300)`) instead of `if (code case >= 200 && < 300)` for standalone conditions. Reserve relational patterns for multi-arm `switch` tables.
