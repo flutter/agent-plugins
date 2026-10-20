@@ -18,17 +18,6 @@
     "mcp"
   ],
   "skills": "./skills/",
-  "mcpServers": {
-    "dart-mcp-server": {
-      "command": "dart",
-      "args": [
-        "mcp-server"
-      ],
-      "env": {
-        "AGENT_PLUGIN": "codex"
-      }
-    }
-  },
   "interface": {
     "displayName": "Dart and Flutter",
     "shortDescription": "Build and manage Dart and Flutter apps from Codex.",
@@ -39,6 +28,21 @@
       "Skills",
       "MCP"
     ],
-    "websiteURL": "https://flutter.dev"
+    "websiteURL": "https://flutter.dev",
+    "composerIcon": "./assets/flutter-icon-square.svg",
+    "logo": "./assets/flutter-logo.svg",
+    "privacyPolicyURL": "https://policies.google.com/privacy",
+    "termsOfServiceURL": "https://policies.google.com/terms"
+  },
+  "mcpServers": {
+    "dart-mcp-server": {
+      "command": "dart",
+      "args": [
+        "mcp-server"
+      ],
+      "env": {
+        "AGENT_PLUGIN": "codex"
+      }
+    }
   }
 }
