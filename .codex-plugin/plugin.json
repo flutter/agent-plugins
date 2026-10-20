@@ -29,8 +29,8 @@
       "MCP"
     ],
     "websiteURL": "https://flutter.dev",
-    "composerIcon": "./assets/flutter-icon-square.svg",
-    "logo": "./assets/flutter-logo.svg",
+    "composerIcon": "./assets/flutter-icon.svg",
+    "logo": "./assets/flutter-logo.png",
     "privacyPolicyURL": "https://policies.google.com/privacy",
     "termsOfServiceURL": "https://policies.google.com/terms"
   },
