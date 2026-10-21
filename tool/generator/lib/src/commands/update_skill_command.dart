@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:logging/logging.dart';
@@ -65,10 +66,20 @@ class UpdateSkillCommand extends BaseSkillCommand {
 
       final dryRun = argResults?['dry-run'] as bool? ?? false;
       if (dryRun) {
+        final origWords = existingContent
+            .split(RegExp(r'\s+'))
+            .where((s) => s.isNotEmpty)
+            .length;
+        final origTokens = (origWords * 1.3).round();
+        final rawWords = combinedMarkdown
+            .split(RegExp(r'\s+'))
+            .where((s) => s.isNotEmpty)
+            .length;
+        final rawTokens = (rawWords * 1.3).round();
         logger
           ..info('  [DRY RUN] Would update skill: ${skill.name}')
           ..info(
-            '  [DRY RUN] Original file size: ${existingContent.split(' ').length} tokens -> Raw content size: ${combinedMarkdown.split(' ').length} tokens.',
+            '  [DRY RUN] Original file size: ~$origWords words (~$origTokens tokens) -> Raw content size: ~$rawWords words (~$rawTokens tokens).',
           );
         return;
       }
@@ -87,6 +98,14 @@ class UpdateSkillCommand extends BaseSkillCommand {
         logger.info(
           '  Updated ${p.join(outputDir.path, skill.name, 'SKILL.md')}',
         );
+
+        final lineCount = const LineSplitter().convert(generatedContent).length;
+        if (lineCount > 500) {
+          logger.warning(
+            '  Warning: Updated SKILL.md has $lineCount lines. '
+            'The Agent Skills standard (https://agentskills.io) recommends keeping SKILL.md under 500 lines.',
+          );
+        }
       } else {
         logger.severe('  Failed to update content for ${skill.name}');
       }

@@ -23,17 +23,50 @@ class GeminiService {
   }) : _model = model ?? defaultModel,
        _client = _ApiKeyClient(httpClient ?? http.Client(), apiKey);
 
-  /// 0.2 is a good temperature for technical material.
+  /// Default temperature for legacy models.
+  ///
+  /// Note: For Gemini 4 models (such as `gemini-4-argon`), sampling parameters
+  /// such as temperature, top_p, and top_k should be omitted, as the model
+  /// optimizes its own reasoning path and setting them can degrade performance
+  /// or is ignored by the API.
+  ///
+  /// See: https://ai.google.dev/gemini-api/docs/latest-model#migrate-to-gemini-4-argon
   static const double defaultTemperature = 0.2;
 
   /// The default model to use for generation.
-  static const String defaultModel = 'models/gemini-3.1-pro-preview';
+  ///
+  /// Defaults to Gemini 4 Argon (`models/gemini-4-argon`), Google's flagship
+  /// model for software engineering, deep reasoning, and autonomous agents,
+  /// featuring a 1M unified context window.
+  ///
+  /// See:
+  /// - https://ai.google.dev/gemini-api/docs/models/gemini-4-argon
+  /// - https://ai.google.dev/gemini-api/docs/latest-model
+  static const String defaultModel = 'models/gemini-4-argon';
 
   /// The default token budget for thinking.
+  ///
+  /// Gemini 4 Argon engages in dynamic reasoning by default (using thinking
+  /// levels: low, medium, high). When communicating via GenerativeLanguage API,
+  /// thinking budget controls reasoning depth.
+  ///
+  /// See:
+  /// - https://ai.google.dev/gemini-api/docs/thinking
+  /// - https://ai.google.dev/gemini-api/docs/latest-model#understanding-thinking-levels
   static const int defaultThinkingBudget = 4096;
 
   /// The default max output tokens for generation.
-  static const int defaultMaxOutputLimit = 8192;
+  ///
+  /// For Gemini 4 Argon (and thinking models), thinking tokens and response
+  /// tokens share the same output budget and context window. In synchronous
+  /// mode, Gemini 4 Argon supports a maximum output limit of 65,536 tokens.
+  /// Setting a limit lower than 32K (such as 8192) can cause reasoning to be
+  /// truncated.
+  ///
+  /// See:
+  /// - https://ai.google.dev/gemini-api/docs/models/gemini-4-argon
+  /// - https://ai.google.dev/gemini-api/docs/latest-model#setting-output-token-limits
+  static const int defaultMaxOutputLimit = 65536;
 
   /// The default safety settings to use for generation.
   static final List<SafetySetting> defaultSafetySettings = [
@@ -272,6 +305,11 @@ metadata:
     String? systemInstruction,
     int thinkingBudget = defaultThinkingBudget,
   }) {
+    // For Gemini 4 thinking models, sampling parameters (temperature, top_p,
+    // top_k) should be omitted per Google best practices.
+    final isGemini4 =
+        _model.startsWith('models/gemini-4') || _model.startsWith('gemini-4');
+
     return GenerateContentRequest(
       model: _model,
       systemInstruction: systemInstruction != null
@@ -282,7 +320,7 @@ metadata:
       ],
       // See [GenerationConfig] in package:google_cloud_ai_generativelanguage_v1beta
       generationConfig: GenerationConfig(
-        temperature: defaultTemperature,
+        temperature: isGemini4 ? null : defaultTemperature,
         maxOutputTokens: defaultMaxOutputLimit,
         thinkingConfig: thinkingBudget > 0
             ? ThinkingConfig(

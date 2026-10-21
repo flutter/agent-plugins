@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:logging/logging.dart';
@@ -54,10 +55,15 @@ class GenerateSkillCommand extends BaseSkillCommand {
 
       final dryRun = argResults?['dry-run'] as bool? ?? false;
       if (dryRun) {
+        final words = combinedMarkdown
+            .split(RegExp(r'\s+'))
+            .where((s) => s.isNotEmpty)
+            .length;
+        final approxTokens = (words * 1.3).round();
         logger
           ..info('  [DRY RUN] Would generate skill: ${skill.name}')
           ..info(
-            '  [DRY RUN] Prompt size: ${combinedMarkdown.split(' ').length} tokens.',
+            '  [DRY RUN] Prompt size: ~$words words (approx. $approxTokens tokens).',
           );
         return;
       }
@@ -82,6 +88,14 @@ class GenerateSkillCommand extends BaseSkillCommand {
         logger.info(
           '  Generated ${p.join(outputDir.path, skill.name, 'SKILL.md')}',
         );
+
+        final lineCount = const LineSplitter().convert(generatedContent).length;
+        if (lineCount > 500) {
+          logger.warning(
+            '  Warning: Generated SKILL.md has $lineCount lines. '
+            'The Agent Skills standard (https://agentskills.io) recommends keeping SKILL.md under 500 lines.',
+          );
+        }
       } else {
         logger.severe('  Failed to generate content for ${skill.name}');
       }

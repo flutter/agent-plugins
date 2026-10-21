@@ -261,6 +261,90 @@ void main() {
       expect(logs, contains(contains('Existing skill file not found')));
     });
 
+    test('logs warning when existing skill file exceeds 500 lines', () async {
+      const skillName = 'long-skill';
+      final skillDir = Directory(p.join(skillsDir.path, skillName));
+      await skillDir.create();
+      final longContent = StringBuffer('---\nname: $skillName\n---\n');
+      for (var i = 0; i < 505; i++) {
+        longContent.writeln('Line $i');
+      }
+      File(
+        p.join(skillDir.path, 'SKILL.md'),
+      ).writeAsStringSync(longContent.toString());
+
+      final configFile = File(p.join(tempDir.path, 'config_long.yaml'));
+      await configFile.writeAsString(
+        jsonEncode([
+          {
+            'name': skillName,
+            'description': 'Desc',
+            'resources': ['https://example.com'],
+          },
+        ]),
+      );
+
+      final mockClient = MockClient((request) async {
+        return http.Response('Content', 200);
+      });
+
+      runner = CommandRunner<void>('skills', 'Test runner')
+        ..addCommand(
+          ValidateSkillCommand(
+            environment: {'GEMINI_API_KEY': 'test-key'},
+            outputDir: skillsDir,
+            httpClient: mockClient,
+          ),
+        );
+
+      await IOOverrides.runZoned(() async {
+        await runner.run(['validate-skill', '--dry-run', configFile.path]);
+      }, getCurrentDirectory: () => tempDir);
+
+      expect(
+        logs,
+        contains(
+          contains(
+            'The Agent Skills standard (https://agentskills.io) recommends keeping SKILL.md under 500 lines.',
+          ),
+        ),
+      );
+    });
+
+    test('logs warning when description exceeds 1024 characters', () async {
+      const skillName = 'long-desc-skill';
+      final configFile = File(p.join(tempDir.path, 'config_long_desc.yaml'));
+      final longDesc = 'A' * 1050;
+      await configFile.writeAsString(
+        jsonEncode([
+          {
+            'name': skillName,
+            'description': longDesc,
+            'resources': ['https://example.com'],
+          },
+        ]),
+      );
+
+      final mockClient = MockClient((request) async {
+        return http.Response('Content', 200);
+      });
+
+      runner = CommandRunner<void>('skills', 'Test runner')
+        ..addCommand(
+          ValidateSkillCommand(
+            environment: {'GEMINI_API_KEY': 'test-key'},
+            outputDir: skillsDir,
+            httpClient: mockClient,
+          ),
+        );
+
+      await IOOverrides.runZoned(() async {
+        await runner.run(['validate-skill', '--dry-run', configFile.path]);
+      }, getCurrentDirectory: () => tempDir);
+
+      expect(logs, contains(contains('description exceeds 1024 characters')));
+    });
+
     test('logs warning when failed to fetch URL', () async {
       const skillName = 'fail-skill';
       final skillDir = Directory(p.join(skillsDir.path, skillName));

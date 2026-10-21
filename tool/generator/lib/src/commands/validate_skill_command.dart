@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:logging/logging.dart';
@@ -102,6 +103,11 @@ class ValidateSkillCommand extends BaseSkillCommand {
       } else if (rawDescription is! String) {
         logger.severe('Skill "$name" field "description" must be a string.');
         isValid = false;
+      } else if (rawDescription.length > 1024) {
+        logger.warning(
+          'Skill "$name" description exceeds 1024 characters (${rawDescription.length} chars). '
+          'The Agent Skills standard (https://agentskills.io) limits descriptions to 1024 characters.',
+        );
       }
 
       if (item['resources'] == null) {
@@ -221,6 +227,17 @@ class ValidateSkillCommand extends BaseSkillCommand {
         );
       }
 
+      // Check file length per agentskills.io recommendation (< 500 lines)
+      final lineCount = const LineSplitter()
+          .convert(existingSkillFileContent)
+          .length;
+      if (lineCount > 500) {
+        logger.warning(
+          '  Validation Warning: ${existingSkillFile.path} has $lineCount lines. '
+          'The Agent Skills standard (https://agentskills.io) recommends keeping SKILL.md under 500 lines.',
+        );
+      }
+
       // Extract metadata from existing content
       final generationDate =
           RegExp(
@@ -236,10 +253,20 @@ class ValidateSkillCommand extends BaseSkillCommand {
       // Compare
       final dryRun = argResults?['dry-run'] as bool? ?? false;
       if (dryRun) {
+        final existWords = existingSkillFileContent
+            .split(RegExp(r'\s+'))
+            .where((s) => s.isNotEmpty)
+            .length;
+        final existTokens = (existWords * 1.3).round();
+        final rawWords = markdown
+            .split(RegExp(r'\s+'))
+            .where((s) => s.isNotEmpty)
+            .length;
+        final rawTokens = (rawWords * 1.3).round();
         logger
           ..info('  [DRY RUN] Would validate skill: ${skill.name}')
           ..info(
-            '  [DRY RUN] existing file size: ${existingSkillFileContent.split(' ').length} tokens -> new fetched content size: ${markdown.split(' ').length} tokens.',
+            '  [DRY RUN] Existing file size: ~$existWords words (~$existTokens tokens) -> Fetched content size: ~$rawWords words (~$rawTokens tokens).',
           );
         return;
       }

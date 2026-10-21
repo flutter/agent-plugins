@@ -246,7 +246,7 @@ void main() {
         logs,
         contains(
           contains(
-            'Model: models/gemini-3.1-pro-preview, Max Output Tokens: 8192, Thinking Budget: 4000',
+            'Model: models/gemini-4-argon, Max Output Tokens: 65536, Thinking Budget: 4000',
           ),
         ),
       );
@@ -257,6 +257,76 @@ void main() {
       expect(
         skillFile.readAsStringSync(),
         contains('Generated Budget Content\n'),
+      );
+    });
+
+    test('accepts custom --model option', () async {
+      final skillsDir = Directory(p.join(tempDir.path, 'skills_output_model'));
+      await skillsDir.create();
+
+      final configFile = File(p.join(tempDir.path, 'config_model.yaml'));
+      final inputData = [
+        {
+          'name': 'model_test',
+          'description': 'Model test description',
+          'resources': ['https://example.com/model'],
+        },
+      ];
+      configFile.writeAsStringSync(jsonEncode(inputData));
+
+      final logs = <String>[];
+      final sub = Logger.root.onRecord.listen((record) {
+        logs.add(record.message);
+      });
+      addTearDown(sub.cancel);
+
+      final mockClient = MockClient((request) async {
+        final url = request.url.toString();
+        if (url == 'https://example.com/model') {
+          return http.Response('<html>Model Content</html>', 200);
+        }
+        if (url.contains('generativelanguage')) {
+          return http.Response(
+            jsonEncode({
+              'candidates': [
+                {
+                  'content': {
+                    'parts': [
+                      {'text': 'Generated Model Content'},
+                    ],
+                  },
+                },
+              ],
+            }),
+            200,
+          );
+        }
+        return http.Response('Error', 500);
+      });
+
+      final command = GenerateSkillCommand(
+        environment: {'GEMINI_API_KEY': 'test-key'},
+        httpClient: mockClient,
+        outputDir: skillsDir,
+      );
+      runner.addCommand(command);
+
+      await runner.run([
+        'generate-skill',
+        configFile.path,
+        '--directory',
+        skillsDir.path,
+        '--model',
+        'models/custom-model-test',
+      ]);
+
+      expect(
+        logs,
+        contains(
+          contains(
+            'Model: models/custom-model-test, Max Output Tokens: 65536, Thinking Budget: 4096',
+          ),
+        ),
       );
     });
 

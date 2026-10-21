@@ -127,5 +127,14 @@ void main() {
 
       expect(logs, contains('GEMINI_API_KEY environment variable not set.'));
     });
+
+    test('defines model option defaulting to GeminiService.defaultModel', () {
+      final command = _TestSkillCommand(httpClient: mockClient);
+      expect(command.argParser.options.containsKey('model'), isTrue);
+      expect(
+        command.argParser.options['model']!.defaultsTo,
+        GeminiService.defaultModel,
+      );
+    });
   });
 }
