@@ -64,28 +64,19 @@ Follow the appropriate conditional workflow to launch and interact with the Widg
 **If using a supported IDE (Android Studio, IntelliJ, VS Code with Flutter 3.47+):**
 1. Launch the IDE. The Widget Previewer starts automatically.
 2. Open the "Flutter Widget Preview" tab in the sidebar.
-3. Toggle "Filter previews by selected file" at the bottom of the environment to switch between showing only previews in the active file vs. project-wide previews.
+3. Toggle "Filter previews by selected file" at the bottom left if you want to view previews outside the currently active file.
 
 **If using the Command Line:**
 1. Navigate to the Flutter project's root directory.
 2. Run `flutter widget-preview start`.
-3. View the automatically launched real-time preview environment in the browser.
+3. View the automatically opened Chrome environment.
 
-**Searching and Filtering:**
-- Use the search bar at the top of the preview environment to filter previews in real-time.
-- Use the filter dropdown to match against:
-  - **Preview name**: Filter by preview `name`.
-  - **Group name**: Filter by preview `group`.
-  - **Containing script**: Filter by the URI of the Dart file containing the preview.
-  - **Containing package**: Filter by the package name.
-
-**Feedback Loop: Preview Controls & Iteration**
-1. Inspect the preview using card controls:
-   - **Zoom in / Zoom out / Reset zoom**: Adjust preview magnification.
-   - **Toggle light/dark mode**: Switch color scheme.
-   - **Preview hot restart**: Restart only the specific widget preview to apply local changes quickly.
-2. Modify widget code or preview configurations.
-3. If global state was modified (e.g., static initializers changed): Use the global hot restart button at the bottom right of the previewer.
+**Feedback Loop: Preview Iteration**
+1. Modify the widget code or preview configuration.
+2. Observe the automatic update in the Widget Previewer.
+3. If global state (e.g., static initializers) was modified: Click the global hot restart button at the bottom right.
+4. If only the local widget state needs resetting: Click the individual hot restart button on the specific preview card.
+5. Review errors in the IDE/CLI console -> fix -> repeat.
 
 ## Examples
 
