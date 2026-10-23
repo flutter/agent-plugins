@@ -2,12 +2,9 @@ name: Block Upstream Skill Modifications
 
 permissions:
   contents: read
-  pull-requests: write
 
-# zizmor: ignore[dangerous-triggers] - {Needed to detect when Dart skills are modified}
 on:
-  # zizmor: ignore[dangerous-triggers] - {Needed to detect when Dart skills are modified}
-  pull_request_target:
+  pull_request:
     types: [opened, synchronize, reopened]
     paths:
       # Triggers if any file inside folders prefixed with "dart-" is modified
@@ -17,42 +14,20 @@ jobs:
   prevent-modifications:
     runs-on: ubuntu-latest
     permissions:
-      pull-requests: write
+      contents: read
     # Skip the block check ONLY if the PR is originating from the sync branch on the main repository.
     if: |
       github.event.pull_request.head.repo.full_name != github.repository ||
       github.event.pull_request.head.ref != 'automation/sync-dart-skills'
     steps:
-      - name: Fail Action and Comment on PR
+      - name: Fail Action and Record Summary
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
-            const prNumber = context.payload.pull_request.number;
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
+            await core.summary
+              .addHeading('DO NOT modify these files!', 2)
+              .addRaw('The files within `skills/dart-*` are **automatically synchronized** from the upstream [dart-lang/skills](https://github.com/dart-lang/skills) repository.\n\n')
+              .addRaw('Please close this Pull Request and submit your changes to the [upstream repository](https://github.com/dart-lang/skills) instead. Once merged upstream, your updates will be automatically brought over here.')
+              .write();
 
-            // Retrieve comments to avoid duplicate spam
-            const { data: comments } = await github.rest.issues.listComments({
-              owner,
-              repo,
-              issue_number: prNumber,
-            });
-
-            const botCommentIdentifier = "⚠️ **DO NOT modify these files!**";
-            const alreadyCommented = comments.some(comment => comment.body.includes(botCommentIdentifier));
-
-            if (!alreadyCommented) {
-              const message = `⚠️ **DO NOT modify these files!**\n\n` +
-                              `The files within \`skills/dart-*\` are **automatically synchronized** from the upstream [dart-lang/skills](https://github.com/dart-lang/skills) repository.\n\n` +
-                              `Please close this Pull Request and submit your changes to the [upstream repository](https://github.com/dart-lang/skills) instead. Once merged upstream, your updates will be automatically brought over here.`;
-              
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number: prNumber,
-                body: message
-              });
-            }
-            
-            // Fail the workflow to block the PR from merging
-            core.setFailed("Direct changes to synced Dart skills are prohibited in this repository.");
+            core.setFailed('Direct changes to synced Dart skills are prohibited in this repository. Submit changes to https://github.com/dart-lang/skills instead.');
