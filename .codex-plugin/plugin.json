@@ -3,7 +3,7 @@
   "version": "1.0.7",
   "description": "Official Codex plugin for Dart and Flutter that installs Flutter/Dart Skills and Dart MCP server for building natively compiled, visually stunning applications for mobile, web, desktop, and embedded devices from a single codebase.",
   "author": {
-    "name": "Dart and Flutter",
+    "name": "Google LLC",
     "url": "https://flutter.dev"
   },
   "homepage": "https://github.com/flutter/agent-plugins",
@@ -20,9 +20,9 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Dart and Flutter",
-    "shortDescription": "Build and manage Dart and Flutter apps from Codex.",
+    "shortDescription": "Build Dart and Flutter apps",
     "longDescription": "Use official Dart and Flutter skills and the MCP server to develop apps, run workflows, and manage code from Codex.",
-    "developerName": "Dart and Flutter",
+    "developerName": "Google LLC",
     "category": "Developer Tools",
     "capabilities": [
       "Skills",
@@ -30,7 +30,7 @@
     ],
     "websiteURL": "https://flutter.dev",
     "composerIcon": "./assets/flutter-icon.svg",
-    "logo": "./assets/flutter-logo.png",
+    "logo": "./assets/flutter-icon.svg",
     "privacyPolicyURL": "https://policies.google.com/privacy",
     "termsOfServiceURL": "https://policies.google.com/terms"
   },
