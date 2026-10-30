@@ -1,7 +1,8 @@
 skills_lint:
   rules:
-    disallowed-field: error
+    check-relative-paths: error
     check-absolute-paths: error
+    disallowed-field: error
   directories:
     - path: "../../skills"
       rules:
