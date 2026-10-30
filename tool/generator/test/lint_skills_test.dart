@@ -157,6 +157,11 @@ void main() {
 
       final config = await ConfigParser.loadConfig();
       expect(
+        config.parsingErrors,
+        isEmpty,
+        reason: 'skills_lint.yaml must not contain parsing errors.',
+      );
+      expect(
         config.directoryConfigs,
         isNotEmpty,
         reason: 'Configuration directoryConfigs should not be empty.',
