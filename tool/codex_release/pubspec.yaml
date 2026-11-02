@@ -1,0 +1,16 @@
+name: codex_release
+description: Builds, validates, and releases the Codex plugin zip for the OpenAI plugin submission portal.
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.10.8
+dependencies:
+  archive: ^4.5.2
+  args: ^2.7.0
+  path: ^1.9.1
+  xml: ^7.1.0
+  yaml: ^3.1.4
+dev_dependencies:
+  lints: ^6.1.0
+  test: ^1.33.0

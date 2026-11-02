@@ -5,4 +5,5 @@ environment:
   sdk: ^3.10.8
 
 workspace:
+  - tool/codex_release
   - tool/generator
