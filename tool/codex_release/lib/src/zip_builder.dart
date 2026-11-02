@@ -12,7 +12,12 @@ import 'validator.dart' show manifestPath;
 
 /// A fixed timestamp for every zip entry, so rebuilding the same commit
 /// produces a byte-for-byte identical zip.
-final _fixedTimestamp = DateTime(1980, 1, 1);
+///
+/// The archive package also writes each entry's date and time converted to
+/// the build machine's local time zone, so zips are identical only when built
+/// in the same time zone. CI always builds in UTC. The date is a day after the
+/// zip format's 1980 epoch so it never displays as 1979 in any time zone.
+final _fixedTimestamp = DateTime.utc(1980, 1, 2);
 
 /// The interface fields that reference branding images.
 const _assetFields = ['composerIcon', 'composerIconDark', 'logo', 'logoDark'];
