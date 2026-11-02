@@ -106,6 +106,7 @@ linter:
     unnecessary_string_interpolations: true
     unnecessary_this: true
     use_function_type_syntax_for_parameters: true
+    use_if_null_to_convert_nulls_to_bools: true
     use_string_buffers: true
     use_to_and_as_if_applicable: true
 

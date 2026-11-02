@@ -13,7 +13,11 @@ import 'markdown_converter.dart';
 /// Fetches and converts content from diverse resources.
 class ResourceFetcherService {
   /// Creates a new [ResourceFetcherService].
-  ResourceFetcherService({required this._httpClient, required this._logger});
+  ResourceFetcherService({
+    required http.Client httpClient,
+    required Logger logger,
+  }) : _httpClient = httpClient,
+       _logger = logger;
 
   final http.Client _httpClient;
   final Logger _logger;
