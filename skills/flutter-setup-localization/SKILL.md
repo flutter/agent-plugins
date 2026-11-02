@@ -183,7 +183,7 @@ use-escaping: true
 ### Complete Widget Implementation
 ```dart
 import 'package:flutter/material.dart';
-import 'l10n/app_localizations.dart';
+import 'l10n/app_localizations.dart'; // Adjust path depending on the widget's file location
 
 class GreetingWidget extends StatelessWidget {
   final String userName;
