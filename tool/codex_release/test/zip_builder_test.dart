@@ -125,6 +125,25 @@ void main() {
     );
   });
 
+  test('fails cleanly when plugin.json is not valid JSON', () async {
+    _write('.codex-plugin/plugin.json', '{"name": ');
+    expect(
+      () => buildZip(Git(_repo.path)),
+      throwsA(
+        isA<BuildException>().having(
+          (e) => e.message,
+          'message',
+          contains('not valid JSON'),
+        ),
+      ),
+    );
+  });
+
+  test('fails cleanly when plugin.json is missing', () async {
+    File(p.join(_repo.path, '.codex-plugin', 'plugin.json')).deleteSync();
+    expect(() => buildZip(Git(_repo.path)), throwsA(isA<BuildException>()));
+  });
+
   test('leaves out untracked files', () async {
     _write('skills/dart-one/scratch.md', 'not committed');
     final build = await buildZip(Git(_repo.path));

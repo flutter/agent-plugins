@@ -91,7 +91,9 @@ class Release {
     await git(['fetch', remote, options.branch, '--tags']);
     await _checkCheckout(remote);
 
-    final version = _readVersion();
+    final manifest = readRepoManifest(git.root);
+    final version = _versionOf(manifest);
+    final zipName = '${_nameOf(manifest)}-codex-$version.zip';
     final tag = tagFor(version);
     await _checkTagIsNew(remote, tag);
     final sha = await git(['rev-parse', 'HEAD']);
@@ -121,7 +123,6 @@ class Release {
       );
     }
 
-    final zipName = '${_readName()}-codex-$version.zip';
     final outputDirectory = p.join(git.root, options.outputDirectory);
     await _gh([
       'run',
@@ -292,16 +293,8 @@ class Release {
     return (result.stdout as String).trim();
   }
 
-  Map<String, Object?> _readManifest() =>
-      jsonDecode(
-            File(
-              p.join(git.root, '.codex-plugin', 'plugin.json'),
-            ).readAsStringSync(),
-          )
-          as Map<String, Object?>;
-
-  String _readVersion() {
-    final version = _readManifest()['version'];
+  static String _versionOf(Map<String, Object?> manifest) {
+    final version = manifest['version'];
     if (version is! String || ReleaseVersion.tryParse(version) == null) {
       throw ReleaseException(
         '.codex-plugin/plugin.json "version" must be a semantic version.',
@@ -310,7 +303,15 @@ class Release {
     return version;
   }
 
-  String _readName() => _readManifest()['name'] as String;
+  static String _nameOf(Map<String, Object?> manifest) {
+    final name = manifest['name'];
+    if (name is! String || name.isEmpty) {
+      throw ReleaseException(
+        '.codex-plugin/plugin.json "name" must be a non-empty string.',
+      );
+    }
+    return name;
+  }
 
   void _reportFindings(List<Finding> findings) {
     for (final finding in findings) {

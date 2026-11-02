@@ -62,7 +62,7 @@ Future<BuildResult> buildZip(
   String? releaseNotes,
 }) async {
   final root = git.root;
-  final repoManifest = _readRepoManifest(root);
+  final repoManifest = readRepoManifest(root);
   final version = repoManifest['version'];
   if (version is! String) {
     throw BuildException('$manifestPath has no string "version".');
@@ -113,12 +113,21 @@ Future<BuildResult> buildZip(
   return BuildResult(_encode(files), manifest, version);
 }
 
-Map<String, Object?> _readRepoManifest(String root) {
+/// Reads and parses the repo's `.codex-plugin/plugin.json` under [root].
+///
+/// Throws a [BuildException] if the file is missing, isn't valid JSON, or
+/// doesn't contain a JSON object.
+Map<String, Object?> readRepoManifest(String root) {
   final file = File(p.join(root, '.codex-plugin', 'plugin.json'));
   if (!file.existsSync()) {
     throw BuildException('${file.path} does not exist.');
   }
-  final json = jsonDecode(file.readAsStringSync());
+  final Object? json;
+  try {
+    json = jsonDecode(file.readAsStringSync());
+  } on FormatException catch (e) {
+    throw BuildException('$manifestPath is not valid JSON: ${e.message}');
+  }
   if (json is! Map<String, Object?>) {
     throw BuildException('$manifestPath must contain a JSON object.');
   }

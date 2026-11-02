@@ -128,6 +128,16 @@ void main() {
   });
 
   group('stops before tagging when', () {
+    Future<void> expectStopWith<T extends Object>(String message) async {
+      final runner = FakeRunner(_healthyResponses());
+      await expectLater(
+        _release(runner),
+        throwsA(isA<T>().having((e) => '$e', 'message', contains(message))),
+      );
+      expect(runner.commands, isNot(contains(startsWith('git tag'))));
+      expect(runner.commands, isNot(contains(startsWith('git push'))));
+    }
+
     Future<void> expectStop(
       Map<String, Object> overrides,
       String message,
@@ -175,6 +185,20 @@ void main() {
       return expectStop({
         'git remote -v': 'origin\tgit@github.com:me/fork.git (fetch)',
       }, 'No git remote');
+    });
+
+    test('plugin.json is not valid JSON', () {
+      File(
+        p.join(_repo.path, '.codex-plugin', 'plugin.json'),
+      ).writeAsStringSync('{"name": ');
+      return expectStopWith<BuildException>('not valid JSON');
+    });
+
+    test('plugin.json has no name', () {
+      File(
+        p.join(_repo.path, '.codex-plugin', 'plugin.json'),
+      ).writeAsStringSync(jsonEncode({'version': '1.0.8'}));
+      return expectStop({}, '"name" must be a non-empty string');
     });
 
     test('gh is not signed in', () {
