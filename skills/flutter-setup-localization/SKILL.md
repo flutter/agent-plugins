@@ -52,20 +52,21 @@ flutter:
 ```
 
 ### 3. Create Configuration File
-Create a new file named `l10n.yaml` in the root directory of the Flutter project. Define the input directory, template file, and output file:
+Create a new file named `l10n.yaml` in the root directory of the Flutter project. Define the input directory, template file, and output file. The generated Dart files are written next to the `.arb` files in `arb-dir` unless `output-dir` is set:
 ```yaml
 arb-dir: lib/l10n
 template-arb-file: app_en.arb
 output-localization-file: app_localizations.dart
-synthetic-package: true
 ```
+
+Do not set `synthetic-package`. Synthetic packages were removed from Flutter, and `flutter gen-l10n` rejects the option.
 
 ### 4. Configure the App Entry Point
 Import the generated localizations and the `flutter_localizations` library in your `main.dart`. Inject the delegates and supported locales into your `MaterialApp` or `CupertinoApp`.
 
 ```dart
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart'; // Adjust path if synthetic-package is false
+import 'l10n/app_localizations.dart'; // Generated into arb-dir; adjust if output-dir is set
 
 // ... inside build method
 return MaterialApp(
@@ -176,14 +177,13 @@ Use the `select` syntax for conditional strings, such as gendered text.
 arb-dir: lib/l10n
 template-arb-file: app_en.arb
 output-localization-file: app_localizations.dart
-synthetic-package: true
 use-escaping: true
 ```
 
 ### Complete Widget Implementation
 ```dart
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'l10n/app_localizations.dart';
 
 class GreetingWidget extends StatelessWidget {
   final String userName;
