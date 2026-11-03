@@ -43,7 +43,7 @@ jobs:
         id: build
         env:
           TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
-        run: dart --no-pub tool/build_codex_plugin.dart ${TAG:+--tag="$TAG"}
+        run: dart tool/build_codex_plugin.dart ${TAG:+--tag="$TAG"}
 
       - name: Upload zip
         if: github.ref_type == 'tag'

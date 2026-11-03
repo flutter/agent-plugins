@@ -8,7 +8,7 @@ import 'dart:io';
 const String manifestPath = '.codex-plugin/plugin.json';
 const String tagPrefix = 'codex-plugin-v';
 const String releaseWorkflow = 'release_codex_plugin.yaml';
-const String defaultRepo = 'flutter/agent-plugins';
+const String releaseRepo = 'flutter/agent-plugins';
 
 /// `description` for the skills-only release, without the MCP server.
 const String releaseDescription =
@@ -33,16 +33,13 @@ final RegExp _semverPattern = RegExp(r'^(\d+)\.(\d+)\.(\d+)(-[^+]+)?(\+.*)?$');
 /// Builds and optionally releases the Codex plugin zip for the OpenAI portal.
 ///
 /// Usage:
-///   dart run tool/build_codex_plugin.dart [--tag=<tag>] [--output-dir=dist]
-///   dart run tool/build_codex_plugin.dart --release [--dry-run]
+///   dart tool/build_codex_plugin.dart [--tag=<tag>] [--output-dir=dist]
+///   dart tool/build_codex_plugin.dart --release [--dry-run]
 Future<void> main(List<String> args) async {
   var release = false;
   var dryRun = false;
   var outputDir = 'dist';
-  var repo = defaultRepo;
-  var branch = 'main';
   String? tag;
-  String? remote;
   String? releaseNotes;
 
   for (var i = 0; i < args.length; i++) {
@@ -71,18 +68,6 @@ Future<void> main(List<String> args) async {
       releaseNotes = nextValue();
     } else if (arg.startsWith('--release-notes=')) {
       releaseNotes = arg.substring('--release-notes='.length);
-    } else if (arg == '--repo') {
-      repo = nextValue();
-    } else if (arg.startsWith('--repo=')) {
-      repo = arg.substring('--repo='.length);
-    } else if (arg == '--remote') {
-      remote = nextValue();
-    } else if (arg.startsWith('--remote=')) {
-      remote = arg.substring('--remote='.length);
-    } else if (arg == '--branch') {
-      branch = nextValue();
-    } else if (arg.startsWith('--branch=')) {
-      branch = arg.substring('--branch='.length);
     } else {
       _fail('Unknown option: $arg\nRun with --help for usage.');
     }
@@ -90,14 +75,7 @@ Future<void> main(List<String> args) async {
 
   final root = _git(['rev-parse', '--show-toplevel']);
   if (release) {
-    await _runRelease(
-      root: root,
-      repo: repo,
-      remote: remote,
-      branch: branch,
-      outputDir: outputDir,
-      dryRun: dryRun,
-    );
+    await _runRelease(root: root, outputDir: outputDir, dryRun: dryRun);
   } else {
     _buildAndVerify(
       root: root,
@@ -113,7 +91,7 @@ void _printUsage() {
 Builds and optionally releases the Dart and Flutter Codex plugin zip.
 
 Usage:
-  dart run tool/build_codex_plugin.dart [options]
+  dart tool/build_codex_plugin.dart [options]
 
 Options:
   --tag=<tag>              Verify the manifest version matches <tag>.
@@ -123,9 +101,6 @@ Options:
                            and download the built artifact to --output-dir.
   --dry-run                With --release, run all preflight checks and build
                            locally without creating or pushing a tag.
-  --repo=<owner/name>      GitHub repository for --release (default: $defaultRepo).
-  --remote=<name>          Git remote for --repo (auto-detected by default).
-  --branch=<name>          Release branch for --release (default: main).
   -h, --help               Show this usage information.''');
 }
 
@@ -425,9 +400,6 @@ List<String> _skillDirsAtRef(String root, String ref) {
 /// release tag, waits for the GitHub Actions workflow, and downloads the zip.
 Future<void> _runRelease({
   required String root,
-  required String repo,
-  required String? remote,
-  required String branch,
   required String outputDir,
   required bool dryRun,
 }) async {
@@ -436,9 +408,9 @@ Future<void> _runRelease({
     _fail('GitHub CLI (gh) is not authenticated. Run `gh auth login`.');
   }
 
-  final resolvedRemote = remote ?? _findRemote(root, repo);
-  stdout.writeln('Using remote "$resolvedRemote" for $repo.');
-  _git(['fetch', resolvedRemote, branch, '--tags'], root: root);
+  final target = _resolveTargetRemote(root);
+  stdout.writeln('Using remote "${target.remote}" (${target.repo}).');
+  _git(['fetch', target.remote, 'main', '--tags'], root: root);
 
   final status = _git([
     'status',
@@ -449,17 +421,15 @@ Future<void> _runRelease({
     _fail('Working tree has uncommitted changes:\n$status');
   }
   final currentBranch = _git(['rev-parse', '--abbrev-ref', 'HEAD'], root: root);
-  if (currentBranch != branch) {
-    _fail(
-      'Releases are cut from $branch, but current branch is $currentBranch.',
-    );
+  if (!dryRun && currentBranch != 'main') {
+    _fail('Releases are cut from main, but current branch is $currentBranch.');
   }
   final head = _git(['rev-parse', 'HEAD'], root: root);
-  final upstream = _git(['rev-parse', '$resolvedRemote/$branch'], root: root);
-  if (head != upstream) {
+  final upstream = _git(['rev-parse', '${target.remote}/main'], root: root);
+  if (!dryRun && head != upstream) {
     _fail(
-      '$branch is not up to date with $resolvedRemote/$branch. '
-      'Run `git pull $resolvedRemote $branch`.',
+      'main is not up to date with ${target.remote}/main. '
+      'Run `git pull ${target.remote} main`.',
     );
   }
 
@@ -478,7 +448,7 @@ Future<void> _runRelease({
   final remoteTag = _git([
     'ls-remote',
     '--tags',
-    resolvedRemote,
+    target.remote,
     'refs/tags/$tag',
   ], root: root);
   if (localTag.exitCode == 0 || remoteTag.isNotEmpty) {
@@ -494,14 +464,19 @@ Future<void> _runRelease({
   }
 
   _git(['tag', '-a', tag, '-m', 'Codex plugin $version'], root: root);
-  _git(['push', resolvedRemote, 'refs/tags/$tag'], root: root);
+  _git(['push', target.remote, 'refs/tags/$tag'], root: root);
   stdout.writeln('Pushed tag $tag ($head). Waiting for workflow run...');
 
-  final run = await _waitForRun(root: root, repo: repo, sha: head, tag: tag);
+  final run = await _waitForRun(
+    root: root,
+    repo: target.repo,
+    sha: head,
+    tag: tag,
+  );
   stdout.writeln('Watching ${run.url}');
   final watchProcess = await Process.start(
     'gh',
-    ['run', 'watch', '${run.id}', '--repo', repo, '--exit-status'],
+    ['run', 'watch', '${run.id}', '--repo', target.repo, '--exit-status'],
     workingDirectory: root,
     mode: ProcessStartMode.inheritStdio,
   );
@@ -515,7 +490,7 @@ Future<void> _runRelease({
     'download',
     '${run.id}',
     '--repo',
-    repo,
+    target.repo,
     '--name',
     zipName,
     '--dir',
@@ -525,6 +500,31 @@ Future<void> _runRelease({
     _fail('gh run download failed: ${dl.stderr}');
   }
   stdout.writeln('\nDownloaded $destDir/$zipName');
+}
+
+/// Finds the git remote pointing to `flutter/agent-plugins`, falling back to
+/// `origin` (for fork testing).
+({String remote, String repo}) _resolveTargetRemote(String root) {
+  final remotes = <String, String>{};
+  for (final line in _gitLines(root, ['remote', '-v'])) {
+    final parts = line.split(RegExp(r'\s+'));
+    if (parts.length < 2) continue;
+    final match = RegExp(
+      r'github\.com[:/]([^/\s]+/[^/\s]+?)(?:\.git)?$',
+    ).firstMatch(parts[1]);
+    if (match != null) {
+      remotes[parts[0]] = match[1]!;
+    }
+  }
+  for (final entry in remotes.entries) {
+    if (entry.value == releaseRepo) {
+      return (remote: entry.key, repo: entry.value);
+    }
+  }
+  if (remotes.containsKey('origin')) {
+    return (remote: 'origin', repo: remotes['origin']!);
+  }
+  _fail('No GitHub remote found in git remotes.');
 }
 
 Future<({int id, String url})> _waitForRun({
@@ -561,18 +561,6 @@ Future<({int id, String url})> _waitForRun({
     await Future<void>.delayed(const Duration(seconds: 5));
   }
   _fail('Timed out waiting for $releaseWorkflow run for $tag.');
-}
-
-String _findRemote(String root, String repo) {
-  for (final line in _gitLines(root, ['remote', '-v'])) {
-    final parts = line.split(RegExp(r'\s+'));
-    if (parts.length < 2) continue;
-    final url = parts[1].replaceFirst(RegExp(r'\.git$'), '');
-    if (url.endsWith('/$repo') || url.endsWith(':$repo')) {
-      return parts[0];
-    }
-  }
-  _fail('No git remote points at $repo. Pass --remote=<name>.');
 }
 
 Map<String, Object?> _readManifest(String root) {
