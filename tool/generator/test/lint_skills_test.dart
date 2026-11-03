@@ -11,7 +11,7 @@ import 'package:skills_lint/skills_lint.dart';
 import 'package:test/test.dart';
 
 const String _expectedSkillsShSchema =
-    'https://skills.sh/schemas/skills.sh.json';
+    'https://skills.sh/schemas/skills.sh.schema.json';
 const int _maxGroupTitleLength = 30;
 
 void _validateGroupTitle(Object? title) {
@@ -80,11 +80,19 @@ void main() {
         jsonDecode(skillsShFile.readAsStringSync()) as Map<String, Object?>;
     expect(skillsShJson[r'$schema'], _expectedSkillsShSchema);
 
+    // The skills.sh schema sets additionalProperties: false, so unknown keys
+    // (such as a misspelled "groups") make skills.sh ignore the file.
+    expect(
+      skillsShJson.keys,
+      everyElement(isIn([r'$schema', 'groupings', 'notGrouped'])),
+    );
+
     // Setting notGrouped to "bottom" instructs skills.sh to render any skill
-    // not listed in "groups" (including previously deleted/renamed skill slugs
-    // retained in skills.sh install telemetry and synced dart-* copies) under
+    // not listed in "groupings" (including previously deleted/renamed skill
+    // slugs retained in skills.sh install telemetry and synced dart-* copies)
+    // under
     // its built-in "Other skills" heading at the bottom of the repository page
-    // (the schema only accepts "top", "bottom", or "hidden", and does not
+    // (the schema only accepts "top" or "bottom", and does not
     // support a custom label).
     expect(skillsShJson['notGrouped'], 'bottom');
     expect(skillsShJson.keys.last, 'notGrouped');
@@ -92,11 +100,15 @@ void main() {
     // 3. Validate each group's title, description, and unique skill
     // identifiers, and ensure that all grouped skills exist as flutter-*
     // directories in skills/ (without typos or missing skills).
-    final groups = (skillsShJson['groups'] as List<Object?>)
+    final groups = (skillsShJson['groupings'] as List<Object?>)
         .cast<Map<String, Object?>>();
     expect(groups, isNotEmpty);
 
     for (final group in groups) {
+      expect(
+        group.keys,
+        everyElement(isIn(['title', 'description', 'skills'])),
+      );
       _validateGroupTitle(group['title']);
       _validateGroupDescription(group['description']);
     }

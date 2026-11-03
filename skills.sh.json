@@ -1,6 +1,6 @@
 {
-  "$schema": "https://skills.sh/schemas/skills.sh.json",
-  "groups": [
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "groupings": [
     {
       "title": "UI & Layout",
       "description": "Responsive Flutter layouts, constraint debugging, and app localization.",
