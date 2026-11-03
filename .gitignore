@@ -29,3 +29,6 @@ __pycache__/
 state.json
 CLAUDE.md
 CLAUDE.local.md
+
+# Codex plugin release zips
+dist/
