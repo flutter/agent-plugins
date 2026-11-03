@@ -162,7 +162,7 @@ String _buildAndVerify({
       File('$root/$relPath').copySync(dest.path);
     }
 
-    final zipResult = Process.runSync('zip', [
+    final zipResult = _runSync('zip', [
       '-r',
       '-q',
       '-X',
@@ -403,7 +403,7 @@ Future<void> _runRelease({
   required String outputDir,
   required bool dryRun,
 }) async {
-  final ghCheck = Process.runSync('gh', ['auth', 'status']);
+  final ghCheck = _runSync('gh', ['auth', 'status']);
   if (ghCheck.exitCode != 0) {
     _fail('GitHub CLI (gh) is not authenticated. Run `gh auth login`.');
   }
@@ -439,7 +439,7 @@ Future<void> _runRelease({
   final tag = '$tagPrefix$version';
   final zipName = '$name-codex-$version.zip';
 
-  final localTag = Process.runSync('git', [
+  final localTag = _runSync('git', [
     'rev-parse',
     '--quiet',
     '--verify',
@@ -474,18 +474,23 @@ Future<void> _runRelease({
     tag: tag,
   );
   stdout.writeln('Watching ${run.url}');
-  final watchProcess = await Process.start(
-    'gh',
-    ['run', 'watch', '${run.id}', '--repo', target.repo, '--exit-status'],
-    workingDirectory: root,
-    mode: ProcessStartMode.inheritStdio,
-  );
+  final Process watchProcess;
+  try {
+    watchProcess = await Process.start(
+      'gh',
+      ['run', 'watch', '${run.id}', '--repo', target.repo, '--exit-status'],
+      workingDirectory: root,
+      mode: ProcessStartMode.inheritStdio,
+    );
+  } on ProcessException catch (e) {
+    _failMissingTool('gh', e);
+  }
   if (await watchProcess.exitCode != 0) {
     _fail('Release workflow failed: ${run.url}');
   }
 
   final destDir = '$root/$outputDir';
-  final dl = Process.runSync('gh', [
+  final dl = _runSync('gh', [
     'run',
     'download',
     '${run.id}',
@@ -535,7 +540,7 @@ Future<({int id, String url})> _waitForRun({
 }) async {
   final deadline = DateTime.now().add(const Duration(minutes: 2));
   while (DateTime.now().isBefore(deadline)) {
-    final result = Process.runSync('gh', [
+    final result = await _run('gh', [
       'run',
       'list',
       '--repo',
@@ -578,7 +583,7 @@ Map<String, Object?> _readManifest(String root) {
 }
 
 String _git(List<String> args, {String? root}) {
-  final result = Process.runSync('git', args, workingDirectory: root);
+  final result = _runSync('git', args, workingDirectory: root);
   if (result.exitCode != 0) {
     _fail('git ${args.join(' ')} failed: ${(result.stderr as String).trim()}');
   }
@@ -594,6 +599,52 @@ void _writeGitHubOutput(Map<String, String> outputs) {
   File(path).writeAsStringSync(
     outputs.entries.map((e) => '${e.key}=${e.value}\n').join(),
     mode: FileMode.append,
+  );
+}
+
+/// Runs [executable] synchronously, failing with a helpful message if it is
+/// not installed or not on `PATH`.
+ProcessResult _runSync(
+  String executable,
+  List<String> args, {
+  String? workingDirectory,
+}) {
+  try {
+    return Process.runSync(
+      executable,
+      args,
+      workingDirectory: workingDirectory,
+    );
+  } on ProcessException catch (e) {
+    _failMissingTool(executable, e);
+  }
+}
+
+/// Async variant of [_runSync] for use in polling loops so the event loop is
+/// not blocked.
+Future<ProcessResult> _run(
+  String executable,
+  List<String> args, {
+  String? workingDirectory,
+}) async {
+  try {
+    return await Process.run(
+      executable,
+      args,
+      workingDirectory: workingDirectory,
+    );
+  } on ProcessException catch (e) {
+    _failMissingTool(executable, e);
+  }
+}
+
+const _toolNames = {'gh': 'GitHub CLI (gh)', 'git': 'Git', 'zip': 'zip'};
+
+Never _failMissingTool(String executable, ProcessException e) {
+  final name = _toolNames[executable] ?? executable;
+  _fail(
+    'Failed to run "$executable". Please ensure $name is installed and '
+    'available in your PATH.\nDetails: ${e.message}',
   );
 }
 
