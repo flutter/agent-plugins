@@ -17,7 +17,9 @@ Use `///` (doc comments) for all public members to allow tools like `dartdoc` to
 /// This widget handles the loading state automatically and disables
 /// itself while the transaction is processing.
 @Deprecated('Use PurchaseButtonV2 instead')
-class PurchaseButton extends StatelessWidget { ... }
+class PurchaseButton extends StatelessWidget {
+  // ...
+}
 ```
 
 ### Property Documentation
@@ -72,6 +74,10 @@ class FlightPath extends StatelessWidget {
   ///
   /// The [coordinates] must contain at least two points.
   const FlightPath({required this.coordinates, super.key});
+
+  /// The points that make up the flight path.
+  final List<Point> coordinates;
+}
 ```
 
 ### State Management
