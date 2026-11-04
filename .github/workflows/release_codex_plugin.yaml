@@ -1,0 +1,83 @@
+name: release_codex_plugin
+
+# Builds the Codex plugin zip for the OpenAI plugin submission portal.
+# - On a codex-plugin-v* tag: builds the zip from the tagged commit, runs sanity
+#   checks, and uploads it as a workflow artifact.
+# - On pull requests: builds and checks the zip without uploading it, so
+#   problems are caught before they reach main.
+
+on:
+  push:
+    tags: ['codex-plugin-v*']
+  pull_request:
+    paths:
+      - '.codex-plugin/**'
+      - 'assets/**'
+      - 'skills/**'
+      - 'tool/build_codex_plugin.dart'
+      - '.github/workflows/release_codex_plugin.yaml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Full history and tags, to find the previous release tag for notes.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: dart-lang/setup-dart@6afc89df92d6eb3834022f73cd65adc8cdfcb92d # v1.8.1
+        with:
+          sdk: stable
+
+      # Resolve the workspace so `dart format` uses the language version from
+      # pubspec.yaml, matching local formatting.
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Check formatting and analysis
+        run: |
+          dart format --output=none --set-exit-if-changed tool/build_codex_plugin.dart
+          dart analyze --fatal-infos tool/build_codex_plugin.dart
+
+      - name: Build and verify zip
+        id: build
+        env:
+          TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+        run: dart tool/build_codex_plugin.dart ${TAG:+--tag="$TAG"}
+
+      - name: Upload zip
+        if: github.ref_type == 'tag'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ steps.build.outputs.zip_name }}
+          path: ${{ steps.build.outputs.zip_path }}
+          retention-days: 30
+          if-no-files-found: error
+          compression-level: 0
+
+  report_failure:
+    needs: build
+    if: failure() && github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Open an issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create codex-release --repo "$REPO" --color D93F0B \
+            --description "Codex plugin release" 2>/dev/null || true
+          gh issue create --repo "$REPO" --label codex-release \
+            --title "Codex plugin release failed: $TAG" \
+            --body "The release workflow for \`$TAG\` failed: $RUN_URL
+
+          Fix the problem on main, bump the version in \`.codex-plugin/plugin.json\`, and release again. Tags are never moved or reused."
