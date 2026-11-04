@@ -34,6 +34,11 @@ jobs:
         with:
           sdk: stable
 
+      # Resolve the workspace so `dart format` uses the language version from
+      # pubspec.yaml, matching local formatting.
+      - name: Install dependencies
+        run: dart pub get
+
       - name: Check formatting and analysis
         run: |
           dart format --output=none --set-exit-if-changed tool/build_codex_plugin.dart
