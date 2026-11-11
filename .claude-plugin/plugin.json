@@ -26,6 +26,5 @@
       }
     }
   },
-  "icon": "./assets/flutter-icon.png",
-  "skills": "./skills"
+  "icon": "./assets/flutter-icon.png"
 }
