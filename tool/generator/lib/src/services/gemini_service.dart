@@ -33,7 +33,7 @@ class GeminiService {
   static const int defaultThinkingBudget = 4096;
 
   /// The default max output tokens for generation.
-  static const int defaultMaxOutputTokens = 8192;
+  static const int defaultMaxOutputLimit = 8192;
 
   /// The default safety settings to use for generation.
   static final List<SafetySetting> defaultSafetySettings = [
@@ -78,7 +78,7 @@ class GeminiService {
     );
 
     _logger.info(
-      '  Model: $_model, Max Output Tokens: $defaultMaxOutputTokens, Thinking Budget: $thinkingBudget',
+      '  Model: $_model, Max Output Tokens: $defaultMaxOutputLimit, Thinking Budget: $thinkingBudget',
     );
 
     try {
@@ -141,7 +141,7 @@ metadata:
     );
 
     _logger.info(
-      '  Model: $_model, Max Output Tokens: $defaultMaxOutputTokens, Thinking Budget: $thinkingBudget',
+      '  Model: $_model, Max Output Tokens: $defaultMaxOutputLimit, Thinking Budget: $thinkingBudget',
     );
 
     try {
@@ -206,7 +206,7 @@ metadata:
     );
 
     _logger.info(
-      '  Model: $_model, Max Output Tokens: $defaultMaxOutputTokens, Thinking Budget: $thinkingBudget',
+      '  Model: $_model, Max Output Tokens: $defaultMaxOutputLimit, Thinking Budget: $thinkingBudget',
     );
 
     try {
@@ -283,7 +283,7 @@ metadata:
       // See [GenerationConfig] in package:google_cloud_ai_generativelanguage_v1beta
       generationConfig: GenerationConfig(
         temperature: defaultTemperature,
-        maxOutputTokens: defaultMaxOutputTokens,
+        maxOutputTokens: defaultMaxOutputLimit,
         thinkingConfig: thinkingBudget > 0
             ? ThinkingConfig(
                 includeThoughts: true,
