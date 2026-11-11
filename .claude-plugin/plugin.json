@@ -25,5 +25,6 @@
         "AGENT_PLUGIN": "claude-code"
       }
     }
-  }
+  },
+  "icon": "./assets/flutter-icon.png"
 }
