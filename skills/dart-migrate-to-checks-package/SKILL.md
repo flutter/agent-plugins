@@ -171,7 +171,7 @@ For any target test file:
       ..has((e) => e.message, 'message').equals('invalid input');
 
     // NO (Passing a callback to sync throws will cause a compiler error!)
-    check(() => triggerSync").throws<ArgumentError>((it) => ...); // ERROR!
+    check(() => triggerSyncError()).throws<ArgumentError>((it) => ...); // ERROR!
     ```
   - **Asynchronous** (`Subject<Future<T>>`): `.throws<E>()` returns
     `Future<void>`. Because you cannot chain directly off a `Future<void>`, this
