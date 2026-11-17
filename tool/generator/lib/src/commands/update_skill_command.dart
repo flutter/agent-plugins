@@ -66,15 +66,9 @@ class UpdateSkillCommand extends BaseSkillCommand {
 
       final dryRun = argResults?['dry-run'] as bool? ?? false;
       if (dryRun) {
-        final origWords = existingContent
-            .split(RegExp(r'\s+'))
-            .where((s) => s.isNotEmpty)
-            .length;
+        final origWords = RegExp(r'\S+').allMatches(existingContent).length;
         final origTokens = (origWords * 1.3).round();
-        final rawWords = combinedMarkdown
-            .split(RegExp(r'\s+'))
-            .where((s) => s.isNotEmpty)
-            .length;
+        final rawWords = RegExp(r'\S+').allMatches(combinedMarkdown).length;
         final rawTokens = (rawWords * 1.3).round();
         logger
           ..info('  [DRY RUN] Would update skill: ${skill.name}')

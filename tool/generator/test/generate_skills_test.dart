@@ -581,6 +581,12 @@ void main() {
         logs,
         contains(contains('[DRY RUN] Would generate skill: dry-run-skill')),
       );
+      expect(
+        logs,
+        contains(
+          contains('[DRY RUN] Prompt size: ~7 words (approx. 9 tokens).'),
+        ),
+      );
 
       final skillDir = Directory(p.join(tempDir.path, 'dry-run-skill'));
       expect(skillDir.existsSync(), isFalse);

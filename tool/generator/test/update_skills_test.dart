@@ -235,6 +235,14 @@ void main() {
         logs,
         contains(contains('[DRY RUN] Would update skill: dry-update')),
       );
+      expect(
+        logs,
+        contains(
+          contains(
+            '[DRY RUN] Original file size: ~2 words (~3 tokens) -> Raw content size: ~8 words (~10 tokens).',
+          ),
+        ),
+      );
       expect(skillFile.readAsStringSync(), equals('Existing content'));
     });
   });

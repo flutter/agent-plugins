@@ -253,15 +253,11 @@ class ValidateSkillCommand extends BaseSkillCommand {
       // Compare
       final dryRun = argResults?['dry-run'] as bool? ?? false;
       if (dryRun) {
-        final existWords = existingSkillFileContent
-            .split(RegExp(r'\s+'))
-            .where((s) => s.isNotEmpty)
-            .length;
+        final existWords = RegExp(
+          r'\S+',
+        ).allMatches(existingSkillFileContent).length;
         final existTokens = (existWords * 1.3).round();
-        final rawWords = markdown
-            .split(RegExp(r'\s+'))
-            .where((s) => s.isNotEmpty)
-            .length;
+        final rawWords = RegExp(r'\S+').allMatches(markdown).length;
         final rawTokens = (rawWords * 1.3).round();
         logger
           ..info('  [DRY RUN] Would validate skill: ${skill.name}')

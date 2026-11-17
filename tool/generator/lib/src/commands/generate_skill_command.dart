@@ -55,10 +55,7 @@ class GenerateSkillCommand extends BaseSkillCommand {
 
       final dryRun = argResults?['dry-run'] as bool? ?? false;
       if (dryRun) {
-        final words = combinedMarkdown
-            .split(RegExp(r'\s+'))
-            .where((s) => s.isNotEmpty)
-            .length;
+        final words = RegExp(r'\S+').allMatches(combinedMarkdown).length;
         final approxTokens = (words * 1.3).round();
         logger
           ..info('  [DRY RUN] Would generate skill: ${skill.name}')

@@ -800,6 +800,14 @@ Content
         logs,
         contains(contains('[DRY RUN] Would validate skill: $skillName')),
       );
+      expect(
+        logs,
+        contains(
+          contains(
+            '[DRY RUN] Existing file size: ~4 words (~5 tokens) -> Fetched content size: ~8 words (~10 tokens).',
+          ),
+        ),
+      );
 
       final valDir = Directory(p.join(validationDir.path, skillName));
       expect(valDir.existsSync(), isFalse);
