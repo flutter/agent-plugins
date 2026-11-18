@@ -4,7 +4,8 @@ The Skills CLI simplifies the process of creating "Agent Skills" from external d
 
 ## Context
 
-*   [Agent Skills Best Practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices)
+*   [Agent Skills Overview](https://agentskills.io/home)
+*   [Agent Skills Best Practices](https://agentskills.io/skill-creation/best-practices)
 
 ## Prerequisite
 
@@ -31,6 +32,8 @@ dart run skills generate-skill [options] [config_file]
 **Options:**
 *   `--skill`: Filter to generate only the specified skill by name.
 *   `--directory` (`-d`): The directory to output the generated skill folder. Defaults to `../skills/`.
+*   `--model`: The Gemini model to use for generation. Defaults to `models/gemini-4-argon`.
+*   `--thinking-budget`: The token budget for the model to "think" before generating content. Defaults to 4096.
 *   `--dry-run`: Performs a dry run, showing what would be generated and token count without writing files.
 
 **Example:**
@@ -61,7 +64,8 @@ dart run skills update-skill [options] [config_file]
 **Options:**
 *   `--skill`: Filter to update only the specified skill by name.
 *   `--directory` (`-d`): The directory to search for skills. Defaults to `../skills/`.
-*   `--thinking-budget`: The token budget for the model to "think" before generating content. Defaults to 2048.
+*   `--model`: The Gemini model to use for generation. Defaults to `models/gemini-4-argon`.
+*   `--thinking-budget`: The token budget for the model to "think" before generating content. Defaults to 4096.
 
 **Example:**
 Update all skills defined in resources/flutter_skills.yaml:
@@ -91,7 +95,8 @@ dart run skills validate-skill [options] [config_file]
 **Options:**
 *   `--skill`: Validate only the specified skill by name.
 *   `--directory` (`-d`): The directory containing the generated skills to validate. Defaults to `../skills/`.
-*   `--thinking-budget`: The token budget for the model to "think" before generating content. Defaults to 2048.
+*   `--model`: The Gemini model to use for generation. Defaults to `models/gemini-4-argon`.
+*   `--thinking-budget`: The token budget for the model to "think" before generating content. Defaults to 4096.
 
 **Example:**
 Validate skills in the default 'skills' directory:

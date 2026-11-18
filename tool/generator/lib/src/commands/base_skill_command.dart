@@ -21,6 +21,12 @@ abstract class BaseSkillCommand extends BaseYamlCommand {
   }) {
     argParser
       ..addOption(
+        'model',
+        help:
+            'The Gemini model to use for generation. Defaults to ${GeminiService.defaultModel}.',
+        defaultsTo: GeminiService.defaultModel,
+      )
+      ..addOption(
         'thinking-budget',
         help:
             'The token budget for the model to "think". Defaults to ${GeminiService.defaultThinkingBudget} (recommended for technical documentation).',
@@ -53,7 +59,12 @@ abstract class BaseSkillCommand extends BaseYamlCommand {
       return;
     }
 
-    final gemini = GeminiService(apiKey: apiKey, httpClient: httpClient);
+    final model = argResults?['model'] as String?;
+    final gemini = GeminiService(
+      apiKey: apiKey,
+      httpClient: httpClient,
+      model: model,
+    );
 
     int thinkingBudget;
     try {

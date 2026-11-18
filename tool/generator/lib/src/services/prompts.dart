@@ -10,6 +10,7 @@ class Prompts {
   static String createSkillPrompt(String markdown, String? instructions) {
     return '''
 Rewrite the following technical documentation into a high-quality "SKILL.md" file.
+Synthesize the essential procedures into a concise, focused document strictly under 500 lines and between 1,500 and 3,500 tokens (never exceed 5,000 tokens). Omit basic introductory concepts that competent AI agents already know.
 
 ${instructions != null && instructions.isNotEmpty ? 'Special Instructions: $instructions' : ''}
 
@@ -26,7 +27,7 @@ $markdown
   ) {
     return '''
 Update the following existing "SKILL.md" file using the provided new technical documentation.
-Carefully integrate the new information without losing valuable existing instructions or context.
+Carefully integrate the new information without losing valuable existing instructions or context, keeping the final output concise, high-density, and strictly under 500 lines.
 
 ${instructions != null && instructions.isNotEmpty ? 'Special Instructions: $instructions' : ''}
 

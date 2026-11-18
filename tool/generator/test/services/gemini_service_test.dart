@@ -287,5 +287,112 @@ Some content
         expect(result, isNot(contains('model: "models/test-model"')));
       });
     });
+
+    group('Gemini 4 request parameters', () {
+      test(
+        'omits temperature for models starting with models/gemini-4',
+        () async {
+          late Map<String, dynamic> capturedBody;
+          final mockClient = MockClient((request) async {
+            capturedBody = jsonDecode(request.body) as Map<String, dynamic>;
+            return http.Response(
+              jsonEncode({
+                'candidates': [
+                  {
+                    'content': {
+                      'parts': [
+                        {'text': 'Generated content'},
+                      ],
+                    },
+                  },
+                ],
+              }),
+              200,
+            );
+          });
+
+          final gemini = GeminiService(
+            apiKey: 'test-key',
+            httpClient: mockClient,
+            model: 'models/gemini-4-argon',
+          );
+
+          await gemini.generateSkillContent('raw', 'name', 'desc');
+
+          final genConfig =
+              capturedBody['generationConfig'] as Map<String, dynamic>;
+          expect(genConfig.containsKey('temperature'), isFalse);
+        },
+      );
+
+      test(
+        'omits temperature for models starting with gemini-4 without prefix',
+        () async {
+          late Map<String, dynamic> capturedBody;
+          final mockClient = MockClient((request) async {
+            capturedBody = jsonDecode(request.body) as Map<String, dynamic>;
+            return http.Response(
+              jsonEncode({
+                'candidates': [
+                  {
+                    'content': {
+                      'parts': [
+                        {'text': 'Generated content'},
+                      ],
+                    },
+                  },
+                ],
+              }),
+              200,
+            );
+          });
+
+          final gemini = GeminiService(
+            apiKey: 'test-key',
+            httpClient: mockClient,
+            model: 'gemini-4-argon',
+          );
+
+          await gemini.generateSkillContent('raw', 'name', 'desc');
+
+          final genConfig =
+              capturedBody['generationConfig'] as Map<String, dynamic>;
+          expect(genConfig.containsKey('temperature'), isFalse);
+        },
+      );
+
+      test('includes temperature for non-gemini-4 models', () async {
+        late Map<String, dynamic> capturedBody;
+        final mockClient = MockClient((request) async {
+          capturedBody = jsonDecode(request.body) as Map<String, dynamic>;
+          return http.Response(
+            jsonEncode({
+              'candidates': [
+                {
+                  'content': {
+                    'parts': [
+                      {'text': 'Generated content'},
+                    ],
+                  },
+                },
+              ],
+            }),
+            200,
+          );
+        });
+
+        final gemini = GeminiService(
+          apiKey: 'test-key',
+          httpClient: mockClient,
+          model: 'models/gemini-3.1-pro-preview',
+        );
+
+        await gemini.generateSkillContent('raw', 'name', 'desc');
+
+        final genConfig =
+            capturedBody['generationConfig'] as Map<String, dynamic>;
+        expect(genConfig['temperature'], equals(0.2));
+      });
+    });
   });
 }
