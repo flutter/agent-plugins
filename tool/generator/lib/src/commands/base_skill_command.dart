@@ -5,9 +5,11 @@
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:meta/meta.dart';
 
 import '../models/skill_params.dart';
 import '../services/gemini_service.dart';
+import '../utils/text_metrics.dart';
 import 'base_yaml_command.dart';
 
 /// Base command for skill operations requiring AI generation.
@@ -53,28 +55,26 @@ abstract class BaseSkillCommand extends BaseYamlCommand {
     Directory outputDir, {
     Directory? configDir,
   }) async {
+    final dryRun = argResults?['dry-run'] as bool? ?? false;
     final apiKey = (environment ?? Platform.environment)['GEMINI_API_KEY'];
-    if (apiKey == null) {
+    if (!dryRun && (apiKey == null || apiKey.trim().isEmpty)) {
       logger.severe('GEMINI_API_KEY environment variable not set.');
+      return;
+    }
+
+    final rawBudget = argResults!['thinking-budget'] as String;
+    final thinkingBudget = int.tryParse(rawBudget);
+    if (thinkingBudget == null || thinkingBudget < 0) {
+      logger.severe('Invalid thinking-budget: $rawBudget. Skipping.');
       return;
     }
 
     final model = argResults?['model'] as String?;
     final gemini = GeminiService(
-      apiKey: apiKey,
+      apiKey: (apiKey != null && apiKey.trim().isNotEmpty) ? apiKey : 'dry-run',
       httpClient: httpClient,
       model: model,
     );
-
-    int thinkingBudget;
-    try {
-      thinkingBudget = int.parse(argResults!['thinking-budget'] as String);
-    } on FormatException {
-      logger.warning(
-        'Invalid thinking-budget: ${argResults!['thinking-budget']}. Skipping.',
-      );
-      return;
-    }
 
     for (final skill in skills) {
       await runSkill(
@@ -83,6 +83,20 @@ abstract class BaseSkillCommand extends BaseYamlCommand {
         outputDir,
         thinkingBudget,
         configDir: configDir,
+      );
+    }
+  }
+
+  /// Logs a warning when [content] exceeds [maxRecommendedSkillLines] lines per
+  /// the Agent Skills standard.
+  @protected
+  void warnIfExceedsLineLimit(String content, {required String prefix}) {
+    final lines = content.lineCount;
+    if (lines > maxRecommendedSkillLines) {
+      logger.warning(
+        '  $prefix has $lines lines. '
+        'The Agent Skills standard (https://agentskills.io) recommends keeping '
+        'SKILL.md under $maxRecommendedSkillLines lines.',
       );
     }
   }

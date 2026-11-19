@@ -33,5 +33,61 @@ void main() {
       expect(skill.resources, ['http://example.com']);
       expect(skill.instructions, 'Do not hallucinate.');
     });
+
+    test('fromYamlMap parses untyped YAML maps including examplePrompt', () {
+      final yamlMap = <Object?, Object?>{
+        'name': 'yaml-skill',
+        'description': 'YAML Description',
+        'resources': <Object?>['https://example.com/doc'],
+        'instructions': 'Keep under 500 lines.',
+        'examplePrompt': 'Build a responsive layout.',
+      };
+      final skill = SkillParams.fromYamlMap(yamlMap);
+      expect(skill.name, 'yaml-skill');
+      expect(skill.description, 'YAML Description');
+      expect(skill.resources, ['https://example.com/doc']);
+      expect(skill.instructions, 'Keep under 500 lines.');
+      expect(skill.examplePrompt, 'Build a responsive layout.');
+    });
+
+    test('fromYamlMap throws FormatException on invalid field types', () {
+      expect(
+        () => SkillParams.fromYamlMap(<Object?, Object?>{}),
+        throwsFormatException,
+      );
+      expect(
+        () => SkillParams.fromYamlMap(<Object?, Object?>{
+          'name': 'foo',
+          'description': 123,
+          'resources': <Object?>['https://example.com'],
+        }),
+        throwsFormatException,
+      );
+      expect(
+        () => SkillParams.fromYamlMap(<Object?, Object?>{
+          'name': 'foo',
+          'description': 'desc',
+          'resources': <Object?>[123],
+        }),
+        throwsFormatException,
+      );
+      expect(
+        () => SkillParams.fromYamlMap(<Object?, Object?>{
+          'name': '   ',
+          'description': 'desc',
+          'resources': <Object?>['https://example.com'],
+        }),
+        throwsFormatException,
+      );
+      expect(
+        () => SkillParams.fromYamlMap(<Object?, Object?>{
+          'name': 'foo',
+          'description': 'desc',
+          'resources': <Object?>['https://example.com'],
+          'examplePrompt': 456,
+        }),
+        throwsFormatException,
+      );
+    });
   });
 }

@@ -18,6 +18,8 @@ class _TestSkillCommand extends BaseSkillCommand {
   _TestSkillCommand({required super.httpClient, super.environment})
     : super(logger: Logger('_TestSkillCommand'));
 
+  int runSkillCalls = 0;
+
   @override
   String get name => 'test-command';
 
@@ -31,7 +33,9 @@ class _TestSkillCommand extends BaseSkillCommand {
     Directory outputDir,
     int thinkingBudget, {
     Directory? configDir,
-  }) async {}
+  }) async {
+    runSkillCalls++;
+  }
 }
 
 void main() {
@@ -40,6 +44,7 @@ void main() {
     late Directory tempDir;
     late MockClient mockClient;
     final logs = <String>[];
+    final records = <LogRecord>[];
 
     setUp(() async {
       tempDir = await Directory.systemTemp.createTemp(
@@ -50,13 +55,19 @@ void main() {
         ..addCommand(_TestSkillCommand(httpClient: mockClient));
 
       Logger.root.level = Level.INFO;
-      Logger.root.onRecord.listen((record) => logs.add(record.message));
+      final sub = Logger.root.onRecord.listen((record) {
+        logs.add(record.message);
+        records.add(record);
+      });
+      addTearDown(sub.cancel);
       logs.clear();
+      records.clear();
     });
 
     tearDown(() async {
       await tempDir.delete(recursive: true);
       logs.clear();
+      records.clear();
     });
 
     test('logs severe error when configuration file not found', () async {
@@ -67,6 +78,38 @@ void main() {
 
       expect(logs, contains('Configuration file not found: $path'));
     });
+
+    test(
+      'logs severe error when YAML syntax or item schema is invalid',
+      () async {
+        final invalidYamlFile = File(p.join(tempDir.path, 'invalid.yaml'));
+        await invalidYamlFile.writeAsString(': invalid: [yaml');
+        await runner.run(['test-command', invalidYamlFile.path]);
+        expect(logs, contains(contains('Invalid YAML syntax in')));
+
+        logs.clear();
+        final nonMapItemFile = File(p.join(tempDir.path, 'non_map.yaml'));
+        await nonMapItemFile.writeAsString(jsonEncode([123]));
+        await runner.run(['test-command', nonMapItemFile.path]);
+        expect(logs, contains('Invalid configuration: Item 0 is not a Map.'));
+
+        logs.clear();
+        final badMapItemFile = File(p.join(tempDir.path, 'bad_map.yaml'));
+        await badMapItemFile.writeAsString(
+          jsonEncode([
+            {'name': 'foo', 'description': 123, 'resources': <String>[]},
+          ]),
+        );
+        await runner.run(['test-command', badMapItemFile.path]);
+        expect(
+          logs,
+          contains(
+            'Invalid configuration at item 0: '
+            'Skill "foo" field "description" must be a string.',
+          ),
+        );
+      },
+    );
 
     test('logs warning when no skills match the --skill filter', () async {
       final configFile = File(p.join(tempDir.path, 'config.yaml'));
@@ -103,7 +146,52 @@ void main() {
       expect(logs, contains('No skills found in configuration file.'));
     });
 
-    test('logs severe error when GEMINI_API_KEY is not set', () async {
+    test(
+      'logs severe error when GEMINI_API_KEY is missing or blank unless --dry-run',
+      () async {
+        final configFile = File(p.join(tempDir.path, 'config.yaml'));
+        await configFile.writeAsString(
+          jsonEncode(<Map<String, dynamic>>[
+            {
+              'name': 'existent-skill',
+              'description': 'desc',
+              'resources': <String>[],
+            },
+          ]),
+        );
+
+        final missingKeyCommand = _TestSkillCommand(
+          httpClient: mockClient,
+          environment: {},
+        );
+        runner = CommandRunner<void>('skills', 'Test runner')
+          ..addCommand(missingKeyCommand);
+        await runner.run(['test-command', configFile.path]);
+        expect(logs, contains('GEMINI_API_KEY environment variable not set.'));
+        expect(missingKeyCommand.runSkillCalls, 0);
+
+        logs.clear();
+        await runner.run(['test-command', '--dry-run', configFile.path]);
+        expect(
+          logs,
+          isNot(contains('GEMINI_API_KEY environment variable not set.')),
+        );
+        expect(missingKeyCommand.runSkillCalls, 1);
+
+        logs.clear();
+        final blankKeyCommand = _TestSkillCommand(
+          httpClient: mockClient,
+          environment: {'GEMINI_API_KEY': '   '},
+        );
+        runner = CommandRunner<void>('skills', 'Test runner')
+          ..addCommand(blankKeyCommand);
+        await runner.run(['test-command', configFile.path]);
+        expect(logs, contains('GEMINI_API_KEY environment variable not set.'));
+        expect(blankKeyCommand.runSkillCalls, 0);
+      },
+    );
+
+    test('logs severe error when --thinking-budget is invalid', () async {
       final configFile = File(p.join(tempDir.path, 'config.yaml'));
       await configFile.writeAsString(
         jsonEncode(<Map<String, dynamic>>[
@@ -115,17 +203,28 @@ void main() {
         ]),
       );
 
-      // Override environment parameter to simulate missing api key
-      runner = CommandRunner(
-        'skills',
-        'Test runner',
-      )..addCommand(_TestSkillCommand(httpClient: mockClient, environment: {}));
+      runner = CommandRunner<void>('skills', 'Test runner')
+        ..addCommand(
+          _TestSkillCommand(
+            httpClient: mockClient,
+            environment: {'GEMINI_API_KEY': 'test-key'},
+          ),
+        );
 
-      await IOOverrides.runZoned(() async {
-        await runner.run(['test-command', configFile.path]);
-      }, getCurrentDirectory: () => tempDir);
-
-      expect(logs, contains('GEMINI_API_KEY environment variable not set.'));
+      await runner.run([
+        'test-command',
+        configFile.path,
+        '--thinking-budget',
+        '-1',
+      ]);
+      expect(
+        records.any(
+          (r) =>
+              r.level == Level.SEVERE &&
+              r.message.contains('Invalid thinking-budget: -1. Skipping.'),
+        ),
+        isTrue,
+      );
     });
 
     test('defines model option defaulting to GeminiService.defaultModel', () {
