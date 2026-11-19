@@ -27,9 +27,10 @@ void main() {
       mockClient = MockClient((request) async => http.Response('', 200));
 
       Logger.root.level = Level.INFO;
-      Logger.root.onRecord.listen((record) {
+      final sub = Logger.root.onRecord.listen((record) {
         logs.add(record.message);
       });
+      addTearDown(sub.cancel);
       logs.clear();
     });
 
@@ -225,6 +226,7 @@ void main() {
 
       await runValidation('flutter_skills.yaml', content1);
       expect(logs, contains('Item 0 field "name" must be a string.'));
+      expect(logs, contains('Configuration validation failed.'));
 
       logs.clear();
       final content2 = jsonEncode([
@@ -240,6 +242,7 @@ void main() {
         logs,
         contains('Skill "flutter-skill" field "description" must be a string.'),
       );
+      expect(logs, contains('Configuration validation failed.'));
 
       logs.clear();
       final content3 = jsonEncode([
@@ -258,6 +261,50 @@ void main() {
           'Skill "flutter-skill" field "instructions" must be a string.',
         ),
       );
+      expect(logs, contains('Configuration validation failed.'));
+
+      logs.clear();
+      final content4 = jsonEncode([
+        {
+          'name': 'flutter-skill',
+          'description': 'A Flutter skill description',
+          'resources': ['https://example.com'],
+          'examplePrompt': 123, // int, should be string
+        },
+      ]);
+
+      await runValidation('flutter_skills.yaml', content4);
+      expect(
+        logs,
+        contains(
+          'Skill "flutter-skill" field "examplePrompt" must be a string.',
+        ),
+      );
+      expect(logs, contains('Configuration validation failed.'));
+    });
+
+    test('fails when configuration contains duplicate skill names', () async {
+      final content = jsonEncode([
+        {
+          'name': 'flutter-duplicate-skill',
+          'description': 'First skill description',
+          'resources': ['https://example.com/first'],
+        },
+        {
+          'name': 'flutter-duplicate-skill',
+          'description': 'Second skill description',
+          'resources': ['https://example.com/second'],
+        },
+      ]);
+
+      await runValidation('flutter_skills.yaml', content);
+      expect(
+        logs,
+        contains(
+          'Duplicate skill name "flutter-duplicate-skill" in flutter_skills.yaml.',
+        ),
+      );
+      expect(logs, contains('Configuration validation failed.'));
     });
   });
 }

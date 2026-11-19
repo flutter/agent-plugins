@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
@@ -14,11 +15,14 @@ import 'package:skills/src/commands/validate_skill_command.dart';
 
 const String version = '0.1.0';
 
-void main(List<String> arguments) async {
+Future<void> main(List<String> arguments) async {
   final httpClient = http.Client();
 
   final runner =
-      CommandRunner<void>('skills', 'A sample command-line application.')
+      CommandRunner<void>(
+          'skills',
+          'CLI tool for generating, updating, and validating Agent Skills.',
+        )
         ..addCommand(GenerateSkillCommand(httpClient: httpClient))
         ..addCommand(UpdateSkillCommand(httpClient: httpClient))
         ..addCommand(ValidateSkillCommand(httpClient: httpClient))
@@ -36,6 +40,7 @@ void main(List<String> arguments) async {
     help: 'Show additional command output.',
   );
 
+  StreamSubscription<LogRecord>? logSubscription;
   try {
     final results = runner.parse(arguments);
     if (results.flag('version')) {
@@ -43,7 +48,7 @@ void main(List<String> arguments) async {
       return;
     }
 
-    _configureLogging(results.flag('verbose'));
+    logSubscription = _configureLogging(results.flag('verbose'));
 
     if (results.flag('verbose')) {
       Logger.root.fine('All arguments: ${results.arguments}');
@@ -52,20 +57,22 @@ void main(List<String> arguments) async {
     await runner.run(arguments);
   } on UsageException catch (e) {
     stderr.writeln(e);
-    exit(64);
+    exitCode = 64;
   } on Exception catch (e) {
     stderr.writeln('An error occurred: $e');
-    exit(1);
+    exitCode = 1;
   } finally {
+    await logSubscription?.cancel();
     httpClient.close();
   }
 }
 
-void _configureLogging(bool verbose) {
+StreamSubscription<LogRecord> _configureLogging(bool verbose) {
   Logger.root.level = verbose ? Level.ALL : Level.INFO;
-  Logger.root.onRecord.listen((record) {
+  return Logger.root.onRecord.listen((record) {
     if (record.level >= Level.SEVERE) {
       stderr.writeln(record.message);
+      exitCode = 1;
     } else {
       stdout.writeln(record.message);
     }

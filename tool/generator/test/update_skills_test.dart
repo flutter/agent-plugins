@@ -131,7 +131,7 @@ void main() {
       await runner.run(['update-skill', inputYamlFile.path]);
 
       expect(logs, contains(contains('Skill file not found at')));
-      expect(logs, contains(contains('Cannot update an non-existent skill.')));
+      expect(logs, contains(contains('Cannot update a non-existent skill.')));
     });
 
     test(
