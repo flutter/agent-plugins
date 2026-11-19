@@ -2,11 +2,12 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
 import 'package:logging/logging.dart';
+import 'package:meta/meta.dart';
+import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
 import '../models/skill_params.dart';
@@ -43,14 +44,38 @@ abstract class BaseYamlCommand extends Command<void> {
     }
 
     final yamlContent = file.readAsStringSync();
-    final yamlList = loadYaml(yamlContent) as YamlList;
-    final skills = yamlList
-        .map(
-          (e) => SkillParams.fromJson(
-            jsonDecode(jsonEncode(e)) as Map<String, dynamic>,
-          ),
-        )
-        .toList();
+    final YamlList yamlList;
+    try {
+      final decoded = loadYaml(yamlContent);
+      if (decoded is! YamlList) {
+        logger.severe('Invalid configuration: Root must be a YAML list.');
+        return;
+      }
+      yamlList = decoded;
+    } on YamlException catch (e) {
+      logger.severe('Invalid YAML syntax in $inputFile: $e');
+      return;
+    }
+
+    if (!validateYamlList(yamlList, p.basename(file.path))) {
+      logger.severe('Configuration validation failed.');
+      return;
+    }
+
+    final skills = <SkillParams>[];
+    for (var i = 0; i < yamlList.length; i++) {
+      final item = yamlList[i];
+      if (item is! Map<Object?, Object?>) {
+        logger.severe('Invalid configuration: Item $i is not a Map.');
+        return;
+      }
+      try {
+        skills.add(SkillParams.fromYamlMap(item));
+      } on FormatException catch (e) {
+        logger.severe('Invalid configuration at item $i: ${e.message}');
+        return;
+      }
+    }
 
     final skillFilter = argResults?['skill'] as String?;
     final targetSkills = skillFilter != null
@@ -73,6 +98,13 @@ abstract class BaseYamlCommand extends Command<void> {
 
     await runWithSkills(targetSkills, outDir, configDir: file.parent);
   }
+
+  /// Validates the raw [yamlList] before converting entries to [SkillParams].
+  ///
+  /// Subclasses such as `ValidateSkillCommand` can override this method to
+  /// perform schema checks without reading or parsing the YAML file twice.
+  @protected
+  bool validateYamlList(YamlList yamlList, String fileName) => true;
 
   /// Executes the command with the parsed and filtered list of skills.
   Future<void> runWithSkills(

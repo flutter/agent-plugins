@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:logging/logging.dart';
@@ -12,6 +11,7 @@ import 'package:yaml/yaml.dart';
 import '../models/skill_params.dart';
 import '../services/gemini_service.dart';
 import '../services/resource_fetcher_service.dart';
+import '../utils/text_metrics.dart';
 import 'base_skill_command.dart';
 
 /// Command to validate skills by re-generating and comparing with existing skills.
@@ -24,6 +24,11 @@ class ValidateSkillCommand extends BaseSkillCommand {
     this.validationDir,
   }) : super(logger: Logger('ValidateSkillCommand'));
 
+  static final RegExp _kebabCaseRegExp = RegExp(r'^[a-z0-9]+(-[a-z0-9]+)*$');
+  static final RegExp _lastModifiedRegExp = RegExp('last_modified: (.*)');
+  static final RegExp _modelRegExp = RegExp('model: (.*)');
+  static final RegExp _gradeRegExp = RegExp(r'Grade:\s*(\d+)');
+
   /// The directory to output validation reports.
   final Directory? validationDir;
 
@@ -32,51 +37,17 @@ class ValidateSkillCommand extends BaseSkillCommand {
 
   @override
   String get description =>
-      'Validates skills using existing skill files and yaml configuration.';
+      'Validates skills using existing skill files and YAML configuration.';
 
   @override
-  Future<void> run() async {
-    final inputFile = argResults!.rest.isNotEmpty
-        ? argResults!.rest.first
-        : 'resources/flutter_skills.yaml';
-
-    final file = File(inputFile);
-    if (!file.existsSync()) {
-      logger.severe('Configuration file not found: $inputFile');
-      return;
-    }
-
-    final yamlContent = file.readAsStringSync();
-    YamlList yamlList;
-    try {
-      final decoded = loadYaml(yamlContent);
-      if (decoded is! YamlList) {
-        logger.severe('Invalid configuration: Root must be a YAML list.');
-        return;
-      }
-      yamlList = decoded;
-    } on Object catch (e) {
-      logger.severe('Invalid YAML syntax in $inputFile: $e');
-      return;
-    }
-
-    final isValid = _validateYamlStructure(yamlList, p.basename(file.path));
-    if (!isValid) {
-      logger.severe('Configuration validation failed.');
-      return;
-    }
-
-    await super.run();
-  }
-
-  bool _validateYamlStructure(YamlList yamlList, String fileName) {
+  bool validateYamlList(YamlList yamlList, String fileName) {
     if (yamlList.isEmpty) {
       logger.severe('Configuration list must not be empty.');
       return false;
     }
 
     var isValid = true;
-    final kabobCase = RegExp(r'^[a-z0-9]+(-[a-z0-9]+)*$');
+    final seenNames = <String>{};
 
     for (var i = 0; i < yamlList.length; i++) {
       final item = yamlList[i];
@@ -103,10 +74,10 @@ class ValidateSkillCommand extends BaseSkillCommand {
       } else if (rawDescription is! String) {
         logger.severe('Skill "$name" field "description" must be a string.');
         isValid = false;
-      } else if (rawDescription.length > 1024) {
+      } else if (rawDescription.length > maxSkillDescriptionLength) {
         logger.warning(
-          'Skill "$name" description exceeds 1024 characters (${rawDescription.length} chars). '
-          'The Agent Skills standard (https://agentskills.io) limits descriptions to 1024 characters.',
+          'Skill "$name" description exceeds $maxSkillDescriptionLength characters (${rawDescription.length} chars). '
+          'The Agent Skills standard (https://agentskills.io) limits descriptions to $maxSkillDescriptionLength characters.',
         );
       }
 
@@ -120,8 +91,18 @@ class ValidateSkillCommand extends BaseSkillCommand {
         isValid = false;
       }
 
+      if (item['examplePrompt'] != null && item['examplePrompt'] is! String) {
+        logger.severe('Skill "$name" field "examplePrompt" must be a string.');
+        isValid = false;
+      }
+
       if (rawName is String) {
-        if (!kabobCase.hasMatch(name)) {
+        if (!seenNames.add(name)) {
+          logger.severe('Duplicate skill name "$name" in $fileName.');
+          isValid = false;
+        }
+
+        if (!_kebabCaseRegExp.hasMatch(name)) {
           logger.severe(
             'Skill name "$name" must be kabob-case (e.g. abc-def).',
           );
@@ -180,7 +161,7 @@ class ValidateSkillCommand extends BaseSkillCommand {
     SkillParams skill,
     GeminiService gemini,
     Directory outputDir,
-    int thinkingBudget, {
+    int? thinkingBudget, {
     Directory? configDir,
   }) async {
     logger.info('Validating skill: ${skill.name}...');
@@ -228,37 +209,26 @@ class ValidateSkillCommand extends BaseSkillCommand {
       }
 
       // Check file length per agentskills.io recommendation (< 500 lines)
-      final lineCount = const LineSplitter()
-          .convert(existingSkillFileContent)
-          .length;
-      if (lineCount > 500) {
-        logger.warning(
-          '  Validation Warning: ${existingSkillFile.path} has $lineCount lines. '
-          'The Agent Skills standard (https://agentskills.io) recommends keeping SKILL.md under 500 lines.',
-        );
-      }
+      warnIfExceedsLineLimit(
+        existingSkillFileContent,
+        prefix: 'Validation Warning: ${existingSkillFile.path}',
+      );
 
       // Extract metadata from existing content
       final generationDate =
-          RegExp(
-            'last_modified: (.*)',
-          ).firstMatch(existingSkillFileContent)?.group(1) ??
+          _lastModifiedRegExp.firstMatch(existingSkillFileContent)?.group(1) ??
           'Unknown';
       final modelName =
-          RegExp(
-            'model: (.*)',
-          ).firstMatch(existingSkillFileContent)?.group(1) ??
+          _modelRegExp.firstMatch(existingSkillFileContent)?.group(1) ??
           'Unknown';
 
       // Compare
       final dryRun = argResults?['dry-run'] as bool? ?? false;
       if (dryRun) {
-        final existWords = RegExp(
-          r'\S+',
-        ).allMatches(existingSkillFileContent).length;
-        final existTokens = (existWords * 1.3).round();
-        final rawWords = RegExp(r'\S+').allMatches(markdown).length;
-        final rawTokens = (rawWords * 1.3).round();
+        final existWords = existingSkillFileContent.wordCount;
+        final existTokens = existingSkillFileContent.approximateTokenCount;
+        final rawWords = markdown.wordCount;
+        final rawTokens = markdown.approximateTokenCount;
         logger
           ..info('  [DRY RUN] Would validate skill: ${skill.name}')
           ..info(
@@ -288,7 +258,7 @@ class ValidateSkillCommand extends BaseSkillCommand {
         File(p.join(valDir.path, 'validation.md')).writeAsStringSync(result);
 
         // Extract and log the grade
-        final gradeMatch = RegExp(r'Grade:\s*(\d+)').firstMatch(result);
+        final gradeMatch = _gradeRegExp.firstMatch(result);
         final grade = gradeMatch?.group(1);
 
         logger.info(

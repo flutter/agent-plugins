@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:logging/logging.dart';
@@ -11,6 +10,7 @@ import 'package:path/path.dart' as p;
 import '../models/skill_params.dart';
 import '../services/gemini_service.dart';
 import '../services/resource_fetcher_service.dart';
+import '../utils/text_metrics.dart';
 import 'base_skill_command.dart';
 
 /// Command to update skills from a configuration file, preserving existing content.
@@ -34,7 +34,7 @@ class UpdateSkillCommand extends BaseSkillCommand {
     SkillParams skill,
     GeminiService gemini,
     Directory outputDir,
-    int thinkingBudget, {
+    int? thinkingBudget, {
     Directory? configDir,
   }) async {
     logger.info('Updating skill: ${skill.name}...');
@@ -42,7 +42,7 @@ class UpdateSkillCommand extends BaseSkillCommand {
     final skillFile = File(p.join(outputDir.path, skill.name, 'SKILL.md'));
     if (!skillFile.existsSync()) {
       logger.severe(
-        '  Skill file not found at ${skillFile.path}. Cannot update an non-existent skill.',
+        '  Skill file not found at ${skillFile.path}. Cannot update a non-existent skill.',
       );
       return;
     }
@@ -66,10 +66,10 @@ class UpdateSkillCommand extends BaseSkillCommand {
 
       final dryRun = argResults?['dry-run'] as bool? ?? false;
       if (dryRun) {
-        final origWords = RegExp(r'\S+').allMatches(existingContent).length;
-        final origTokens = (origWords * 1.3).round();
-        final rawWords = RegExp(r'\S+').allMatches(combinedMarkdown).length;
-        final rawTokens = (rawWords * 1.3).round();
+        final origWords = existingContent.wordCount;
+        final origTokens = existingContent.approximateTokenCount;
+        final rawWords = combinedMarkdown.wordCount;
+        final rawTokens = combinedMarkdown.approximateTokenCount;
         logger
           ..info('  [DRY RUN] Would update skill: ${skill.name}')
           ..info(
@@ -93,13 +93,10 @@ class UpdateSkillCommand extends BaseSkillCommand {
           '  Updated ${p.join(outputDir.path, skill.name, 'SKILL.md')}',
         );
 
-        final lineCount = const LineSplitter().convert(generatedContent).length;
-        if (lineCount > 500) {
-          logger.warning(
-            '  Warning: Updated SKILL.md has $lineCount lines. '
-            'The Agent Skills standard (https://agentskills.io) recommends keeping SKILL.md under 500 lines.',
-          );
-        }
+        warnIfExceedsLineLimit(
+          generatedContent,
+          prefix: 'Warning: Updated SKILL.md',
+        );
       } else {
         logger.severe('  Failed to update content for ${skill.name}');
       }

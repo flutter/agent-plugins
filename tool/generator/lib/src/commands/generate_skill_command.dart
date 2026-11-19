@@ -2,7 +2,6 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:logging/logging.dart';
@@ -11,6 +10,7 @@ import 'package:path/path.dart' as p;
 import '../models/skill_params.dart';
 import '../services/gemini_service.dart';
 import '../services/resource_fetcher_service.dart';
+import '../utils/text_metrics.dart';
 import 'base_skill_command.dart';
 
 /// Command to generate skills from a configuration file.
@@ -26,14 +26,14 @@ class GenerateSkillCommand extends BaseSkillCommand {
   String get name => 'generate-skill';
 
   @override
-  String get description => 'Generates skills from using yaml configuration.';
+  String get description => 'Generates skills from a YAML configuration file.';
 
   @override
   Future<void> runSkill(
     SkillParams skill,
     GeminiService gemini,
     Directory outputDir,
-    int thinkingBudget, {
+    int? thinkingBudget, {
     Directory? configDir,
   }) async {
     logger.info('Generating skill: ${skill.name}...');
@@ -55,8 +55,8 @@ class GenerateSkillCommand extends BaseSkillCommand {
 
       final dryRun = argResults?['dry-run'] as bool? ?? false;
       if (dryRun) {
-        final words = RegExp(r'\S+').allMatches(combinedMarkdown).length;
-        final approxTokens = (words * 1.3).round();
+        final words = combinedMarkdown.wordCount;
+        final approxTokens = combinedMarkdown.approximateTokenCount;
         logger
           ..info('  [DRY RUN] Would generate skill: ${skill.name}')
           ..info(
@@ -86,13 +86,10 @@ class GenerateSkillCommand extends BaseSkillCommand {
           '  Generated ${p.join(outputDir.path, skill.name, 'SKILL.md')}',
         );
 
-        final lineCount = const LineSplitter().convert(generatedContent).length;
-        if (lineCount > 500) {
-          logger.warning(
-            '  Warning: Generated SKILL.md has $lineCount lines. '
-            'The Agent Skills standard (https://agentskills.io) recommends keeping SKILL.md under 500 lines.',
-          );
-        }
+        warnIfExceedsLineLimit(
+          generatedContent,
+          prefix: 'Warning: Generated SKILL.md',
+        );
       } else {
         logger.severe('  Failed to generate content for ${skill.name}');
       }

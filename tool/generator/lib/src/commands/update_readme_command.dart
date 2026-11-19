@@ -21,6 +21,17 @@ class UpdateReadmeCommand extends BaseYamlCommand {
     );
   }
 
+  static final RegExp _tableLineRegExp = RegExp(
+    r'^\| \[([^\]]+)\]\([^)]+\) \| [^|]+ \| ([^|]+) \|',
+    multiLine: true,
+  );
+  static final RegExp _sectionHeaderRegExp = RegExp(
+    '^## (Available Skills|List of Skills|Skills List|Skill Index)',
+    caseSensitive: false,
+    multiLine: true,
+  );
+  static final RegExp _nextSectionRegExp = RegExp(r'\n##\s');
+
   @override
   String get name => 'update-readme';
 
@@ -65,11 +76,7 @@ class UpdateReadmeCommand extends BaseYamlCommand {
 
     // Parse existing example prompts from the README if they exist
     final existingPrompts = <String, String>{};
-    final tableLineRegex = RegExp(
-      r'^\| \[([^\]]+)\]\([^)]+\) \| [^|]+ \| ([^|]+) \|',
-      multiLine: true,
-    );
-    for (final match in tableLineRegex.allMatches(content)) {
+    for (final match in _tableLineRegExp.allMatches(content)) {
       final skillName = match.group(1)!;
       final prompt = match.group(2)!.trim();
       if (prompt.isNotEmpty) {
@@ -112,12 +119,7 @@ class UpdateReadmeCommand extends BaseYamlCommand {
     final newTable = buffer.toString();
 
     // Find where to insert the table
-    final sectionRegex = RegExp(
-      '^## (Available Skills|List of Skills|Skills List|Skill Index)',
-      caseSensitive: false,
-      multiLine: true,
-    );
-    final match = sectionRegex.firstMatch(content);
+    final match = _sectionHeaderRegExp.firstMatch(content);
 
     String updatedContent;
     if (match != null) {
@@ -125,7 +127,7 @@ class UpdateReadmeCommand extends BaseYamlCommand {
       final headerEnd = content.indexOf('\n', match.start);
       // Find the next section header or end of file
       final nextSectionIndex = content.indexOf(
-        RegExp(r'\n##\s', multiLine: true),
+        _nextSectionRegExp,
         headerEnd + 1,
       );
 

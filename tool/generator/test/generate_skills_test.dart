@@ -246,7 +246,7 @@ void main() {
         logs,
         contains(
           contains(
-            'Model: models/gemini-4-argon, Max Output Tokens: 65536, Thinking Budget: 4000',
+            'Model: models/gemini-4-carbon, Max Output Tokens: 65536, Thinking Budget: 4000',
           ),
         ),
       );
@@ -258,6 +258,83 @@ void main() {
         skillFile.readAsStringSync(),
         contains('Generated Budget Content\n'),
       );
+    });
+
+    test('accepts --thinking-level option', () async {
+      final skillsDir = Directory(p.join(tempDir.path, 'skills_output_level'));
+      await skillsDir.create();
+
+      final configFile = File(p.join(tempDir.path, 'config_level.yaml'));
+      final inputData = [
+        {
+          'name': 'level_test',
+          'description': 'Thinking level test description',
+          'resources': ['https://example.com/level'],
+        },
+      ];
+      configFile.writeAsStringSync(jsonEncode(inputData));
+
+      final logs = <String>[];
+      final sub = Logger.root.onRecord.listen((record) {
+        logs.add(record.message);
+      });
+      addTearDown(sub.cancel);
+
+      late Map<String, dynamic> capturedBody;
+      final mockClient = MockClient((request) async {
+        final url = request.url.toString();
+        if (url == 'https://example.com/level') {
+          return http.Response('<html>Level Content</html>', 200);
+        }
+        if (url.contains('generativelanguage')) {
+          capturedBody = jsonDecode(request.body) as Map<String, dynamic>;
+          return http.Response(
+            jsonEncode({
+              'candidates': [
+                {
+                  'content': {
+                    'parts': [
+                      {'text': 'Generated Level Content'},
+                    ],
+                  },
+                },
+              ],
+            }),
+            200,
+          );
+        }
+        return http.Response('Error', 500);
+      });
+
+      final command = GenerateSkillCommand(
+        environment: {'GEMINI_API_KEY': 'test-key'},
+        httpClient: mockClient,
+        outputDir: skillsDir,
+      );
+      runner.addCommand(command);
+
+      await runner.run([
+        'generate-skill',
+        configFile.path,
+        '--directory',
+        skillsDir.path,
+        '--thinking-level',
+        'high',
+      ]);
+
+      expect(
+        logs,
+        contains(
+          contains(
+            'Model: models/gemini-4-carbon, Max Output Tokens: 65536, Thinking Level: high',
+          ),
+        ),
+      );
+      final genConfig =
+          capturedBody['generationConfig'] as Map<String, dynamic>;
+      final thinkingConfig =
+          genConfig['thinkingConfig'] as Map<String, dynamic>;
+      expect(thinkingConfig['thinkingLevel'], equals('HIGH'));
     });
 
     test('accepts custom --model option', () async {
