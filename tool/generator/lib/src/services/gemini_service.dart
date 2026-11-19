@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:meta/meta.dart';
 import 'package:retry/retry.dart';
+import 'package:yaml/yaml.dart';
 
 import 'prompts.dart';
 import 'skill_instructions.dart';
@@ -21,6 +22,7 @@ class GeminiService {
     http.Client? httpClient,
     String? model,
   }) : _model = model ?? defaultModel,
+       _ownsClient = httpClient == null,
        _client = _ApiKeyClient(httpClient ?? http.Client(), apiKey);
 
   /// Default temperature for legacy models.
@@ -88,9 +90,48 @@ class GeminiService {
     ),
   ];
 
+  static final RegExp _leadingCodeFenceRegExp = RegExp(
+    r'^\s*(`{3,})[^\r\n`]*\r?\n',
+  );
+  static final RegExp _yamlFenceLineRegExp = RegExp(
+    r'^---[ \t]*$',
+    multiLine: true,
+  );
+  static final RegExp _markdownPrefixStartRegExp = RegExp(
+    r'^(?:[-#>*+_~`]|\d+\.)',
+  );
+  static final RegExp _leadingBlankLineRegExp = RegExp(
+    r'^[ \t]*\r?\n[ \t]*\r?\n',
+  );
+  static final RegExp _trailingBlankLineRegExp = RegExp(
+    r'\r?\n[ \t]*\r?\n[ \t]*$',
+  );
+  static final RegExp _yamlFrontmatterKeyRegExp = RegExp(
+    r'^[a-z][a-zA-Z0-9_-]*$',
+  );
+  static const Set<String> _knownFrontmatterKeys = {
+    'name',
+    'description',
+    'metadata',
+    'license',
+    'compatibility',
+    'allowed-tools',
+  };
+
   final String _model;
+  final bool _ownsClient;
   final http.Client _client;
   final Logger _logger = Logger('GeminiService');
+
+  /// Closes the underlying HTTP client if it was created internally by this
+  /// [GeminiService].
+  ///
+  /// Does not close an external `httpClient` passed into the constructor.
+  void close() {
+    if (_ownsClient) {
+      _client.close();
+    }
+  }
 
   /// Generates the content for a skill based on raw markdown input.
   Future<String?> generateSkillContent(
@@ -116,22 +157,15 @@ class GeminiService {
 
     try {
       const r = RetryOptions(maxAttempts: 3);
-      final response = await r.retry(() async {
+      final cleanedBody = await r.retry(() async {
         final res = await service.generateContent(request);
-        final text = res.candidates.first.content?.parts
-            .where((part) => !part.thought)
-            .map((part) => part.text)
-            .where((text) => text != null)
-            .join('\n');
-
-        if (text == null || text.isEmpty) {
-          throw const FormatException('Empty response from Gemini');
+        final text = _extractVerifiedText(res);
+        final cleaned = cleanContent(text);
+        if (cleaned == null || cleaned.trim().isEmpty) {
+          throw const FormatException('Empty markdown body from Gemini');
         }
-
-        return text;
+        return cleaned;
       }, onRetry: (e) => _logger.warning('Retrying Gemini generation: $e'));
-
-      final content = response;
 
       final frontmatter =
           '''---
@@ -143,7 +177,7 @@ metadata:
 ---
 ''';
 
-      return frontmatter + (cleanContent(content) ?? '');
+      return frontmatter + cleanedBody;
     } on Object catch (e) {
       _logger.severe('Gemini generation failed: $e');
       return null;
@@ -179,22 +213,15 @@ metadata:
 
     try {
       const r = RetryOptions(maxAttempts: 3);
-      final response = await r.retry(() async {
+      final cleanedBody = await r.retry(() async {
         final res = await service.generateContent(request);
-        final text = res.candidates.first.content?.parts
-            .where((part) => !part.thought)
-            .map((part) => part.text)
-            .where((text) => text != null)
-            .join('\n');
-
-        if (text == null || text.isEmpty) {
-          throw const FormatException('Empty response from Gemini');
+        final text = _extractVerifiedText(res);
+        final cleaned = cleanContent(text);
+        if (cleaned == null || cleaned.trim().isEmpty) {
+          throw const FormatException('Empty markdown body from Gemini');
         }
-
-        return text;
+        return cleaned;
       }, onRetry: (e) => _logger.warning('Retrying Gemini generation: $e'));
-
-      final content = response;
 
       final frontmatter =
           '''---
@@ -206,14 +233,14 @@ metadata:
 ---
 ''';
 
-      return frontmatter + (cleanContent(content) ?? '');
+      return frontmatter + cleanedBody;
     } on Object catch (e) {
       _logger.severe('Gemini update failed: $e');
       return null;
     }
   }
 
-  /// Validates an existing skill
+  /// Validates an existing skill.
   Future<String?> validateExistingSkillContent(
     String markdown,
     String skillName,
@@ -246,17 +273,7 @@ metadata:
       const r = RetryOptions(maxAttempts: 3);
       final response = await r.retry(() async {
         final res = await service.generateContent(request);
-        final text = res.candidates.first.content?.parts
-            .where((part) => !part.thought)
-            .map((part) => part.text)
-            .where((text) => text != null)
-            .join('\n');
-
-        if (text == null || text.isEmpty) {
-          throw const FormatException('Empty response from Gemini');
-        }
-
-        return text;
+        return _extractVerifiedText(res);
       }, onRetry: (e) => _logger.warning('Retrying Gemini validation: $e'));
 
       return response;
@@ -266,38 +283,138 @@ metadata:
     }
   }
 
-  /// Cleans the generated content by removing markdown code blocks and frontmatter.
+  String _extractVerifiedText(GenerateContentResponse res) {
+    if (res.candidates.isEmpty) {
+      throw FormatException(
+        'No candidates returned from Gemini '
+        '(blockReason: ${res.promptFeedback?.blockReason}).',
+      );
+    }
+    final candidate = res.candidates.first;
+    final finishReason = candidate.finishReason;
+    if (finishReason != Candidate_FinishReason.stop &&
+        finishReason != Candidate_FinishReason.finishReasonUnspecified) {
+      throw FormatException(
+        'Incomplete Gemini response (finishReason: $finishReason).',
+      );
+    }
+    final text = candidate.content?.parts
+        .where((part) => !part.thought)
+        .map((part) => part.text)
+        .where((text) => text != null)
+        .join('\n');
+
+    if (text == null || text.trim().isEmpty) {
+      throw const FormatException('Empty response from Gemini');
+    }
+    return text;
+  }
+
+  /// Cleans the generated content by removing outer markdown code fences and
+  /// leading YAML frontmatter while preserving horizontal rules (`---`) inside
+  /// the markdown body.
   @visibleForTesting
   String? cleanContent(String? content) {
     if (content == null) return null;
     var cleaned = content;
-    final startMatch = RegExp(
-      r'^\s*```[a-zA-Z]*\s*\n',
-      caseSensitive: false,
-    ).firstMatch(cleaned);
+    final startMatch = _leadingCodeFenceRegExp.firstMatch(cleaned);
     if (startMatch != null) {
+      final fence = startMatch.group(1)!;
       cleaned = cleaned.substring(startMatch.end);
-      // Remove the last triple backticks if they exist
-      cleaned = cleaned.replaceAll(RegExp(r'\n```\s*$'), '');
+      final trailingFenceRegExp = RegExp(
+        '(?:^|\\r?\\n)[ \\t]*${RegExp.escape(fence)}\\s*\$',
+      );
+      cleaned = cleaned.replaceFirst(trailingFenceRegExp, '');
     }
 
-    final yamlStartIndex = cleaned.indexOf('---');
-    if (yamlStartIndex == 0) {
-      // Possible frontmatter, skip it
-      final end = cleaned.indexOf('---', 3);
-      if (end != -1) {
-        cleaned = cleaned.substring(end + 3).trim();
-      }
-    } else if (yamlStartIndex > 0) {
-      // Maybe noise before frontmatter, try to strip it if it looks like frontmatter
-      final end = cleaned.indexOf('---', yamlStartIndex + 3);
-      if (end != -1) {
-        cleaned = cleaned.substring(end + 3).trim();
-      }
-    }
+    cleaned = _stripLeadingFrontmatter(cleaned);
 
     // Ensure one trailing newline
     return '${cleaned.trim()}\n';
+  }
+
+  String _stripLeadingFrontmatter(String input) {
+    final firstFence = _yamlFenceLineRegExp.firstMatch(input);
+    if (firstFence == null) {
+      return input;
+    }
+
+    final prefix = input.substring(0, firstFence.start).trim();
+    // Allow frontmatter only at the start of the response or immediately after
+    // a single-line conversational lead-in ending with ':' (e.g. "Here is the
+    // content:"). Reject multi-line prefixes and Markdown block starters
+    // (headings, blockquotes, lists, emphasis, or code fences).
+    if (prefix.isNotEmpty &&
+        (prefix.contains('\n') ||
+            prefix.contains('\r') ||
+            !prefix.endsWith(':') ||
+            _markdownPrefixStartRegExp.hasMatch(prefix))) {
+      return input;
+    }
+
+    final remainder = input.substring(firstFence.end);
+    final secondFence = _yamlFenceLineRegExp.firstMatch(remainder);
+    if (secondFence == null) {
+      return input;
+    }
+
+    final rawCandidate = remainder.substring(0, secondFence.start);
+    // YAML frontmatter never starts with a blank line after `---`, whereas
+    // Markdown horizontal rules (`---`) and Setext H2 sections do.
+    if (_leadingBlankLineRegExp.hasMatch(rawCandidate)) {
+      return input;
+    }
+
+    final hasTrailingBlankLine = _trailingBlankLineRegExp.hasMatch(
+      rawCandidate,
+    );
+    if (hasTrailingBlankLine && prefix.isNotEmpty) {
+      return input;
+    }
+
+    final bodyAfterFence = remainder.substring(secondFence.end).trim();
+    final candidateYaml = rawCandidate.trim();
+    if (candidateYaml.isEmpty) {
+      return prefix.isEmpty ? bodyAfterFence : input;
+    }
+
+    if (!_isValidFrontmatterBlock(
+      candidateYaml,
+      allowNullDocument: prefix.isEmpty && bodyAfterFence.isNotEmpty,
+      requireKnownKey: prefix.isNotEmpty || hasTrailingBlankLine,
+    )) {
+      return input;
+    }
+
+    return bodyAfterFence;
+  }
+
+  bool _isValidFrontmatterBlock(
+    String candidateYaml, {
+    required bool allowNullDocument,
+    required bool requireKnownKey,
+  }) {
+    try {
+      final parsed = loadYaml(candidateYaml);
+      if (parsed == null) {
+        return allowNullDocument;
+      }
+      if (parsed is! YamlMap || parsed.isEmpty) {
+        return false;
+      }
+      final hasValidKeys = parsed.keys.every(
+        (key) => key is String && _yamlFrontmatterKeyRegExp.hasMatch(key),
+      );
+      if (!hasValidKeys) {
+        return false;
+      }
+      if (requireKnownKey) {
+        return parsed.keys.any(_knownFrontmatterKeys.contains);
+      }
+      return true;
+    } on YamlException {
+      return false;
+    }
   }
 
   GenerateContentRequest _createRequest(
@@ -344,5 +461,10 @@ class _ApiKeyClient extends http.BaseClient {
   Future<http.StreamedResponse> send(http.BaseRequest request) {
     request.headers['x-goog-api-key'] = _apiKey;
     return _inner.send(request);
+  }
+
+  @override
+  void close() {
+    _inner.close();
   }
 }
