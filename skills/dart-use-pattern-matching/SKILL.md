@@ -10,7 +10,7 @@ description: >-
   type promotion (use `is`), or basic collection filtering.
 metadata:
   model: models/gemini-3.1-pro-preview
-  last_modified: Tue, 13 Oct 2026 19:45:00 GMT
+  last_modified: Fri, 13 Nov 2026 02:48:00 GMT
 ---
 # Implementing Dart Patterns
 
@@ -222,6 +222,34 @@ String? resolveAllowedAssetSubpath(List<String> segments) {
     return rest.join('/');
   }
   return null;
+}
+```
+
+### Compound Filename Classification (Replacing Multi-Dot RegExp)
+Split basenames on `'.'` and switch on list patterns with rest elements (`...`)
+and inline `when` guards (such as `int.tryParse`) instead of maintaining nested
+regular expressions that risk over-matching sibling files. See
+[examples/filename_patterns.dart](examples/filename_patterns.dart) for an
+executable implementation.
+
+```dart
+enum BuildArtifact {
+  entrypoint,
+  sourceMap,
+  deferredPart,
+  supportRuntime;
+
+  static BuildArtifact? tryParse(String name) => switch (name.split('.')) {
+    ['main', 'dart', 'js'] => entrypoint,
+    ['main', 'dart', 'js', 'map'] => sourceMap,
+    // Matches numbered chunks like 'main.dart.1.part.js'.
+    ['main', 'dart', final part, ..., 'part', 'js']
+        when int.tryParse(part) != null =>
+      deferredPart,
+    // Stays distinct instead of being swallowed by 'main.dart.*.js'.
+    ['main', 'dart', 'support', 'js'] => supportRuntime,
+    _ => null,
+  };
 }
 ```
 

@@ -30,7 +30,7 @@ The `{@example}` directive parses an external file and resolves it into a fenced
 ///
 /// ```dart
 /// final client = Client();
-/// client.send();
+/// await client.get(Uri.parse('https://example.com'));
 /// ```
 ```
 
@@ -48,10 +48,10 @@ Often, an external example file contains imports, setup, or `void main()` wrappe
 ```dart
 import 'package:http/http.dart';
 
-void main() {
+Future<void> main() async {
   // #region request_snippet
   final client = Client();
-  client.send();
+  await client.get(Uri.parse('https://example.com'));
   // #endregion request_snippet
 }
 ```
