@@ -161,7 +161,7 @@ class ValidateSkillCommand extends BaseSkillCommand {
     SkillParams skill,
     GeminiService gemini,
     Directory outputDir,
-    int thinkingBudget, {
+    int? thinkingBudget, {
     Directory? configDir,
   }) async {
     logger.info('Validating skill: ${skill.name}...');

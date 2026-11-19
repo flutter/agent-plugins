@@ -9,7 +9,7 @@ The Skills CLI simplifies the process of creating "Agent Skills" from external d
 
 ## Prerequisite
 
-This tool requires the `GEMINI_API_KEY` environment variable to be set.
+This tool requires the `GEMINI_API_KEY` environment variable to be set (except when running with `--dry-run`).
 
 ## Commands
 
@@ -31,10 +31,11 @@ dart run skills generate-skill [options] [config_file]
 
 **Options:**
 *   `--skill`: Filter to generate only the specified skill by name.
-*   `--directory` (`-d`): The directory to output the generated skill folder. Defaults to `../skills/`.
-*   `--model`: The Gemini model to use for generation. Defaults to `models/gemini-4-argon`.
-*   `--thinking-budget`: The token budget for the model to "think" before generating content. Defaults to 4096.
-*   `--dry-run`: Performs a dry run, showing what would be generated and token count without writing files.
+*   `--directory` (`-d`): The directory to output the generated skill folder. Defaults to `skills/`.
+*   `--model`: The Gemini model to use for generation (e.g., `models/gemini-4-carbon`, `models/gemini-4-neon`, `models/gemini-4-argon`, `models/gemini-4-hydrogen`). Defaults to `models/gemini-4-carbon`.
+*   `--thinking-level`: Reasoning depth for Gemini 3 and Gemini 4 models (`low`, `medium`, `high` on Carbon/Argon; `+xhigh` on Neon/Hydrogen; `+minimal` on Gemini 3 Flash-Lite). Defaults to the model default.
+*   `--thinking-budget`: Legacy token budget for model thinking on earlier models (`-1` for dynamic, `0` to disable where supported, or a positive token count; legacy default: `4096`).
+*   `--dry-run` (`-n`): Performs a dry run, showing what would be generated and estimated token count without writing files.
 
 **Example:**
 Generate all skills defined in resources/flutter_skills.yaml to the skills/ directory:
@@ -63,9 +64,11 @@ dart run skills update-skill [options] [config_file]
 
 **Options:**
 *   `--skill`: Filter to update only the specified skill by name.
-*   `--directory` (`-d`): The directory to search for skills. Defaults to `../skills/`.
-*   `--model`: The Gemini model to use for generation. Defaults to `models/gemini-4-argon`.
-*   `--thinking-budget`: The token budget for the model to "think" before generating content. Defaults to 4096.
+*   `--directory` (`-d`): The directory to search for skills. Defaults to `skills/`.
+*   `--model`: The Gemini model to use for generation (e.g., `models/gemini-4-carbon`, `models/gemini-4-neon`, `models/gemini-4-argon`, `models/gemini-4-hydrogen`). Defaults to `models/gemini-4-carbon`.
+*   `--thinking-level`: Reasoning depth for Gemini 3 and Gemini 4 models (`low`, `medium`, `high` on Carbon/Argon; `+xhigh` on Neon/Hydrogen; `+minimal` on Gemini 3 Flash-Lite). Defaults to the model default.
+*   `--thinking-budget`: Legacy token budget for model thinking on earlier models (`-1` for dynamic, `0` to disable where supported, or a positive token count; legacy default: `4096`).
+*   `--dry-run` (`-n`): Performs a dry run, showing original and raw content sizes without writing files.
 
 **Example:**
 Update all skills defined in resources/flutter_skills.yaml:
@@ -94,9 +97,11 @@ dart run skills validate-skill [options] [config_file]
 
 **Options:**
 *   `--skill`: Validate only the specified skill by name.
-*   `--directory` (`-d`): The directory containing the generated skills to validate. Defaults to `../skills/`.
-*   `--model`: The Gemini model to use for generation. Defaults to `models/gemini-4-argon`.
-*   `--thinking-budget`: The token budget for the model to "think" before generating content. Defaults to 4096.
+*   `--directory` (`-d`): The directory containing the generated skills to validate. Defaults to `skills/`.
+*   `--model`: The Gemini model to use for generation (e.g., `models/gemini-4-carbon`, `models/gemini-4-neon`, `models/gemini-4-argon`, `models/gemini-4-hydrogen`). Defaults to `models/gemini-4-carbon`.
+*   `--thinking-level`: Reasoning depth for Gemini 3 and Gemini 4 models (`low`, `medium`, `high` on Carbon/Argon; `+xhigh` on Neon/Hydrogen; `+minimal` on Gemini 3 Flash-Lite). Defaults to the model default.
+*   `--thinking-budget`: Legacy token budget for model thinking on earlier models (`-1` for dynamic, `0` to disable where supported, or a positive token count; legacy default: `4096`).
+*   `--dry-run` (`-n`): Performs a dry run, showing existing and fetched content sizes without writing files.
 
 **Example:**
 Validate skills in the default 'skills' directory:

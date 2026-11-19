@@ -25,14 +25,25 @@ abstract class BaseSkillCommand extends BaseYamlCommand {
       ..addOption(
         'model',
         help:
-            'The Gemini model to use for generation. Defaults to ${GeminiService.defaultModel}.',
+            'The Gemini model to use for generation '
+            '(e.g., ${GeminiService.knownModels.join(', ')}). '
+            'Defaults to ${GeminiService.defaultModel}.',
         defaultsTo: GeminiService.defaultModel,
+      )
+      ..addOption(
+        'thinking-level',
+        allowed: GeminiService.supportedThinkingLevels,
+        help:
+            'Reasoning depth for Gemini 3 and Gemini 4 models '
+            '(low, medium, high on Carbon/Argon; +xhigh on Neon/Hydrogen; '
+            '+minimal on Gemini 3 Flash-Lite). Defaults to the model default.',
       )
       ..addOption(
         'thinking-budget',
         help:
-            'The token budget for the model to "think". Defaults to ${GeminiService.defaultThinkingBudget} (recommended for technical documentation).',
-        defaultsTo: GeminiService.defaultThinkingBudget.toString(),
+            'Legacy token budget for model thinking (-1 for dynamic, 0 to disable '
+            'where supported, or positive token count; legacy default: '
+            '${GeminiService.defaultThinkingBudget}).',
       )
       ..addFlag(
         'dry-run',
@@ -62,19 +73,40 @@ abstract class BaseSkillCommand extends BaseYamlCommand {
       return;
     }
 
-    final rawBudget = argResults!['thinking-budget'] as String;
-    final thinkingBudget = int.tryParse(rawBudget);
-    if (thinkingBudget == null || thinkingBudget < 0) {
-      logger.severe('Invalid thinking-budget: $rawBudget. Skipping.');
-      return;
+    if (argResults!.wasParsed('thinking-level') &&
+        argResults!.wasParsed('thinking-budget')) {
+      usageException(
+        'Cannot specify both --thinking-level and --thinking-budget.',
+      );
+    }
+
+    int? thinkingBudget;
+    final rawBudget = argResults?['thinking-budget'] as String?;
+    if (rawBudget != null) {
+      final parsed = int.tryParse(rawBudget);
+      if (parsed == null || parsed < -1) {
+        logger.severe('Invalid thinking-budget: $rawBudget. Skipping.');
+        return;
+      }
+      thinkingBudget = parsed;
     }
 
     final model = argResults?['model'] as String?;
-    final gemini = GeminiService(
-      apiKey: (apiKey != null && apiKey.trim().isNotEmpty) ? apiKey : 'dry-run',
-      httpClient: httpClient,
-      model: model,
-    );
+    final thinkingLevel = argResults?['thinking-level'] as String?;
+    final GeminiService gemini;
+    try {
+      gemini = GeminiService(
+        apiKey: (apiKey != null && apiKey.trim().isNotEmpty)
+            ? apiKey
+            : 'dry-run',
+        httpClient: httpClient,
+        model: model,
+        thinkingLevel: thinkingLevel,
+      )..validateThinkingBudget(thinkingBudget);
+    } on FormatException catch (e) {
+      logger.severe('Invalid model or thinking configuration: ${e.message}');
+      return;
+    }
 
     for (final skill in skills) {
       await runSkill(
@@ -106,7 +138,7 @@ abstract class BaseSkillCommand extends BaseYamlCommand {
     SkillParams skill,
     GeminiService gemini,
     Directory outputDir,
-    int thinkingBudget, {
+    int? thinkingBudget, {
     Directory? configDir,
   });
 }

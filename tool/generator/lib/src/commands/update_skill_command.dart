@@ -34,7 +34,7 @@ class UpdateSkillCommand extends BaseSkillCommand {
     SkillParams skill,
     GeminiService gemini,
     Directory outputDir,
-    int thinkingBudget, {
+    int? thinkingBudget, {
     Directory? configDir,
   }) async {
     logger.info('Updating skill: ${skill.name}...');

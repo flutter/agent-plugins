@@ -18,7 +18,7 @@ class _TestSkillCommand extends BaseSkillCommand {
   _TestSkillCommand({required super.httpClient, super.environment})
     : super(logger: Logger('_TestSkillCommand'));
 
-  int runSkillCalls = 0;
+  final List<int?> recordedThinkingBudgets = <int?>[];
 
   @override
   String get name => 'test-command';
@@ -31,10 +31,10 @@ class _TestSkillCommand extends BaseSkillCommand {
     SkillParams skill,
     GeminiService gemini,
     Directory outputDir,
-    int thinkingBudget, {
+    int? thinkingBudget, {
     Directory? configDir,
   }) async {
-    runSkillCalls++;
+    recordedThinkingBudgets.add(thinkingBudget);
   }
 }
 
@@ -168,7 +168,7 @@ void main() {
           ..addCommand(missingKeyCommand);
         await runner.run(['test-command', configFile.path]);
         expect(logs, contains('GEMINI_API_KEY environment variable not set.'));
-        expect(missingKeyCommand.runSkillCalls, 0);
+        expect(missingKeyCommand.recordedThinkingBudgets, isEmpty);
 
         logs.clear();
         await runner.run(['test-command', '--dry-run', configFile.path]);
@@ -176,7 +176,7 @@ void main() {
           logs,
           isNot(contains('GEMINI_API_KEY environment variable not set.')),
         );
-        expect(missingKeyCommand.runSkillCalls, 1);
+        expect(missingKeyCommand.recordedThinkingBudgets, <int?>[null]);
 
         logs.clear();
         final blankKeyCommand = _TestSkillCommand(
@@ -187,53 +187,161 @@ void main() {
           ..addCommand(blankKeyCommand);
         await runner.run(['test-command', configFile.path]);
         expect(logs, contains('GEMINI_API_KEY environment variable not set.'));
-        expect(blankKeyCommand.runSkillCalls, 0);
+        expect(blankKeyCommand.recordedThinkingBudgets, isEmpty);
       },
     );
 
-    test('logs severe error when --thinking-budget is invalid', () async {
-      final configFile = File(p.join(tempDir.path, 'config.yaml'));
-      await configFile.writeAsString(
-        jsonEncode(<Map<String, dynamic>>[
-          {
-            'name': 'existent-skill',
-            'description': 'desc',
-            'resources': <String>[],
-          },
-        ]),
-      );
-
-      runner = CommandRunner<void>('skills', 'Test runner')
-        ..addCommand(
-          _TestSkillCommand(
-            httpClient: mockClient,
-            environment: {'GEMINI_API_KEY': 'test-key'},
-          ),
-        );
-
-      await runner.run([
-        'test-command',
-        configFile.path,
-        '--thinking-budget',
-        '-1',
-      ]);
-      expect(
-        records.any(
-          (r) =>
-              r.level == Level.SEVERE &&
-              r.message.contains('Invalid thinking-budget: -1. Skipping.'),
-        ),
-        isTrue,
-      );
-    });
-
-    test('defines model option defaulting to GeminiService.defaultModel', () {
+    test('defines model and thinking-level options with expected defaults', () {
       final command = _TestSkillCommand(httpClient: mockClient);
       expect(command.argParser.options.containsKey('model'), isTrue);
       expect(
         command.argParser.options['model']!.defaultsTo,
         GeminiService.defaultModel,
       );
+      for (final knownModel in GeminiService.knownModels) {
+        expect(command.argParser.options['model']!.help, contains(knownModel));
+      }
+      expect(command.argParser.options.containsKey('thinking-level'), isTrue);
+      expect(
+        command.argParser.options['thinking-level']!.allowed,
+        GeminiService.supportedThinkingLevels,
+      );
+      expect(command.argParser.options['thinking-budget']!.defaultsTo, isNull);
     });
+
+    test(
+      'throws UsageException when both --thinking-level and --thinking-budget are passed',
+      () async {
+        final configFile = File(p.join(tempDir.path, 'config.yaml'));
+        await configFile.writeAsString(
+          jsonEncode(<Map<String, dynamic>>[
+            {
+              'name': 'existent-skill',
+              'description': 'desc',
+              'resources': <String>[],
+            },
+          ]),
+        );
+
+        runner = CommandRunner<void>('skills', 'Test runner')
+          ..addCommand(
+            _TestSkillCommand(
+              httpClient: mockClient,
+              environment: {'GEMINI_API_KEY': 'test-key'},
+            ),
+          );
+
+        expect(
+          () => runner.run([
+            'test-command',
+            configFile.path,
+            '--thinking-level',
+            'high',
+            '--thinking-budget',
+            '4096',
+          ]),
+          throwsA(isA<UsageException>()),
+        );
+      },
+    );
+
+    test(
+      'logs severe error on invalid model, thinking-level, or thinking-budget combinations',
+      () async {
+        final configFile = File(p.join(tempDir.path, 'config.yaml'));
+        await configFile.writeAsString(
+          jsonEncode(<Map<String, dynamic>>[
+            {
+              'name': 'existent-skill',
+              'description': 'desc',
+              'resources': <String>[],
+            },
+          ]),
+        );
+
+        final command = _TestSkillCommand(
+          httpClient: mockClient,
+          environment: {'GEMINI_API_KEY': 'test-key'},
+        );
+        runner = CommandRunner<void>('skills', 'Test runner')
+          ..addCommand(command);
+
+        await runner.run(['test-command', configFile.path, '--model', '']);
+        expect(
+          logs,
+          contains(contains('Invalid model or thinking configuration')),
+        );
+
+        records.clear();
+        await runner.run([
+          'test-command',
+          configFile.path,
+          '--model',
+          'gemini-4-carbon',
+          '--thinking-level',
+          'xhigh',
+        ]);
+        expect(
+          records.any(
+            (r) =>
+                r.level == Level.SEVERE &&
+                r.message.contains('Invalid model or thinking configuration'),
+          ),
+          isTrue,
+        );
+
+        records.clear();
+        await runner.run([
+          'test-command',
+          configFile.path,
+          '--model',
+          'gemini-4-carbon',
+          '--thinking-budget',
+          '0',
+        ]);
+        expect(
+          records.any(
+            (r) =>
+                r.level == Level.SEVERE &&
+                r.message.contains('Invalid model or thinking configuration'),
+          ),
+          isTrue,
+        );
+
+        records.clear();
+        await runner.run([
+          'test-command',
+          configFile.path,
+          '--thinking-budget',
+          '-2',
+        ]);
+        expect(
+          records.any(
+            (r) =>
+                r.level == Level.SEVERE &&
+                r.message.contains('Invalid thinking-budget: -2. Skipping.'),
+          ),
+          isTrue,
+        );
+
+        await runner.run([
+          'test-command',
+          configFile.path,
+          '--model',
+          'gemini-2.5-flash',
+          '--thinking-budget',
+          '-1',
+        ]);
+        await runner.run([
+          'test-command',
+          configFile.path,
+          '--model',
+          'gemini-2.5-flash',
+          '--thinking-budget',
+          '0',
+        ]);
+        expect(command.recordedThinkingBudgets, <int?>[-1, 0]);
+      },
+    );
   });
 }
