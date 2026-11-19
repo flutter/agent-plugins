@@ -47,6 +47,7 @@ class ValidateSkillCommand extends BaseSkillCommand {
     }
 
     var isValid = true;
+    final seenNames = <String>{};
 
     for (var i = 0; i < yamlList.length; i++) {
       final item = yamlList[i];
@@ -96,6 +97,11 @@ class ValidateSkillCommand extends BaseSkillCommand {
       }
 
       if (rawName is String) {
+        if (!seenNames.add(name)) {
+          logger.severe('Duplicate skill name "$name" in $fileName.');
+          isValid = false;
+        }
+
         if (!_kebabCaseRegExp.hasMatch(name)) {
           logger.severe(
             'Skill name "$name" must be kabob-case (e.g. abc-def).',

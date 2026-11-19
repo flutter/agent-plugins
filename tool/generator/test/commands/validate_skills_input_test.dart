@@ -282,5 +282,29 @@ void main() {
       );
       expect(logs, contains('Configuration validation failed.'));
     });
+
+    test('fails when configuration contains duplicate skill names', () async {
+      final content = jsonEncode([
+        {
+          'name': 'flutter-duplicate-skill',
+          'description': 'First skill description',
+          'resources': ['https://example.com/first'],
+        },
+        {
+          'name': 'flutter-duplicate-skill',
+          'description': 'Second skill description',
+          'resources': ['https://example.com/second'],
+        },
+      ]);
+
+      await runValidation('flutter_skills.yaml', content);
+      expect(
+        logs,
+        contains(
+          'Duplicate skill name "flutter-duplicate-skill" in flutter_skills.yaml.',
+        ),
+      );
+      expect(logs, contains('Configuration validation failed.'));
+    });
   });
 }
